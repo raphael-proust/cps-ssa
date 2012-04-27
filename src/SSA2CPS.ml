@@ -1,15 +1,25 @@
 
 let return = Prim.var "return"
 
-let block_of_label b = failwith "TODO"
-let immediate_dominatees b = failwith "TODO"
+let block_of_label bs l =
+	List.find (fun b -> b.SSA.b_label = l) bs
 
-let rec block ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
+let immediate_dominatees bs b =
+	(* /!\ WARNING /!\ temp version causes infinite loops on non-DAG graphs /!\ *)
+	(* /!\ WARNING /!\ really! *will* cause loops in the translation! *)
+
+	match b.SSA.b_jump with
+	| SSA.Jgoto l -> [block_of_label bs l]
+	| SSA.Jreturn _ | SSA.Jtail _ -> []
+	| SSA.Jcond (_, l1, l2) -> [block_of_label bs l1; block_of_label bs l2]
+
+
+let rec block bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 
 	let args_of_label l =
 		List.map
 			(fun (_, p) -> List.assoc b_label p)
-			((block_of_label l).SSA.b_phis)
+			((block_of_label bs l).SSA.b_phis)
 	in
 
 	let rec aux = function
@@ -29,7 +39,7 @@ let rec block ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 					)
 	in
 
-	match immediate_dominatees b with
+	match immediate_dominatees bs b with
 	| [] -> aux b_assigns
 	| l  ->
 		let l =
@@ -37,7 +47,7 @@ let rec block ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 				(fun b ->
 					let vs = List.map fst b.SSA.b_phis in
 					(Prim.var_of_label b.SSA.b_label,
-					 CPS.Ljump (vs, block b) (*terminates bc dominator tree is a DAG*)
+					 CPS.Ljump (vs, block bs b) (*terminates bc dominator tree is a DAG*)
 					)
 				)
 				l
@@ -49,6 +59,6 @@ let rec block ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 and proc {SSA.p_args; p_blocks;} cont =
 	match p_blocks with
 	| [] -> failwith "Can't translate empty ssa procedure into cps"
-	| h::_ -> CPS.Lproc (p_args, cont, block h)
+	| h::_ -> CPS.Lproc (p_args, cont, block p_blocks h)
 
 
