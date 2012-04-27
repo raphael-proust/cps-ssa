@@ -4,7 +4,7 @@ type var
 val var : string -> var
 val string_of_var : var -> string
 
-val fresh_var : unit -> string
+val fresh_var : unit -> var
 
 type value =
 	| Vvar of var
@@ -23,7 +23,7 @@ type label
 val label : string -> label
 val string_of_label : label -> string
 
-val fresh_label : unit -> string
+val fresh_label : unit -> label
 
 val var_of_label : label -> var
 val label_of_var : var -> label
