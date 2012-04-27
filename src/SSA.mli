@@ -26,3 +26,30 @@ and jump =
 and phi = Prim.var * (Prim.label * Prim.expr) list
 
 
+module Blocks :sig
+
+	val expr: ?label:Prim.label -> Prim.expr -> block
+	val const: ?label:Prim.label -> int -> block
+	val zero: ?label:Prim.label -> unit -> block
+
+	val cond: ?label:Prim.label -> Prim.expr -> Prim.label -> Prim.label -> block
+
+end
+
+module Procs : sig
+
+	val block: Prim.var list -> block -> proc
+
+	val cond:
+		   ?label:Prim.label
+		-> Prim.var list
+		-> Prim.expr -> block -> block
+		-> proc
+
+	val cond_e:
+		   ?label:Prim.label
+		-> Prim.var list
+		-> Prim.expr -> Prim.expr -> Prim.expr
+		-> proc
+
+end
