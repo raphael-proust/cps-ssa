@@ -1,6 +1,6 @@
 type const = int
 
-type var
+type var = private string
 val var : string -> var
 val string_of_var : var -> string
 
@@ -19,7 +19,7 @@ type expr =
 	| OMax of (value * value)
 	| OMin of (value * value)
 
-type label
+type label = private string
 val label : string -> label
 val string_of_label : label -> string
 
