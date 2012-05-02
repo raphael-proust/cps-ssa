@@ -1,6 +1,7 @@
 
+type prog = proc list
 
-type proc = {
+and proc = {
 	p_args  : Prim.var list;
 	p_blocks: block list; (* First block is entry block. Hence it dominates
 	                         non-dead blocks *)
@@ -24,6 +25,10 @@ and jump =
 	| Jcond of (Prim.expr * Prim.label * Prim.label)
 
 and phi = Prim.var * (Prim.label * Prim.expr) list
+
+val label_main : Prim.label
+
+val check_ssa : prog -> bool
 
 
 module Blocks :sig

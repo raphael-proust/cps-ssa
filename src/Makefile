@@ -1,5 +1,6 @@
 
 MLS= \
+		 util.ml \
 		 prim.ml \
 		 SSA.ml \
 		 CPS.ml \

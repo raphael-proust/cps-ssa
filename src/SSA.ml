@@ -1,5 +1,11 @@
 
-type proc = {
+(* SSA terms. We only enforce SSA property dynamically. *)
+
+let label_main = Prim.label "main"
+
+type prog = proc list
+
+and proc = {
 	p_args  : Prim.var list;
 	p_blocks: block list; (* First block is entry block. Hence it dominates
 	                         non-dead blocks *)
@@ -23,6 +29,27 @@ and jump =
 	| Jcond of (Prim.expr * Prim.label * Prim.label)
 
 and phi = Prim.var * (Prim.label * Prim.expr) list
+
+let check_ssa prog =
+
+	(* no procedure should be empty *)
+	List.for_all (fun p -> p.p_blocks <> []) prog &&
+
+	(* one procedure is the "main" *)
+	Util.L.exists_one (fun p -> (List.hd p.p_blocks).b_label = label_main) prog &&
+
+	let blocks = Util.L.concat_map (fun p -> p.p_blocks) prog in
+
+	(* no two labels are identical *)
+	Util.L.unique (fun b -> b.b_label) blocks &&
+
+	(* no two assignments share their rhs variable *)
+	Util.L.unique
+		(function | Aexpr (v, _) | Acall (v, _, _) -> v)
+		(Util.L.concat_map (fun b -> b.b_assigns) blocks)
+
+	(* TODO: check def dominates use *)
+	(* TODO? do one pass check? *)
 
 
 (* For building trivial blocks *)
