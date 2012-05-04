@@ -1,1 +1,22 @@
-Studying the relation between SSA and CPS (and ANF wen appropriate).
+Studying the relation between SSA and CPS (and ANF when appropriate).
+
+Most representations and algorithms are from litterature. Here is a
+non-exhaustive list of papers that were used:
+
+- A Functional Perspective on SSA Optimisation Algorithms;
+  Chakravarty, Keller and Zadarnowski.
+- SSA is Functional Programming;  Appel.
+- Efficiently Computing Static Single Assignment Form and The Control Dependence
+  Graph;  Cytron, Ferrante, Rosen, Wegman and Zadeck
+- Compiling Standard ML to Java Bytecodes;  Benton, Kennedy and Russell.
+- Compiling with Continuations, Continued;  Kennedy.
+- Design and Implementation of Code Optimizations for a Type-Directed Compiler
+  for Standard ML;  Tarditi.
+- Separating Stages in the CPS Transformation;  Lawall and Danvy.
+- Optimizing Nested Loops Using Local CPS Conversion;  Reppy.
+- A Generic Account of Continuation Passing Styles;  Hatcliff, Danvy.
+- Contification Using Dominators;  Fluet and Weeks.
+- Global Value Numbers and Redundant Computations;  Rosen, Wegman and Zadeck.
+- A Correspondence between Continuation Passing Style and Static Single
+  Assignment Form;  Kelsey.
+
