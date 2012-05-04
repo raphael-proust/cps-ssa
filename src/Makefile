@@ -4,7 +4,9 @@ MLS= \
 		 prim.ml \
 		 SSA.ml \
 		 CPS.ml \
-		 SSA2CPS.ml
+		 CPS_diff.ml \
+		 SSA2CPS.ml \
+		 difftest.ml
 
 CMXS=$(MLS:.ml=.cmx)
 
