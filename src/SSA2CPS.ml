@@ -17,8 +17,6 @@
   *                                                                          *)
 
 
-let return = Prim.var "return"
-
 let block_of_label bs l =
   List.find (fun b -> b.SSA.b_label = l) bs
 
@@ -32,7 +30,7 @@ let immediate_dominatees bs b =
   | SSA.Jcond (_, l1, l2) -> [block_of_label bs l1; block_of_label bs l2]
 
 
-let rec block bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
+let rec block return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 
   let args_of_label l =
     List.map
@@ -65,7 +63,7 @@ let rec block bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
         (fun b ->
           let vs = List.map fst b.SSA.b_phis in
           (Prim.var_of_label b.SSA.b_label,
-           CPS.Ljump (vs, block bs b) (*terminates bc dominator tree is a DAG*)
+           CPS.Ljump (vs, block return bs b) (*terminates bc dominator tree is a DAG*)
           )
         )
         l
@@ -74,9 +72,32 @@ let rec block bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 
 
 
-and proc {SSA.p_args; p_blocks;} cont =
+and proc {SSA.p_args; p_blocks;} =
   match p_blocks with
   | [] -> failwith "Can't translate empty ssa procedure into cps"
-  | h::_ -> CPS.Lproc (p_args, cont, block p_blocks h)
+  | h::_ ->
+    let return = Prim.fresh_var () in
+    CPS.Lproc (p_args, return, block return p_blocks h)
 
+and prog proclist cont =
+  match proclist with
+  | [] -> failwith "Can't translate empty ssa program into cps"
+  | _ ->
+    let lambdas =
+      List.map
+       (fun p ->
+         let l = proc p in
+         (
+           (Prim.var_of_label (List.hd p.SSA.p_blocks).SSA.b_label),
+            l
+         )
+       )
+       proclist
+    in
+    CPS.Mrec (lambdas,
+              (CPS.Mapp ((Prim.var_of_label SSA.label_main),
+                         [],
+                         cont)
+              )
+             )
 

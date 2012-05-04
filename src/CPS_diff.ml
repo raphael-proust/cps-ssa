@@ -30,7 +30,7 @@ let fp = Format.fprintf
 let print_var f v = fp f "%s" (Prim.string_of_var v)
 
 let print_value f = function
-  | Prim.Vvar v -> fp f "%a" print_var v
+  | Prim.Vvar v -> fp f "%a" print_var (v:Prim.var)
   | Prim.Vconst c -> fp f "%s" (string_of_int c)
 
 let print_expr f = function

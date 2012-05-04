@@ -32,6 +32,8 @@ type var = private string
   *)
 val var : string -> var
 
+val string_of_var: var -> string
+
 (** A generic variable generator. *)
 val fresh_var : unit -> var
 
@@ -55,6 +57,8 @@ type label = private string
 
 (** Label generation. Similar to [var]. *)
 val label : string -> label
+
+val string_of_label: label -> string
 
 (** A generic label generator. *)
 val fresh_label : unit -> label
