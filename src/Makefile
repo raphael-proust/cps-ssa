@@ -31,12 +31,16 @@ OCAMLC=ocamlc $(OCAMLCOPTIONS)
 OCAMLDEP=ocamldep
 
 
-all: native
+all: $(BINNAME).native
 
-native: $(CMXS)
+native: $(BINNAME).native
+
+byte: $(BINNAME).byte
+
+$(BINNAME).native: $(CMXS)
 	$(OCAMLOPT) $(LIBXS) $(CMXS) -o $(BINNAME).native
 
-byte: $(CMOS)
+$(BINNAME).byte: $(CMOS)
 	$(OCAMLC) $(LIBS) $(CMOS) -o $(BINNAME).byte
 
 
@@ -47,7 +51,7 @@ purge: clean
 	rm -f .depend $(BINNAME).native $(BINNAME).byte
 
 
-depend .depend: $(MLS) $(MLIS)
+depend: $(MLS) $(MLIS)
 	$(OCAMLDEP) $(MLS) $(MLIS) >.depend
 
 
