@@ -16,7 +16,20 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   *                                                                          *)
 
+ (** This module does CPS term pretty printing. It is intended to be used as a
+     preparation for plain-text diff(1). Thus it introduces lots of linebreaks
+     (way too many for the printing to be considered 'pretty').
+   *)
 
+ (** [print_α f x] prints [x] on formatter [f] (where [x] has type [CPS.α]). See
+     [CPS] module for details on different α.
+   *)
+
+ (** *)
 val print_m      : Format.formatter -> CPS.m -> unit
+
+(** *)
 val print_cont   : Format.formatter -> CPS.cont -> unit
+
+(** *)
 val print_lambda : Format.formatter -> CPS.lambda -> unit

@@ -17,14 +17,22 @@
   *                                                                          *)
 
 
+(** A program is a set of procedures. Exactly one of those has to be labeled
+    with [label_main].
+  *)
 type prog = proc list
 
+(** A procedure has arguments and a body (constituted of blocks). *)
 and proc = {
   p_args  : Prim.var list;
   p_blocks: block list; (* First block is entry block. Hence it dominates
                            non-dead blocks *)
 }
 
+(** BLocks are not represented exactly as in Kesley's paper but the two forms
+    are similar enough. A block has a label, some phi-functions, some assignement
+    and one jump (conditional jumps allow for control flow).
+  *)
 and block = {
   b_label  : Prim.label;
   b_phis   : phi list;
@@ -32,20 +40,32 @@ and block = {
   b_jump   : jump;
 }
 
+(** Assignements of direct expressions or function calls. *)
 and assign =
   | Aexpr of (Prim.var * Prim.expr)
+  (*FIXME? Acall var label (expr list)? with label for proc identification*)
   | Acall of (Prim.var * Prim.var * Prim.expr list)
 
+(** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
+    or conditional jumping.
+  *)
 and jump =
   | Jgoto of (Prim.label)
   | Jreturn of Prim.expr
+  (*FIXME? Jtail label (expr list)?*)
   | Jtail of (Prim.var * Prim.expr list)
   | Jcond of (Prim.expr * Prim.label * Prim.label)
 
+(** SSA-magic is made of phi-functions. *)
 and phi = Prim.var * (Prim.label * Prim.expr) list
 
+(** Label for program entry point. *)
 val label_main : Prim.label
 
+(** checks that the ssa program is indeed ssa. In particular, it checks that
+    each variable is assigned to, only once, there is exactly one main procedure,
+    and other things.
+  *)
 val check_ssa : prog -> bool
 
 

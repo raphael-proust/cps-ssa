@@ -16,18 +16,31 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   *                                                                          *)
 
+(** Constants are only integers when working on the intermediate
+    representation.
+  *)
 type const = int
 
+(** Variables are represented as strings. They are private so as to ease
+    printing and comparison, while making it possible, in the future to check for
+    uniqueness of variable names (well, not really, but sort of).
+  *)
 type var = private string
-val var : string -> var
-val string_of_var : var -> string
 
+(** Variable Generation. Uses the argument as a base and adds unspecified
+    prefixes and suffixes.
+  *)
+val var : string -> var
+
+(** A generic variable generator. *)
 val fresh_var : unit -> var
 
+(** Values are either variables or constants. *)
 type value =
   | Vvar of var
   | Vconst of const
 
+(** Expressions are operations on values (or just a value). *)
 type expr =
   | ONone of value
   | OPlus  of (value * value)
@@ -37,11 +50,18 @@ type expr =
   | OMax of (value * value)
   | OMin of (value * value)
 
+(** Labels. Like variables but for procedure block naming. *)
 type label = private string
-val label : string -> label
-val string_of_label : label -> string
 
+(** Label generation. Similar to [var]. *)
+val label : string -> label
+
+(** A generic label generator. *)
 val fresh_label : unit -> label
+
+(** [label] to and from [var] translation. Usefull for translating procedures
+    into lambdas and vice versa.
+  *)
 
 val var_of_label : label -> var
 val label_of_var : var -> label

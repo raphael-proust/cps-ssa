@@ -16,18 +16,39 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   *                                                                          *)
 
+ (** This module deals with CPS terms. Its content is inspired by "A
+     Correspondence between Continuation Passing Style and Static Single
+     Assignment Form" by Kesley.
+   *)
+
 
 type m =
+  (** Application. The [var]iable can only be a procedure/function call. An
+      extra continuation argument is needed.
+    *)
   | Mapp  of (Prim.var * Prim.expr list * cont)
+  (** Continuation call. The [var]iable must be a continuation. *)
+  (*TODO? use GADT to enforce the [var]iable to be a continuation? *)
   | Mcont of (Prim.var * Prim.expr list)
-  | Mcond of (Prim.expr * (Prim.var * Prim.expr list) * (Prim.var * Prim.expr list))
+  (** Conditional Branching. Both branches must use continuation [var]iables. *)
+  | Mcond of ( Prim.expr
+             * (Prim.var * Prim.expr list)
+             * (Prim.var * Prim.expr list))
+  (** Let-binding. Note that it only bounds [expressions]. *)
   | Mlet  of (Prim.var * Prim.expr * m)
+  (** Recursive let binding. It binds lambdas. *)
   | Mrec  of ((Prim.var * lambda) list * m)
 
 and cont =
+    (** Continuation Variable. *)
   | Cvar of Prim.var
+    (** Explicit Continuation. *)
   | C    of Prim.var * m
 
 and lambda =
+  (** Procedures. These are for source program functions/procedures translation.
+      The last [var]iable is for continuation passing.
+    *)
   | Lproc of (Prim.var list * Prim.var * m)
+  (** Intra-procedure Jumps. E.g. for join points. *)
   | Ljump of (Prim.var list * m)
