@@ -24,14 +24,14 @@ let rec block bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 
 	let rec aux = function
 		| SSA.Aexpr (x, e)     :: l -> CPS.Mlet (x, e,  aux l)
-		| SSA.Acall (x, e, es) :: l -> CPS.Mapp (e, es, CPS.C (x, aux l))
+		| SSA.Acall (x, f, es) :: l -> CPS.Mapp (f, es, CPS.C (x, aux l))
 		| [] -> match b_jump with
 			| SSA.Jgoto l ->
 					CPS.Mcont ((Prim.var_of_label l), (args_of_label l))
 			| SSA.Jreturn e ->
 					CPS.Mcont (return, [e])
-			| SSA.Jtail (e, es) ->
-					CPS.Mapp (e, es, CPS.Cvar return)
+			| SSA.Jtail (v, es) ->
+					CPS.Mapp (v, es, CPS.Cvar return)
 			| SSA.Jcond (c, l1, l2) ->
 					CPS.Mcond (c,
 						(Prim.var_of_label l1, (args_of_label l1)),

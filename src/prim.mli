@@ -7,17 +7,17 @@ val string_of_var : var -> string
 val fresh_var : unit -> var
 
 type value =
-	| Vvar of var
-	| Vconst of const
+  | Vvar of var
+  | Vconst of const
 
 type expr =
-	| ONone of value
-	| OPlus  of (value * value)
-	| OMult  of (value * value)
-	| OMinus of (value * value)
-	| ODiv   of (value * value)
-	| OMax of (value * value)
-	| OMin of (value * value)
+  | ONone of value
+  | OPlus  of (value * value)
+  | OMult  of (value * value)
+  | OMinus of (value * value)
+  | ODiv   of (value * value)
+  | OMax of (value * value)
+  | OMin of (value * value)
 
 type label = private string
 val label : string -> label

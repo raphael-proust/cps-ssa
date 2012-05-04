@@ -1,6 +1,6 @@
 
 type m =
-	| Mapp  of (Prim.expr * Prim.expr list * cont)
+	| Mapp  of (Prim.var * Prim.expr list * cont)
 	| Mcont of (Prim.var * Prim.expr list)
 	| Mcond of (Prim.expr * (Prim.var * Prim.expr list) * (Prim.var * Prim.expr list))
 	| Mlet  of (Prim.var * Prim.expr * m)
