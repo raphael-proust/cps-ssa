@@ -18,6 +18,14 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-val block : Dom.G.t -> Prim.var -> SSA.block list -> SSA.block -> CPS.m
-val proc : Dom.G.t -> SSA.proc -> CPS.lambda
-val prog : SSA.proc list -> CPS.cont -> CPS.m
+module G : Graph.Sig.P with type V.t = SSA.block
+                        and type V.label = SSA.block
+                        and type E.t = SSA.block * SSA.block
+                        and type E.label = unit
+
+(* Changes the representation of an SSA [prog]ram to a "proper" graph. *)
+val graph_of_ssa: SSA.prog -> G.t
+
+(* Computes the dominator tree of a graph. It uses the "Simple, Fast Dominace
+ * Algorithm" of Cooper, Harvey and Kennedy. *)
+val dom_of_graph: G.t -> G.t

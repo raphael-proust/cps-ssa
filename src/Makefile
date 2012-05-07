@@ -5,6 +5,7 @@ MLS= \
 		 SSA.ml \
 		 CPS.ml \
 		 CPS_diff.ml \
+		 dom.ml \
 		 SSA2CPS.ml \
 		 difftest.ml
 
@@ -17,8 +18,9 @@ MLIS=$(MLS:.ml=.mli)
 CMIS=$(MLS:.ml=.cmi)
 
 
-LIBXS=
+LIBXS=$(shell ocamlfind query ocamlgraph)/graph.cmxa
 LIBS=$(LIBXS:.cmxa=.cma)
+LIBDIRS=$(shell ocamlfind query ocamlgraph)
 
 
 BINNAME=run
@@ -58,11 +60,11 @@ depend: $(MLS) $(MLIS)
 -include .depend
 
 %.cmo: %.ml
-	$(OCAMLC) -c $<
+	$(OCAMLC) -I $(LIBDIRS) -c $<
 
 %.cmi: %.mli
-	$(OCAMLC) -c $<
+	$(OCAMLC) -I $(LIBDIRS) -c $<
 
 %.cmx: %.ml
-	$(OCAMLOPT) -c $<
+	$(OCAMLOPT) -I $(LIBDIRS) -c $<
 
