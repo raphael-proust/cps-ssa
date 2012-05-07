@@ -1,4 +1,6 @@
- (*                                                                          *
+ (* {{{ LICENSE                                                              *
+  * vi: set fdm=marker fdl=0:                                                *
+  *                                                                          *
   * Copyright (c) 2012 Raphaël Proust <raphlalou@gmail.com>                  *
   * Copyright (c) 2012 INRIA - Raphaël Proust <raphlalou@gmail.com>          *
   * Copyright (c) 2012 ENS - Raphaël Proust <raphlalou@gmail.com>            *
@@ -100,4 +102,3 @@ and prog proclist cont =
                          cont)
               )
              )
-

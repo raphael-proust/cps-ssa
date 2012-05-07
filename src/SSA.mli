@@ -1,4 +1,6 @@
- (*                                                                          *
+ (* {{{ LICENSE                                                              *
+  * vi: set fdm=marker fdl=0:                                                *
+  *                                                                          *
   * Copyright (c) 2012 Raphaël Proust <raphlalou@gmail.com>                  *
   * Copyright (c) 2012 INRIA - Raphaël Proust <raphlalou@gmail.com>          *
   * Copyright (c) 2012 ENS - Raphaël Proust <raphlalou@gmail.com>            *
@@ -14,8 +16,7 @@
   * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN    *
   * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF  *
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
-  *                                                                          *)
-
+  * }}}                                                                      *)
 
 (** A program is a set of procedures. Exactly one of those has to be labeled
     with [label_main].

@@ -1,4 +1,6 @@
- (*                                                                          *
+ (* {{{ LICENSE                                                              *
+  * vi: set fdm=marker fdl=0:                                                *
+  *                                                                          *
   * Copyright (c) 2012 Raphaël Proust <raphlalou@gmail.com>                  *
   * Copyright (c) 2012 INRIA - Raphaël Proust <raphlalou@gmail.com>          *
   * Copyright (c) 2012 ENS - Raphaël Proust <raphlalou@gmail.com>            *
@@ -14,7 +16,7 @@
   * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN    *
   * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF  *
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
-  *                                                                          *)
+  * }}}                                                                      *)
 
  (** This module deals with CPS terms. Its content is inspired by "A
      Correspondence between Continuation Passing Style and Static Single

@@ -1,4 +1,6 @@
- (*                                                                          *
+ (* {{{ LICENSE                                                              *
+  * vi: set fdm=marker fdl=0:                                                *
+  *                                                                          *
   * Copyright (c) 2012 Raphaël Proust <raphlalou@gmail.com>                  *
   * Copyright (c) 2012 INRIA - Raphaël Proust <raphlalou@gmail.com>          *
   * Copyright (c) 2012 ENS - Raphaël Proust <raphlalou@gmail.com>            *
@@ -14,14 +16,12 @@
   * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN    *
   * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF  *
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
-  *                                                                          *)
-
-module Cd = CPS_diff ;;
+  * }}}                                                                      *)
 
 let w_buf m =
   let b = Buffer.create 10 in
   let f = Format.formatter_of_buffer b in
-  let () = Format.fprintf f "@[%a@]" Cd.print_m m in
+  let () = Format.fprintf f "@[%a@]" CPS_diff.print_m m in
   let () = Format.pp_print_newline f () in
   let () = Format.pp_print_newline f () in
   let () = print_string (Buffer.contents b) in
