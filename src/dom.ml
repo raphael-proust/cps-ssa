@@ -45,22 +45,18 @@ let vertices_of_block blocks b =
     ]
 
 let graph_of_blocks blocks =
-  let (graph, process) =
+  let graph =
     List.fold_left (* list of (list of jumps | blocks) *)
-      (fun (g, l) block ->
-        let gg =
-          List.fold_left (* (list of jumps | block) *)
-            G.add_edge_e
-            g
-            (vertices_of_block blocks block)
-        in
-        let ll = block :: l in
-        (gg,ll)
+      (fun g block ->
+        List.fold_left (* (list of jumps | block) *)
+          G.add_edge_e
+          g
+          (vertices_of_block blocks block)
       )
-      (G.empty, [])
+      G.empty
       blocks
   in
-  (graph, process)
+  graph
 
 (* Once we have a graph, we build a postorder *)
 
@@ -68,14 +64,18 @@ module DFS_Traverse = Graph.Traverse.Dfs(G)
 
 let mark_postorder g =
   let id = ref 0 in
+  let process = ref [] in
   DFS_Traverse.postfix
-    (fun b ->  b.SSA.b_order <- !id; incr id)
-    g
+    (fun b ->
+      b.SSA.b_order <- !id; incr id;
+      process := b :: !process
+    )
+    g;
+  !process
 
 let dom_of_blocks blocks =
 
-  let (graph, process) = graph_of_blocks blocks in
-  let process = List.tl (List.rev process) in
+  let graph = graph_of_blocks blocks in
 
   (* based on Cooper, Harvey, and Kennedy *)
   (*helpers*)
@@ -86,7 +86,7 @@ let dom_of_blocks blocks =
 
   (*init*)
     let dom = Array.make (G.nb_vertex graph) None in
-    mark_postorder graph;
+    let process = mark_postorder graph in
     dom.((List.hd blocks).SSA.b_order) <- Some (List.hd blocks);
     let changed = ref true in
 
