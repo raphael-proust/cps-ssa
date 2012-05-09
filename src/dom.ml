@@ -18,16 +18,27 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-module Vertex = struct
-  type t = SSA.block
+(* We first make a graph out of the list of list of blocks *)
+
+module BlockVertex = struct
+  type t = int ref * SSA.block (* ref is ugly, but Graph only has iterator
+                                  trasversal (no map, no fold *)
   let compare = Pervasives.compare
   let hash    = Hashtbl.hash
   let equal   = (=)
 end
 
-module G = Graph.Persistent.Digraph.ConcreteBidirectional(Vertex)
+module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
+
+module OrderedBlock = struct
+  type t = SSA.block
+  let compare = Pervasives.compare
+end
+
+module M = Map.Make(OrderedBlock)
 
 (* *VERY* inefficient! *)
+(*TODO: memoize or build a map before use *)
 let block_of_label_proc proc label =
   List.find (fun p -> p.SSA.b_label = label) proc.SSA.p_blocks
 
@@ -42,31 +53,58 @@ let block_of_label prog label =
   in
   aux prog
 
-(*TODO? how to handle inter-procedure calls *)
+(*TODO? how to handle inter-procedure calls? *)
 
-let vertices_of_block prog proc b =
+(*TODO: add an integer tag to blocks so as to allow postorder treatment *)
+
+let vertices_of_block map_ref prog proc b =
+  (* we get a list of jumps out of a block *)
+  let create b1 b2 =
+    let n1 = (ref 0, b1) in
+    let n2 = (ref 0, b2) in
+    map_ref := M.add b1 n1 !map_ref;
+    map_ref := M.add b2 n2 !map_ref;
+    G.E.create (ref 0, b1) () (ref 0, b2)
+  in
   match b.SSA.b_jump with
   | SSA.Jreturn _ | SSA.Jtail _ -> []
-  | SSA.Jgoto label -> [G.E.create b () (block_of_label_proc proc label)]
+  | SSA.Jgoto label -> [create b (block_of_label_proc proc label)]
   | SSA.Jcond (_, label1, label2) ->
-    [G.E.create b () (block_of_label_proc proc label1);
-     G.E.create b () (block_of_label_proc proc label2);
+    [create b (block_of_label_proc proc label1);
+     create b (block_of_label_proc proc label2);
     ]
 
 let graph_of_ssa prog =
-  List.fold_left
-    (fun g proc ->
-      List.fold_left
-        (fun g block ->
-          List.fold_left
-            G.add_edge_e
-            g
-            (vertices_of_block prog proc block)
-        )
-        g
-        proc.SSA.p_blocks
-    )
-    G.empty
-    prog
+  let map_ref = ref M.empty in
+  let graph =
+    List.fold_left (* list of list of (list of jumps | blocks) *)
+      (fun g proc ->
+        List.fold_left (* list of (list of jumps | blocks) *)
+          (fun g block ->
+            List.fold_left (* (list of jumps | block) *)
+              G.add_edge_e
+              g
+              (vertices_of_block map_ref prog proc block)
+          )
+          g
+          proc.SSA.p_blocks
+      )
+      G.empty
+      prog
+  in
+  (graph, !map_ref)
 
-let dom_of_graph g = failwith "TODO"
+(* Once we have a graph, we build a postorder *)
+
+module DFS_Traverse = Graph.Traverse.Dfs(G)
+
+let mark_postorder g =
+  let id      = ref 0 in
+  DFS_Traverse.postfix
+    (fun (o, b) -> incr id; o := !id)
+    g
+
+let dom_of_graph g = (* We temporarily go in imperative mode. *)
+  failwith "TODO"
+
+let dom_of_ssa prog = failwith "TODO"

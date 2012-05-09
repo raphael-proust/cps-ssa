@@ -18,6 +18,6 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-val block : Dom.G.t -> Prim.var -> SSA.block list -> SSA.block -> CPS.m
-val proc : Dom.G.t -> SSA.proc -> CPS.lambda
+val block : Dom.G.t -> Dom.G.V.t Dom.M.t -> Prim.var -> SSA.block list -> SSA.block -> CPS.m
+val proc : Dom.G.t -> Dom.G.V.t Dom.M.t -> SSA.proc -> CPS.lambda
 val prog : SSA.proc list -> CPS.cont -> CPS.m

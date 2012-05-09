@@ -18,14 +18,23 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-module G : Graph.Sig.P with type V.t = SSA.block
-                        and type V.label = SSA.block
-                        and type E.t = SSA.block * SSA.block
+module G : Graph.Sig.P with type V.t = int ref *SSA.block
+                        and type V.label = int ref * SSA.block
+                        and type E.t =   (int ref *SSA.block)
+                                       * (int ref *SSA.block)
                         and type E.label = unit
 
-(* Changes the representation of an SSA [prog]ram to a "proper" graph. *)
-val graph_of_ssa: SSA.prog -> G.t
+module M : Map.S with type key = SSA.block
 
-(* Computes the dominator tree of a graph. It uses the "Simple, Fast Dominace
- * Algorithm" of Cooper, Harvey and Kennedy. *)
+(** Changes the representation of an SSA [prog]ram to a "proper" graph. *)
+val graph_of_ssa: SSA.prog -> (G.t * G.V.t M.t)
+
+(** Number nodes in reverse postorder *)
+val mark_postorder: G.t -> unit
+
+
+(** Computes the dominator tree of a graph. It uses the "Simple, Fast Dominace
+    Algorithm" of Cooper, Harvey and Kennedy. *)
 val dom_of_graph: G.t -> G.t
+
+val dom_of_ssa: SSA.prog -> (G.t * G.V.t M.t)
