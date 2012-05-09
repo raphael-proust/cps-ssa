@@ -18,7 +18,8 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(* We first make a graph out of the list of list of blocks *)
+(* type none of your business to protect the mutable ref *)
+type noyb = int ref
 
 module BlockVertex = struct
   type t = int ref * SSA.block (* ref is ugly, but Graph only has iterator
@@ -39,23 +40,12 @@ module M = Map.Make(OrderedBlock)
 
 (* *VERY* inefficient! *)
 (*TODO: memoize or build a map before use *)
-let block_of_label_proc proc label =
-  List.find (fun p -> p.SSA.b_label = label) proc.SSA.p_blocks
-
-let block_of_label prog label =
-  let rec aux = function
-    | [] -> raise Not_found
-    | h::t ->
-      try
-        block_of_label_proc h label
-      with
-        | Not_found -> aux t
-  in
-  aux prog
+let block_of_label blocks label =
+  List.find (fun p -> p.SSA.b_label = label) blocks
 
 (*TODO: add an integer tag to blocks so as to allow postorder treatment *)
 
-let vertices_of_block map_ref prog proc b =
+let vertices_of_block map_ref blocks b =
   (* we get a list of jumps out of a block *)
   let create b1 b2 =
     let n1 = (ref 0, b1) in
@@ -66,29 +56,24 @@ let vertices_of_block map_ref prog proc b =
   in
   match b.SSA.b_jump with
   | SSA.Jreturn _ | SSA.Jtail _ -> []
-  | SSA.Jgoto label -> [create b (block_of_label_proc proc label)]
+  | SSA.Jgoto label -> [create b (block_of_label blocks label)]
   | SSA.Jcond (_, label1, label2) ->
-    [create b (block_of_label_proc proc label1);
-     create b (block_of_label_proc proc label2);
+    [create b (block_of_label blocks label1);
+     create b (block_of_label blocks label2);
     ]
 
-let graph_of_ssa prog =
+let graph_of_blocks blocks =
   let map_ref = ref M.empty in
   let graph =
-    List.fold_left (* list of list of (list of jumps | blocks) *)
-      (fun g proc ->
-        List.fold_left (* list of (list of jumps | blocks) *)
-          (fun g block ->
-            List.fold_left (* (list of jumps | block) *)
-              G.add_edge_e
-              g
-              (vertices_of_block map_ref prog proc block)
-          )
+    List.fold_left (* list of (list of jumps | blocks) *)
+      (fun g block ->
+        List.fold_left (* (list of jumps | block) *)
+          G.add_edge_e
           g
-          proc.SSA.p_blocks
+          (vertices_of_block map_ref blocks block)
       )
       G.empty
-      prog
+      blocks
   in
   (graph, !map_ref)
 
@@ -105,4 +90,5 @@ let mark_postorder g =
 let dom_of_graph g = (* We temporarily go in imperative mode. *)
   failwith "TODO"
 
-let dom_of_ssa prog = failwith "TODO"
+
+let dom_of_blocks blocks = failwith "TODO"

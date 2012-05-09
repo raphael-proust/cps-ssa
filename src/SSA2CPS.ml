@@ -21,7 +21,7 @@
 let block_of_label bs l =
   List.find (fun b -> b.SSA.b_label = l) bs
 
-let rec block dom node_map return bs
+let rec block (dom, node_map) return bs
               ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 
   let args_of_label l =
@@ -37,17 +37,17 @@ let rec block dom node_map return bs
       CPS.Mapp (f, es, CPS.C (x, aux l))
     | [] -> match b_jump with (*somehow ugly*)
       | SSA.Jgoto l ->
-          CPS.Mcont ((Prim.var_of_label l), (args_of_label l))
+        CPS.Mcont ((Prim.var_of_label l), (args_of_label l))
       | SSA.Jreturn e ->
-          CPS.Mcont (return, [e])
+        CPS.Mcont (return, [e])
       | SSA.Jtail (f, es) ->
-          let f = Prim.var_of_label f in
-          CPS.Mapp (f, es, CPS.Cvar return)
+        let f = Prim.var_of_label f in
+        CPS.Mapp (f, es, CPS.Cvar return)
       | SSA.Jcond (c, l1, l2) ->
-          CPS.Mcond (c,
-            (Prim.var_of_label l1, (args_of_label l1)),
-            (Prim.var_of_label l2, (args_of_label l2))
-          )
+        CPS.Mcond (c,
+                   (Prim.var_of_label l1, (args_of_label l1)),
+                   (Prim.var_of_label l2, (args_of_label l2))
+                  )
   in
 
   match Dom.G.pred dom (Dom.M.find b node_map) with
@@ -58,7 +58,7 @@ let rec block dom node_map return bs
         (fun (_, b) -> (*terminates bc dominator tree is a DAG*)
           let lbl = Prim.var_of_label b.SSA.b_label in
           let vs = List.map fst b.SSA.b_phis in
-          let lambda = CPS.Ljump (vs, block dom node_map return bs b) in
+          let lambda = CPS.Ljump (vs, block (dom, node_map) return bs b) in
           (lbl, lambda)
         )
         l
@@ -67,12 +67,13 @@ let rec block dom node_map return bs
 
 
 
-and proc dom node_map {SSA.p_args; p_blocks;} =
+and proc {SSA.p_args; p_blocks;} =
+  let dom_n_map = Dom.dom_of_blocks p_blocks in
   match p_blocks with
   | [] -> failwith "Can't translate empty ssa procedure into cps"
   | h::_ ->
     let return = Prim.fresh_var () in
-    CPS.Lproc (p_args, return, block dom node_map return p_blocks h)
+    CPS.Lproc (p_args, return, block dom_n_map return p_blocks h)
 
 and prog proclist cont =
   if proclist = [] then
@@ -82,10 +83,8 @@ and prog proclist cont =
     let lambdas =
       List.map
        (fun p ->
-         let (dom, node_map) = Dom.dom_of_ssa proclist in
-         let lambda = proc dom node_map p in
          let lbl= Prim.var_of_label (List.hd p.SSA.p_blocks).SSA.b_label in
-         (lbl, lambda)
+         (lbl, proc p)
        )
        proclist
     in
