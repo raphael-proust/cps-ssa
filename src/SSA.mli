@@ -44,8 +44,7 @@ and block = {
 (** Assignements of direct expressions or function calls. *)
 and assign =
   | Aexpr of (Prim.var * Prim.expr)
-  (*FIXME? Acall var label (expr list)? with label for proc identification*)
-  | Acall of (Prim.var * Prim.var * Prim.expr list)
+  | Acall of (Prim.var * Prim.label * Prim.expr list)
 
 (** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
     or conditional jumping.
@@ -53,8 +52,7 @@ and assign =
 and jump =
   | Jgoto of (Prim.label)
   | Jreturn of Prim.expr
-  (*FIXME? Jtail label (expr list)?*)
-  | Jtail of (Prim.var * Prim.expr list)
+  | Jtail of (Prim.label * Prim.expr list)
   | Jcond of (Prim.expr * Prim.label * Prim.label)
 
 (** SSA-magic is made of phi-functions. *)

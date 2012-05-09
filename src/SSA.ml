@@ -39,12 +39,12 @@ and block = {
 
 and assign =
   | Aexpr of (Prim.var * Prim.expr)
-  | Acall of (Prim.var * Prim.var * Prim.expr list)
+  | Acall of (Prim.var * Prim.label * Prim.expr list)
 
 and jump =
   | Jgoto of (Prim.label)
   | Jreturn of Prim.expr
-  | Jtail of (Prim.var * Prim.expr list)
+  | Jtail of (Prim.label * Prim.expr list)
   | Jcond of (Prim.expr * Prim.label * Prim.label)
 
 and phi = Prim.var * (Prim.label * Prim.expr) list
