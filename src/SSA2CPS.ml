@@ -79,10 +79,10 @@ and prog proclist cont =
     failwith "Can't translate empty ssa program into cps"
   else
     (* we need immediate dominatees for the translation *)
-    let (dom, node_map) = Dom.dom_of_ssa proclist in
     let lambdas =
       List.map
        (fun p ->
+         let (dom, node_map) = Dom.dom_of_ssa proclist in
          let lambda = proc dom node_map p in
          let lbl= Prim.var_of_label (List.hd p.SSA.p_blocks).SSA.b_label in
          (lbl, lambda)

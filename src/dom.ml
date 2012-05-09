@@ -53,8 +53,6 @@ let block_of_label prog label =
   in
   aux prog
 
-(*TODO? how to handle inter-procedure calls? *)
-
 (*TODO: add an integer tag to blocks so as to allow postorder treatment *)
 
 let vertices_of_block map_ref prog proc b =
