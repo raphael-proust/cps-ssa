@@ -53,5 +53,16 @@ module L = struct
     in
     aux l
 
+  let pick_one_such_as f l =
+    let rec aux accu = function
+      | [] -> raise Not_found
+      | h::t ->
+        if f h then
+          (h, List.rev_append accu t)
+        else
+          aux (h::accu) t
+    in
+    aux [] l
+
 
 end

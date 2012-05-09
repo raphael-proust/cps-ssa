@@ -18,14 +18,9 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type noyb
-
-module G : Graph.Sig.P with type V.t = noyb * SSA.block
-                        and type V.label = noyb * SSA.block
-                        and type E.t =   (noyb * SSA.block)
-                                       * (noyb * SSA.block)
+module G : Graph.Sig.P with type     V.t = SSA.block
+                        and type V.label = SSA.block
+                        and type     E.t = SSA.block * SSA.block
                         and type E.label = unit
 
-module M : Map.S with type key = SSA.block
-
-val dom_of_blocks: SSA.block list -> (G.t * G.V.t M.t)
+val dom_of_blocks: SSA.block list -> G.t

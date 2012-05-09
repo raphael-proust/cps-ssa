@@ -23,4 +23,5 @@ module L :
     val concat_map : ('a -> 'b list) -> 'a list -> 'b list
     val exists_one : ('a -> bool) -> 'a list -> bool
     val unique : ('a -> 'b) -> 'a list -> bool
+    val pick_one_such_as: ('a -> bool) -> 'a list -> ('a * 'a list)
   end

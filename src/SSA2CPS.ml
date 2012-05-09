@@ -21,8 +21,7 @@
 let block_of_label bs l =
   List.find (fun b -> b.SSA.b_label = l) bs
 
-let rec block (dom, node_map) return bs
-              ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
+let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 
   let args_of_label l =
     List.map
@@ -50,15 +49,15 @@ let rec block (dom, node_map) return bs
                   )
   in
 
-  match Dom.G.pred dom (Dom.M.find b node_map) with
+  match Dom.G.pred dom b with
   | [] -> aux b_assigns
   | l  ->
     let l =
       List.map
-        (fun (_, b) -> (*terminates bc dominator tree is a DAG*)
+        (fun b -> (*terminates bc dominator tree is a DAG*)
           let lbl = Prim.var_of_label b.SSA.b_label in
           let vs = List.map fst b.SSA.b_phis in
-          let lambda = CPS.Ljump (vs, block (dom, node_map) return bs b) in
+          let lambda = CPS.Ljump (vs, block dom return bs b) in
           (lbl, lambda)
         )
         l
@@ -68,12 +67,12 @@ let rec block (dom, node_map) return bs
 
 
 and proc {SSA.p_args; p_blocks;} =
-  let dom_n_map = Dom.dom_of_blocks p_blocks in
+  let dom = Dom.dom_of_blocks p_blocks in
   match p_blocks with
   | [] -> failwith "Can't translate empty ssa procedure into cps"
   | h::_ ->
     let return = Prim.fresh_var () in
-    CPS.Lproc (p_args, return, block dom_n_map return p_blocks h)
+    CPS.Lproc (p_args, return, block dom return p_blocks h)
 
 and prog proclist cont =
   if proclist = [] then
