@@ -35,10 +35,11 @@ and proc = {
     and one jump (conditional jumps allow for control flow).
   *)
 and block = {
-  b_label  : Prim.label;
-  b_phis   : phi list;
-  b_assigns: assign list;
-  b_jump   : jump;
+  mutable b_order : int;
+  (*   *) b_label  : Prim.label;
+  (*   *) b_phis   : phi list;
+  (*   *) b_assigns: assign list;
+  (*   *) b_jump   : jump;
 }
 
 (** Assignements of direct expressions or function calls. *)

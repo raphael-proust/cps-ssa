@@ -18,19 +18,6 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(* type none of your business to protect the mutable ref *)
-type noyb = int ref
-
-module IntBlockVertex = struct
-  type t = int ref * SSA.block (* ref is ugly, but Graph only has iterator
-                                  trasversal (no map, no fold *)
-  let compare = Pervasives.compare
-  let hash    = Hashtbl.hash
-  let equal   = (=)
-end
-
-module Gib = Graph.Persistent.Digraph.ConcreteBidirectional(IntBlockVertex)
-
 module BlockVertex = struct
   type t = SSA.block
   let compare = Pervasives.compare
@@ -40,13 +27,6 @@ end
 
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
 
-module OrderedBlock = struct
-  type t = SSA.block
-  let compare = Pervasives.compare
-end
-
-module M = Map.Make(OrderedBlock)
-
 (* *VERY* inefficient! *)
 (*TODO: memoize or build a map before use *)
 let block_of_label blocks label =
@@ -54,87 +34,75 @@ let block_of_label blocks label =
 
 (*TODO: add an integer tag to blocks so as to allow postorder treatment *)
 
-let vertices_of_block map_ref blocks b =
+let vertices_of_block blocks b =
   (* we get a list of jumps out of a block *)
-  let create b1 b2 =
-    let n1 = (ref 0, b1) in
-    let n2 = (ref 0, b2) in
-    map_ref := M.add b1 n1 !map_ref;
-    map_ref := M.add b2 n2 !map_ref;
-    Gib.E.create (ref 0, b1) () (ref 0, b2)
-  in
   match b.SSA.b_jump with
   | SSA.Jreturn _ | SSA.Jtail _ -> []
-  | SSA.Jgoto label -> [create b (block_of_label blocks label)]
+  | SSA.Jgoto label -> [G.E.create b () (block_of_label blocks label)]
   | SSA.Jcond (_, label1, label2) ->
-    [create b (block_of_label blocks label1);
-     create b (block_of_label blocks label2);
+    [G.E.create b () (block_of_label blocks label1);
+     G.E.create b () (block_of_label blocks label2);
     ]
 
 let graph_of_blocks blocks =
-  let map_ref = ref M.empty in
   let (graph, process) =
     List.fold_left (* list of (list of jumps | blocks) *)
       (fun (g, l) block ->
         let gg =
           List.fold_left (* (list of jumps | block) *)
-            Gib.add_edge_e
+            G.add_edge_e
             g
-            (vertices_of_block map_ref blocks block)
+            (vertices_of_block blocks block)
         in
         let ll = block :: l in
         (gg,ll)
       )
-      (Gib.empty, [])
+      (G.empty, [])
       blocks
   in
-  (graph, process, !map_ref)
+  (graph, process)
 
 (* Once we have a graph, we build a postorder *)
 
-module DFS_Traverse = Graph.Traverse.Dfs(Gib)
+module DFS_Traverse = Graph.Traverse.Dfs(G)
 
 let mark_postorder g =
-  let id      = ref 0 in
+  let id = ref 0 in
   DFS_Traverse.postfix
-    (fun (o, b) -> incr id; o := !id)
+    (fun b ->  b.SSA.b_order <- !id; incr id)
     g
 
 let dom_of_blocks blocks =
 
-  let (graph, process, map) = graph_of_blocks blocks in
+  let (graph, process) = graph_of_blocks blocks in
   let process = List.tl (List.rev process) in
 
   (* based on Cooper, Harvey, and Kennedy *)
   (*helpers*)
-    let f b = M.find b map in (*find*)
-    let n ib = !(fst ib) in (*num*)
-    let nf b = n (f b) in (*num find*)
     let unopt = function
       | None -> assert false
       | Some v -> v
     in
 
   (*init*)
-    let dom = Array.make (Gib.nb_vertex graph) None in
+    let dom = Array.make (G.nb_vertex graph) None in
     mark_postorder graph;
-    dom.(nf (List.hd blocks)) <- Some (f (List.hd blocks));
+    dom.((List.hd blocks).SSA.b_order) <- Some (List.hd blocks);
     let changed = ref true in
 
   (*dominators intersection*)
-    let intersect ib1 ib2 =
-      let rec aux ib1 ib2 =
-        if n ib1 = n ib2 then begin
-          assert (ib1 = ib2);
-          ib1
-        end else if n ib1 < n ib2 then
-          aux (unopt dom.(n ib1)) ib2
-        else if n ib1 > n ib2 then
-          aux ib1 (unopt dom.(n ib2))
+    let intersect b1 b2 =
+      let rec aux b1 b2 =
+        if b1.SSA.b_order = b2.SSA.b_order then begin
+          b1
+        end else if b1.SSA.b_order < b2.SSA.b_order then
+          aux (unopt dom.(b1.SSA.b_order)) b2
+        else if b1.SSA.b_order > b2.SSA.b_order then
+          aux b1 (unopt dom.(b2.SSA.b_order))
         else
           assert false
       in
-      aux ib1 ib2
+      aux b1 b2
     in
 
   (*main loop with fixpoint detection*)
@@ -144,19 +112,19 @@ let dom_of_blocks blocks =
         (fun b ->
           let (new_idom, others) =
             Util.L.pick_one_such_as
-              (fun ib -> dom.(n ib) <> None)
-              (Gib.pred graph (f b))
+              (fun b -> dom.(b.SSA.b_order) <> None)
+              (G.pred graph b)
           in
           let new_idom = ref new_idom in
           List.iter
             (fun p ->
               begin
-                if dom.(nf b) <> None then
+                if dom.(b.SSA.b_order) <> None then
                   new_idom := intersect p !new_idom
               end;
               begin
-                if dom.(nf b) <> Some !new_idom then begin
-                  dom.(nf b) <- Some !new_idom;
+                if dom.(b.SSA.b_order) <> Some !new_idom then begin
+                  dom.(b.SSA.b_order) <- Some !new_idom;
                   changed := true
                 end
               end
@@ -168,11 +136,11 @@ let dom_of_blocks blocks =
 
     let dom_tree =
       Array.fold_left
-        (fun g ib ->
-          let ib = unopt ib in
+        (fun g b ->
+          let b = unopt b in
           G.add_edge_e
             g
-            (G.E.create (snd ib) () (snd (unopt dom.(n ib))))
+            (G.E.create b () (unopt dom.(b.SSA.b_order)))
         )
         G.empty
         dom

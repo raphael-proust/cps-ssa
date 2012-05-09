@@ -31,10 +31,11 @@ and proc = {
 }
 
 and block = {
-  b_label  : Prim.label;
-  b_phis   : phi list;
-  b_assigns: assign list;
-  b_jump   : jump;
+  mutable b_order  : int;
+  (*   *) b_label  : Prim.label;
+  (*   *) b_phis   : phi list;
+  (*   *) b_assigns: assign list;
+  (*   *) b_jump   : jump;
 }
 
 and assign =
@@ -75,10 +76,11 @@ let check_ssa prog =
 module Blocks = struct
 
   let expr ?(label = Prim.fresh_label ()) e = {
-    b_label   = label;
-    b_phis    = [];
+      b_order = 0;
+      b_label = label;
+       b_phis = [];
     b_assigns = [];
-    b_jump    = Jreturn e;
+       b_jump = Jreturn e;
   }
 
   let const ?label c = expr ?label (Prim.ONone (Prim.Vconst c))
@@ -86,10 +88,11 @@ module Blocks = struct
   let zero ?label () = const ?label 0
 
   let cond ?(label = Prim.fresh_label ()) e l1 l2 = {
-    b_label   = label;
-    b_phis    = [];
+      b_order = 0;
+      b_label = label;
+       b_phis = [];
     b_assigns = [];
-    b_jump    = Jcond (e, l1, l2);
+       b_jump = Jcond (e, l1, l2);
   }
 
 end

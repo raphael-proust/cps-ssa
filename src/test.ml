@@ -18,4 +18,28 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-let () = ()
+let () = Printexc.record_backtrace true
+
+let run (id, prog) =
+  let () = Printf.printf "\t%s: Checking well-formedness\n" id in
+  let () = assert (SSA.check_ssa prog) in
+
+  let () = Printf.printf "\t%s: Translating\n" id in
+  let run = CPS.Cvar (Prim.var "run") in
+  let term = SSA2CPS.prog prog run in
+
+  let () = Printf.printf "\t%s: Printing\n" id in
+  let b = Buffer.create 10 in
+  let f = Format.formatter_of_buffer b in
+  let () = Format.fprintf f "@[%a@]" CPS_diff.print_m term in
+  let () = Format.pp_print_newline f () in
+  let () = Format.pp_print_newline f () in
+  let () = print_string (Buffer.contents b) in
+  let () = Buffer.clear Format.stdbuf in
+  ()
+
+let tests = [
+  "zero", [SSA.Procs.block [] (SSA.Blocks.zero ~label:SSA.label_main ())];
+]
+
+let () = List.iter run tests
