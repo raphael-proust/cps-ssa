@@ -42,4 +42,10 @@ let tests = [
   "zero", [SSA.Procs.block [] (SSA.Blocks.zero ~label:SSA.label_main ())];
 ]
 
-let () = List.iter run tests
+let () =
+  try
+    List.iter run tests
+  with
+  | e ->
+    Printexc.print_backtrace stderr;
+    raise e
