@@ -7,7 +7,7 @@ MLS= \
 		 CPS_diff.ml \
 		 dom.ml \
 		 SSA2CPS.ml \
-		 difftest.ml
+		 test.ml
 
 CMXS=$(MLS:.ml=.cmx)
 
