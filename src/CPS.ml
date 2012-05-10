@@ -32,3 +32,5 @@ and cont =
 and lambda =
   | Lproc of (Prim.var list * Prim.var * m)
   | Ljump of (Prim.var list * m)
+
+let var_run = Prim.var "run"

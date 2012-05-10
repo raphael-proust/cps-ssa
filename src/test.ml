@@ -26,8 +26,7 @@ let run (id, prog) =
   let () = Printf.printf "\t%s: Checked\n" id in
 
   let () = Printf.printf "\t%s: Translating to CPS term\n" id in
-  let run = CPS.Cvar (Prim.var "run") in
-  let term = SSA2CPS.prog prog run in
+  let term = SSA2CPS.prog prog in
   let () = Printf.printf "\t%s: Translated\n" id in
 
   let () = Printf.printf "\t%s: Printing CPS term\n\n" id in

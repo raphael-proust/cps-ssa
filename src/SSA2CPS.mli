@@ -20,4 +20,4 @@
 
 val block : Dom.G.t -> Prim.var -> SSA.block list -> SSA.block -> CPS.m
 val proc : SSA.proc -> CPS.lambda
-val prog : SSA.proc list -> CPS.cont -> CPS.m
+val prog : SSA.proc list -> CPS.m

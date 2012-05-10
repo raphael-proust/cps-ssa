@@ -78,7 +78,7 @@ and proc {SSA.p_args; p_blocks;} =
     let return = Prim.fresh_var () in
     CPS.Lproc (p_args, return, block dom return p_blocks entry)
 
-and prog proclist cont =
+and prog proclist =
   if proclist = [] then
     failwith "Can't translate empty ssa program into cps"
   else
@@ -94,6 +94,6 @@ and prog proclist cont =
     CPS.Mrec (lambdas,
               (CPS.Mapp ((Prim.var_of_label SSA.label_main),
                          [],
-                         cont)
+                         CPS.Cvar CPS.var_run)
               )
              )

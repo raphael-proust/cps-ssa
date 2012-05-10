@@ -54,3 +54,5 @@ and lambda =
   | Lproc of (Prim.var list * Prim.var * m)
   (** Intra-procedure Jumps. E.g. for join points. *)
   | Ljump of (Prim.var list * m)
+
+val var_run: Prim.var
