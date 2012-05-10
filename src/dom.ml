@@ -75,6 +75,9 @@ let mark_postorder g =
 
 let dom_of_blocks blocks =
 
+  let entry = List.hd blocks in
+  assert (entry.SSA.b_order = 0);
+
   let graph = graph_of_blocks blocks in
 
   (* based on Cooper, Harvey, and Kennedy *)
@@ -87,13 +90,15 @@ let dom_of_blocks blocks =
   (*init*)
     let dom = Array.make (G.nb_vertex graph) None in
     let process = mark_postorder graph in
-    dom.((List.hd blocks).SSA.b_order) <- Some (List.hd blocks);
+    assert (entry = List.hd process);
+    dom.(entry.SSA.b_order) <- Some entry;
     let changed = ref true in
 
   (*dominators intersection*)
     let intersect b1 b2 =
       let rec aux b1 b2 =
         if b1.SSA.b_order = b2.SSA.b_order then begin
+          assert (b1 = b2);
           b1
         end else if b1.SSA.b_order < b2.SSA.b_order then
           aux (unopt dom.(b1.SSA.b_order)) b2
@@ -131,7 +136,7 @@ let dom_of_blocks blocks =
             )
             others
         )
-        process
+        (List.tl process)
     done;
 
     let dom_tree =
@@ -139,7 +144,7 @@ let dom_of_blocks blocks =
         (fun g b ->
           let b = unopt b in
           G.add_edge_e
-            g
+            (G.add_vertex g b)
             (G.E.create b () (unopt dom.(b.SSA.b_order)))
         )
         G.empty
