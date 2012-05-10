@@ -50,7 +50,7 @@ let graph_of_blocks blocks =
       (fun g block ->
         List.fold_left (* (list of jumps | block) *)
           G.add_edge_e
-          g
+          (G.add_vertex g block)
           (vertices_of_block blocks block)
       )
       G.empty
