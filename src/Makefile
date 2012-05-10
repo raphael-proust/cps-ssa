@@ -33,7 +33,7 @@ OCAMLC=ocamlc $(OCAMLCOPTIONS)
 OCAMLDEP=ocamldep
 
 
-all: $(BINNAME).native
+all: $(BINNAME).byte
 
 native: $(BINNAME).native
 
