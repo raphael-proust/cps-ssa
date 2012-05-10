@@ -34,13 +34,75 @@ let run (id, prog) =
   let () = Buffer.clear Format.stdbuf in
   ()
 
+let zero =
+  ("zero", [SSA.Procs.block [] (SSA.Blocks.zero ~label:SSA.label_main ())])
+
+let cond =
+  ("cond", [SSA.Procs.cond ~label:SSA.label_main []
+             Prim.(ONone (Vconst 0))
+             (SSA.Blocks.const ~label:(Prim.label "true") 1)
+             (SSA.Blocks.const ~label:(Prim.label "false") 2)
+           ]
+  )
+
+let diamond =
+  let var v = Prim.(ONone (Vvar v)) in
+
+  let entry_var = Prim.var "arg0" in
+
+  let true_label  = Prim.label "true" in
+  let var_true = Prim.fresh_var () in
+
+  let false_label = Prim.label "false" in
+  let var_false = Prim.fresh_var () in
+
+  let merge_label = Prim.label "merge" in
+  let var_merge = Prim.fresh_var () in
+
+  let merge_block = {SSA.
+    b_order = 0;
+    b_label = merge_label;
+    b_phis =
+      [(var_merge, [(true_label, var var_true);
+                    (false_label, var var_false);
+                   ]
+       );
+      ];
+    b_assigns = [];
+    b_jump = SSA.Jreturn (var var_merge);
+  }
+  in
+
+  let true_block = SSA.Blocks.expr ~label:true_label (var var_true) in
+  let true_block = {true_block with
+    SSA.b_assigns = [SSA.Aexpr (var_true, Prim.(ONone (Vconst 42)))];
+    SSA.b_jump = SSA.Jgoto merge_label;
+  }
+  in
+
+  let false_block = SSA.Blocks.expr ~label:false_label (var var_false) in
+  let false_block = {false_block with
+    SSA.b_assigns = [SSA.Aexpr (var_false, Prim.(ONone (Vconst 37)))];
+    SSA.b_jump = SSA.Jgoto merge_label;
+  }
+  in
+
+  let entry_block = SSA.Blocks.cond ~label:SSA.label_main
+    (var entry_var) true_label false_label
+  in
+
+  let diamond = {SSA.
+      p_args = [entry_var];
+    p_blocks = [entry_block; merge_block; true_block; false_block];
+  }
+  in
+
+  ("diamond",[diamond])
+
 let tests = [
-  "zero", [SSA.Procs.block [] (SSA.Blocks.zero ~label:SSA.label_main ())];
-  "cond", [SSA.Procs.cond ~label:SSA.label_main []
-            Prim.(ONone (Vconst 0))
-            (SSA.Blocks.const ~label:(Prim.label "true") 1)
-            (SSA.Blocks.const ~label:(Prim.label "false") 2)
-          ];
+  zero;
+  cond;
+  diamond;
 ]
 
 let () =
