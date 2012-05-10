@@ -23,12 +23,14 @@ let () = Printexc.record_backtrace true
 let run (id, prog) =
   let () = Printf.printf "\t%s: Checking well-formedness\n" id in
   let () = assert (SSA.check_ssa prog) in
+  let () = Printf.printf "\t%s: Checked\n" id in
 
-  let () = Printf.printf "\t%s: Translating\n" id in
+  let () = Printf.printf "\t%s: Translating to CPS term\n" id in
   let run = CPS.Cvar (Prim.var "run") in
   let term = SSA2CPS.prog prog run in
+  let () = Printf.printf "\t%s: Translated\n" id in
 
-  let () = Printf.printf "\t%s: Printing\n" id in
+  let () = Printf.printf "\t%s: Printing CPS term\n\n" id in
   let b = Buffer.create 10 in
   let f = Format.formatter_of_buffer b in
   let () = Format.fprintf f "@[%a@]" CPS_diff.print_m term in
@@ -36,6 +38,7 @@ let run (id, prog) =
   let () = Format.pp_print_newline f () in
   let () = print_string (Buffer.contents b) in
   let () = Buffer.clear Format.stdbuf in
+  let () = Printf.printf "\n\t%s: Printed\n\n" id in
   ()
 
 let tests = [
