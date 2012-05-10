@@ -20,9 +20,9 @@
 
 module BlockVertex = struct
   type t = SSA.block
-  let compare = Pervasives.compare
-  let hash    = Hashtbl.hash
-  let equal   = (=)
+  let compare b1 b2 = Pervasives.compare b1.SSA.b_label b2.SSA.b_label
+  let hash b  = Hashtbl.hash b.SSA.b_label
+  let equal b1 b2 = b1.SSA.b_label = b2.SSA.b_label
 end
 
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
@@ -91,6 +91,7 @@ let dom_of_blocks blocks =
     let dom = Array.make (G.nb_vertex graph) None in
     let process = mark_postorder graph in
     assert (entry = List.hd process);
+    assert (List.for_all (G.mem_vertex graph) process);
     dom.(entry.SSA.b_order) <- Some entry;
     let changed = ref true in
 
@@ -126,29 +127,28 @@ let dom_of_blocks blocks =
               begin
                 if dom.(b.SSA.b_order) <> None then
                   new_idom := intersect p !new_idom
-              end;
-              begin
-                if dom.(b.SSA.b_order) <> Some !new_idom then begin
-                  dom.(b.SSA.b_order) <- Some !new_idom;
-                  changed := true
-                end
               end
             )
-            others
+            others;
+          begin
+            if dom.(b.SSA.b_order) <> Some !new_idom then begin
+              dom.(b.SSA.b_order) <- Some !new_idom;
+              changed := true
+            end
+          end
         )
         (List.tl process)
     done;
 
     let dom_tree =
-      Array.fold_left
-        (fun g b ->
-          let b = unopt b in
-          G.add_edge_e
-            (G.add_vertex g b)
-            (G.E.create b () (unopt dom.(b.SSA.b_order)))
+      let domref = ref G.empty in
+      G.iter_vertex
+        (fun b ->
+          domref :=
+            G.add_edge_e !domref (G.E.create b () (unopt dom.(b.SSA.b_order)))
         )
-        G.empty
-        dom
+        graph;
+      !domref
     in
 
     dom_tree

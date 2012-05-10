@@ -49,24 +49,20 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
                   )
   in
 
-  match Dom.G.pred dom b with
+  match List.filter ((<>) b) (Dom.G.pred dom b) with
   | [] -> aux b_assigns
-  | (h::_) as l  ->
-    if h = b then
-      aux b_assigns
-    else begin
-      let l =
-        List.map
-          (fun b -> (*terminates bc dominator tree is a DAG*)
-            let lbl = Prim.var_of_label b.SSA.b_label in
-            let vs = List.map fst b.SSA.b_phis in
-            let lambda = CPS.Ljump (vs, block dom return bs b) in
-            (lbl, lambda)
-          )
-          l
-      in
-      CPS.Mrec (l, aux b_assigns)
-    end
+  | l  ->
+    let l =
+      List.map
+        (fun domed -> (*terminates bc dominator tree is a DAG*)
+          let lbl = Prim.var_of_label domed.SSA.b_label in
+          let vs = List.map fst domed.SSA.b_phis in
+          let lambda = CPS.Ljump (vs, block dom return bs domed) in
+          (lbl, lambda)
+        )
+        l
+    in
+    CPS.Mrec (l, aux b_assigns)
 
 
 

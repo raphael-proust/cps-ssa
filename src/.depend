@@ -12,8 +12,8 @@ dom.cmo: util.cmi SSA.cmi dom.cmi
 dom.cmx: util.cmx SSA.cmx dom.cmi
 SSA2CPS.cmo: SSA.cmi prim.cmi dom.cmi CPS.cmi SSA2CPS.cmi
 SSA2CPS.cmx: SSA.cmx prim.cmx dom.cmx CPS.cmx SSA2CPS.cmi
-test.cmo: SSA2CPS.cmi SSA.cmi prim.cmi CPS_diff.cmi CPS.cmi test.cmi
-test.cmx: SSA2CPS.cmx SSA.cmx prim.cmx CPS_diff.cmx CPS.cmx test.cmi
+test.cmo: SSA2CPS.cmi SSA.cmi prim.cmi CPS_diff.cmi test.cmi
+test.cmx: SSA2CPS.cmx SSA.cmx prim.cmx CPS_diff.cmx test.cmi
 util.cmi:
 prim.cmi:
 SSA.cmi: prim.cmi
