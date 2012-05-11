@@ -52,10 +52,8 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
                   )
   in
 
-  (* the dominator computations has the entry-block pointing to itself, we
-     remove this phony domination edge in a somewhat crude way. *)
-  (*TODO: only apply filter fo the entry block. *)
-  match List.filter ((<>) b) (Dom.G.pred dom b) with
+  (* We translate immediate dominatees as local lambdas *)
+  match Dom.G.pred dom b with
   | [] -> aux b_assigns
   | l  ->
     let l =
@@ -76,6 +74,8 @@ and proc {SSA.p_args; p_blocks;} =
   | [] -> failwith "Can't translate empty ssa procedure into cps"
   | entry::_ ->
     let dom = Dom.dom_of_blocks p_blocks in
+    (* remove phony fixpoint-seed. *)
+    let dom = Dom.G.remove_edge dom entry entry in
     let return = Prim.fresh_var () in
     CPS.Lproc (p_args, return, block dom return p_blocks entry)
 
