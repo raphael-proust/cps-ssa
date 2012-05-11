@@ -97,10 +97,41 @@ let diamond =
 
   ("diamond",[diamond])
 
+let call =
+  let ret_label = Prim.fresh_label () in
+  let ret =
+    let arg = Prim.fresh_var () in
+    SSA.(Procs.block
+          [arg]
+          (Blocks.expr ~label:ret_label Prim.(ONone (Vvar arg)))
+    )
+  in
+  let entry =
+    let arg = Prim.var "arg0" in
+    let res = Prim.fresh_var () in
+    {SSA.
+      p_args = [arg];
+      p_blocks = [{SSA.
+        b_order = 0;
+        b_label = SSA.label_main;
+        b_phis = [];
+        b_assigns = [SSA.Acall (res,
+                                ret_label,
+                                [Prim.(ONone (Vvar arg))]
+                               )
+                    ];
+        b_jump = SSA.Jreturn Prim.(ONone (Vvar res));
+      }]
+    }
+  in
+  ("call",[entry; ret])
+
+
 let tests = [
   zero;
   cond;
   diamond;
+  call;
 ]
 
 let () =
@@ -113,4 +144,9 @@ let () =
           Printf.eprintf "%s\n" (Printexc.to_string e);
           Printexc.print_backtrace stderr
       )
-      tests
+      (List.filter
+        (fun (name, _) ->
+          Array.fold_left (fun f x -> f || x = name) false Sys.argv
+        )
+        tests
+      )
