@@ -10,3 +10,5 @@
 *.native
 *.byte
 src/pprint.ml*
+.*.swp
+.*.swo
