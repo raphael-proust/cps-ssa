@@ -32,6 +32,7 @@ let pp_value = function
   | Prim.Vconst c -> !^ (string_of_int c)
 
 let with_paren d = PP.lparen ^^ d ^^ PP.rparen
+let with_paren_br d = with_paren (d ^^ PP.break1)
 
 let comma_space = PP.comma ^^ PP.space
 
@@ -46,7 +47,9 @@ let pp_expr = function
   | Prim.OMin (v1, v2) -> (!^ "min") ^^ PP.space ^^ with_paren
                             (pp_value v1 ^^ comma_space ^^ pp_value v2)
 
-let list pp l = PP.sepmap PP.break1 pp l
+let list ?(empty=PP.empty) pp = function
+  | [] -> empty
+  | l ->  PP.sepmap PP.break1 pp l
 
 type ('a, 'b) either =
   | Left of 'a
@@ -58,20 +61,25 @@ let pp_either pl pr = function
 
 let level d = PP.nest 2 (PP.break1 ^^ d)
 
+let unit = !^ "()"
+
 let rec pp_m = function
   | CPS.Mapp  (v, es, k) ->
     pp_var v ^^ level (
-      list (pp_either pp_expr pp_cont) (List.map (fun e -> Left e) es @ [Right k])
+      list
+        (pp_either pp_expr pp_cont)
+        (List.map (fun e -> Left e) es @ [Right k])
     )
 
   | CPS.Mcont (v, es) ->
-    pp_var v ^^ level (list pp_expr es)
+    pp_var v ^^ level (list ~empty:unit pp_expr es)
 
   | CPS.Mcond (e, (v1, es1), (v2, es2)) ->
     !^ "if0" ^^ PP.break0 ^^
     with_paren (pp_expr e) ^^ level (
-      with_paren (pp_var v1 ^^ level (list pp_expr es1)) ^^ PP.break1 ^^
-      with_paren (pp_var v2 ^^ level (list pp_expr es2))
+      with_paren (pp_var v1 ^^ level (list ~empty:unit pp_expr es1)) ^^
+      PP.break1 ^^
+      with_paren (pp_var v2 ^^ level (list ~empty:unit pp_expr es2))
     )
 
   | CPS.Mlet  (v, e, m) ->
@@ -91,22 +99,18 @@ let rec pp_m = function
       pp_m m
     )
 
+and pp_l c vs m =
+  !^ "\\" ^^ PP.char c ^^ level (
+    list ~empty:unit pp_var vs ^^ PP.break1 ^^ PP.dot
+  ) ^^ with_paren_br (level (
+    pp_m m
+  ))
+
 and pp_cont = function
   | CPS.Cvar v -> pp_var v
-  | CPS.C (v, m) ->
-    !^ "\\c" ^^ PP.break1 ^^ pp_var v ^^ PP.dot ^^ level (
-      pp_m m
-    )
+  | CPS.C (v, m) -> pp_l 'c' [v] m
 
-and pp_lambda l =
-  let aux c vs m =
-    !^ "\\" ^^ PP.char c ^^ level (
-      list pp_var vs
-    ) ^^ PP.dot ^^ level (
-      pp_m m
-    )
-  in
-  match l with
-  | CPS.Lproc (vs, v, m) -> aux 'p' (vs @ [v]) m
-  | CPS.Ljump (vs, m) -> aux 'j' vs m
+and pp_lambda = function
+  | CPS.Lproc (vs, v, m) -> pp_l 'p' (vs @ [v]) m
+  | CPS.Ljump (vs, m) -> pp_l 'j' vs m
 
