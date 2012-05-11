@@ -71,13 +71,27 @@ val check_ssa : prog -> bool
 
 module Blocks :sig
 
-  val expr: ?label:Prim.label -> Prim.expr -> block
-  val const: ?label:Prim.label -> int -> block
-  val zero: ?label:Prim.label -> unit -> block
+  val expr:  ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    Prim.expr -> block
+  val const: ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    int -> block
+  val zero:  ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    unit -> block
 
-  val cond: ?label:Prim.label -> Prim.expr -> Prim.label -> Prim.label -> block
+  val cond: ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    Prim.expr -> Prim.label -> Prim.label -> block
 
-  val tail: ?label:Prim.label -> Prim.label -> Prim.expr list -> block
+  val tail: ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    Prim.label -> Prim.expr list -> block
+
+  val goto: ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    Prim.label -> block
 
 end
 

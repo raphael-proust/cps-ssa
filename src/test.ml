@@ -38,8 +38,8 @@ let zero =
 let cond =
   ("cond", [SSA.Procs.cond ~label:SSA.label_main []
              Prim.(ONone (Vconst 0))
-             (SSA.Blocks.const ~label:(Prim.label "true") 1)
-             (SSA.Blocks.const ~label:(Prim.label "false") 2)
+             (SSA.Blocks.const 1)
+             (SSA.Blocks.const 2)
            ]
   )
 
@@ -57,32 +57,29 @@ let diamond =
   let merge_label = Prim.label "merge" in
   let var_merge = Prim.fresh_var () in
 
-  let merge_block = {SSA.
-    b_order = 0;
-    b_label = merge_label;
-    b_phis =
-      [(var_merge, [(true_label, var var_true);
-                    (false_label, var var_false);
-                   ]
-       );
-      ];
-    b_assigns = [];
-    b_jump = SSA.Jreturn (var var_merge);
-  }
+  let merge_block =
+    SSA.Blocks.expr
+      ~label:merge_label
+      ~phis:[(var_merge, [(true_label, var var_true);
+                          (false_label, var var_false);
+                         ]
+             );
+            ]
+    (var var_merge)
   in
 
-  let true_block = SSA.Blocks.expr ~label:true_label (var var_true) in
-  let true_block = {true_block with
-    SSA.b_assigns = [SSA.Aexpr (var_true, Prim.(ONone (Vconst 42)))];
-    SSA.b_jump = SSA.Jgoto merge_label;
-  }
+  let true_block =
+    SSA.Blocks.goto
+      ~label:true_label
+      ~assigns:[SSA.Aexpr (var_true, Prim.(ONone (Vconst 42)))]
+      merge_label
   in
 
-  let false_block = SSA.Blocks.expr ~label:false_label (var var_false) in
-  let false_block = {false_block with
-    SSA.b_assigns = [SSA.Aexpr (var_false, Prim.(ONone (Vconst 37)))];
-    SSA.b_jump = SSA.Jgoto merge_label;
-  }
+  let false_block =
+    SSA.Blocks.goto
+      ~label:false_label
+      ~assigns:[SSA.Aexpr (var_false, Prim.(ONone (Vconst 42)))]
+      merge_label
   in
 
   let entry_block = SSA.Blocks.cond ~label:SSA.label_main

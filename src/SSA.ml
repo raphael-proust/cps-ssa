@@ -75,32 +75,42 @@ let check_ssa prog =
 (* For building trivial blocks *)
 module Blocks = struct
 
-  let expr ?(label = Prim.fresh_label ()) e = {
+  let expr ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e = {
       b_order = 0;
       b_label = label;
-       b_phis = [];
-    b_assigns = [];
+       b_phis = phis;
+    b_assigns = assigns;
        b_jump = Jreturn e;
   }
 
-  let const ?label c = expr ?label (Prim.ONone (Prim.Vconst c))
+  let const ?label ?phis ?assigns c =
+    expr ?label ?phis ?assigns (Prim.ONone (Prim.Vconst c))
 
-  let zero ?label () = const ?label 0
+  let zero ?label ?phis ?assigns () = const ?label ?phis ?assigns 0
 
-  let cond ?(label = Prim.fresh_label ()) e l1 l2 = {
+  let cond ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e l1 l2 =
+    {
       b_order = 0;
       b_label = label;
-       b_phis = [];
-    b_assigns = [];
+       b_phis = phis;
+    b_assigns = assigns;
        b_jump = Jcond (e, l1, l2);
+    }
+
+  let tail ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) l vs = {
+      b_order = 0;
+      b_label = label;
+       b_phis = phis;
+    b_assigns = assigns;
+       b_jump = Jtail (l, vs);
   }
 
-  let tail ?(label = Prim.fresh_label ()) l vs = {
+  let goto ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) l = {
       b_order = 0;
       b_label = label;
-       b_phis = [];
-    b_assigns = [];
-       b_jump = Jtail (l, vs);
+       b_phis = phis;
+    b_assigns = assigns;
+       b_jump = Jgoto l;
   }
 
 end
@@ -109,12 +119,12 @@ end
 module Procs = struct
 
   let block args b = {
-    p_args = args;
+      p_args = args;
     p_blocks = [ b ];
   }
 
   let cond ?(label = Prim.fresh_label ()) args e b1 b2 = {
-    p_args = args;
+      p_args = args;
     p_blocks = [
       Blocks.cond ~label e b1.b_label b2.b_label;
       b1;
@@ -122,10 +132,10 @@ module Procs = struct
     ];
   }
 
-  let cond_e ?(label = Prim.fresh_label ()) args e e1 e2 =
+  let cond_e ?label args e e1 e2 =
     let b1 = Blocks.expr e1 in
     let b2 = Blocks.expr e2 in
-    cond ~label args e b1 b2
+    cond ?label args e b1 b2
 
 
 end
