@@ -87,9 +87,20 @@ and prog proclist =
        )
        proclist
     in
+    let args =
+      let main_proc =
+        List.find
+          SSA.(fun p -> (List.hd p.p_blocks).b_label = label_main)
+          proclist
+      in
+      List.map
+        (fun v -> Prim.(ONone (Vvar v)))
+        main_proc.SSA.p_args
+    in
     CPS.Mrec (lambdas,
               (CPS.Mapp ((Prim.var_of_label SSA.label_main),
-                         [],
-                         CPS.Cvar CPS.var_run)
+                         args,
+                         CPS.Cvar CPS.var_run
+                        )
               )
              )
