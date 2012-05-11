@@ -126,12 +126,16 @@ let call =
   in
   ("call",[entry; ret])
 
+let loop =
+  ("loop", [SSA.(Procs.block [] (Blocks.tail ~label:label_main label_main []))])
+
 
 let tests = [
   zero;
   cond;
   diamond;
   call;
+  loop;
 ]
 
 let () =

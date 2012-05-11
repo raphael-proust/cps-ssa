@@ -77,6 +77,8 @@ module Blocks :sig
 
   val cond: ?label:Prim.label -> Prim.expr -> Prim.label -> Prim.label -> block
 
+  val tail: ?label:Prim.label -> Prim.label -> Prim.expr list -> block
+
 end
 
 module Procs : sig

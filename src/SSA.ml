@@ -95,6 +95,14 @@ module Blocks = struct
        b_jump = Jcond (e, l1, l2);
   }
 
+  let tail ?(label = Prim.fresh_label ()) l vs = {
+      b_order = 0;
+      b_label = label;
+       b_phis = [];
+    b_assigns = [];
+       b_jump = Jtail (l, vs);
+  }
+
 end
 
 (* For building simpl procs *)
