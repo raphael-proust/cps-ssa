@@ -31,7 +31,6 @@ type m =
     *)
   | Mapp  of (Prim.var * Prim.expr list * cont)
   (** Continuation call. The [var]iable must be a continuation. *)
-  (*TODO? use GADT to enforce the [var]iable to be a continuation? *)
   | Mcont of (Prim.var * Prim.expr list)
   (** Conditional Branching. Both branches must use continuation [var]iables. *)
   | Mcond of ( Prim.expr

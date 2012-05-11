@@ -71,7 +71,7 @@ module DFS_Traverse = Graph.Traverse.Dfs(G)
 
 let mark_postorder g =
   (* This modifies the b_order field of the blocks. *)
-  (*FIXME: does not work if graph is not connex.*)
+  (*FIXME: does not work if graph is not connex: entry node is not top node.*)
   let id = ref 0 in
   let process = ref [] in
   DFS_Traverse.postfix

@@ -68,7 +68,7 @@ let check_ssa prog =
     (function | Aexpr (v, _) | Acall (v, _, _) -> v)
     (Util.L.concat_map (fun b -> b.b_assigns) blocks)
 
-  (* TODO: check def dominates use *)
+  (* TODO: check def dominates use (requires dominator info, not necessary) *)
   (* TODO? do one pass check? *)
 
 
