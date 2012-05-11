@@ -4,6 +4,7 @@ MLS= \
 		 prim.ml \
 		 SSA.ml \
 		 CPS.ml \
+		 pprint.ml \
 		 CPS_diff.ml \
 		 dom.ml \
 		 SSA2CPS.ml \
@@ -50,7 +51,7 @@ clean:
 	rm -f $(CMOS) $(CMIS) $(CMXS) $(MLS:.ml=.o)
 
 purge: clean
-	rm -f .depend $(BINNAME).native $(BINNAME).byte
+	rm -f .depend $(BINNAME).native $(BINNAME).byte pprint.ml[i]
 
 
 depend: $(MLS) $(MLIS)
@@ -67,4 +68,10 @@ depend: $(MLS) $(MLIS)
 
 %.cmx: %.ml
 	$(OCAMLOPT) -I $(LIBDIRS) -c $<
+
+pprint.ml:
+	ln -s ../pprint/pprint.ml .
+
+pprint.mli:
+	ln -s ../pprint/pprint.mli .
 

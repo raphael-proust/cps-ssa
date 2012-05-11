@@ -22,81 +22,91 @@
  * (with appropriate newline characters and what not), so that diff(1) can take
  * care of it. *)
 
-let () = Format.set_max_indent max_int
-let () = Format.set_margin max_int
-let () = Format.set_max_boxes max_int
+module PP = Pprint
+open PP.Operators
 
-let fp = Format.fprintf
+let pp_var v = !^ (Prim.string_of_var v)
 
-let print_var f v = fp f "%s" (Prim.string_of_var v)
+let pp_value = function
+  | Prim.Vvar v -> pp_var v
+  | Prim.Vconst c -> !^ (string_of_int c)
 
-let print_value f = function
-  | Prim.Vvar v -> fp f "%a" print_var (v:Prim.var)
-  | Prim.Vconst c -> fp f "%s" (string_of_int c)
+let with_paren d = PP.lparen ^^ d ^^ PP.rparen
 
-let print_expr f = function
-  | Prim.ONone v -> fp f "%a" print_value v
-  | Prim.OPlus  (v1, v2) -> fp f "%a + %a" print_value v1 print_value v2
-  | Prim.OMult  (v1, v2) -> fp f "%a x %a" print_value v1 print_value v2
-  | Prim.OMinus (v1, v2) -> fp f "%a - %a" print_value v1 print_value v2
-  | Prim.ODiv   (v1, v2) -> fp f "%a / %a" print_value v1 print_value v2
-  | Prim.OMax (v1, v2) -> fp f "max (%a, %a)" print_value v1 print_value v2
-  | Prim.OMin (v1, v2) -> fp f "min (%a, %a)" print_value v1 print_value v2
+let comma_space = PP.comma ^^ PP.space
 
-let print_list p f l =
-  let rec aux f = function
-    | [] -> ()
-    | [h] -> fp f "(%a)" p h
-    | h::t -> fp f "(%a)@,%a" p h aux t
-  in
-  match l with
-  | [] -> fp f "()"
-  | _ -> fp f "%a" aux l
+let pp_expr = function
+  | Prim.ONone v -> pp_value v
+  | Prim.OPlus  (v1, v2) -> (pp_value v1) ^^ PP.plus  ^^ (pp_value v2)
+  | Prim.OMult  (v1, v2) -> (pp_value v1) ^^ PP.star  ^^ (pp_value v2)
+  | Prim.OMinus (v1, v2) -> (pp_value v1) ^^ PP.minus ^^ (pp_value v2)
+  | Prim.ODiv   (v1, v2) -> (pp_value v1) ^^ PP.bar   ^^ (pp_value v2)
+  | Prim.OMax (v1, v2) -> (!^ "max") ^^ PP.space ^^ with_paren
+                            (pp_value v1 ^^ comma_space ^^ pp_value v2)
+  | Prim.OMin (v1, v2) -> (!^ "min") ^^ PP.space ^^ with_paren
+                            (pp_value v1 ^^ comma_space ^^ pp_value v2)
+
+let list pp l = PP.sepmap PP.break1 pp l
 
 type ('a, 'b) either =
   | Left of 'a
   | Right of 'b
 
-let print_either pl pr f = function
-  | Left l  -> fp f "%a" pl l
-  | Right r -> fp f "%a" pr r
+let pp_either pl pr = function
+  | Left l  -> pl l
+  | Right r -> pr r
 
-let rec print_m f = function
+let level d = PP.nest 2 (PP.break1 ^^ d)
+
+let rec pp_m = function
   | CPS.Mapp  (v, es, k) ->
-    fp f "%a@[<v>@,%a@]"
-      print_var v
-      (print_list (print_either print_expr print_cont))
-        (List.map (fun e -> Left e) es @ [Right k])
+    pp_var v ^^ level (
+      list (pp_either pp_expr pp_cont) (List.map (fun e -> Left e) es @ [Right k])
+    )
+
   | CPS.Mcont (v, es) ->
-    fp f "%a@[<v>@,%a@]"
-      print_var v
-      (print_list print_expr) es
+    pp_var v ^^ level (list pp_expr es)
+
   | CPS.Mcond (e, (v1, es1), (v2, es2)) ->
-    fp f "if0 (%a)@[<v>@,(%a@[<v>@,%a@]@,)@,(%a@[<v>@,%a@]@,)@]"
-      print_expr e
-      print_var v1 (print_list print_expr) es1
-      print_var v2 (print_list print_expr) es2
+    !^ "if0" ^^ PP.break0 ^^
+    with_paren (pp_expr e) ^^ level (
+      with_paren (pp_var v1 ^^ level (list pp_expr es1)) ^^ PP.break1 ^^
+      with_paren (pp_var v2 ^^ level (list pp_expr es2))
+    )
+
   | CPS.Mlet  (v, e, m) ->
-    fp f "@[<v>let %a =@[<v>@,%a@]@,in@[<v>@,%a@]@]"
-      print_var v
-      print_expr e
-      print_m m
+    !^ "let" ^^ PP.space ^^ pp_var v ^^ PP.space ^^ PP.equals ^^ level (
+      pp_expr e
+    ) ^^ PP.break1 ^^ !^ "in" ^^ level (
+      pp_m m
+    )
+
   | CPS.Mrec  (vls, m) ->
-    let print_vl f (v, l) =
-      fp f "%a =@[<v>@,%a@]" print_var v print_lambda l
+    let vl (v, l) =
+      pp_var v ^^ PP.space ^^ PP.equals ^^ level (pp_lambda l) ^^ PP.break1
     in
-    fp f "letrec (@[<v>@,%a@]@,)@[<v>@,%a@]"
-      (print_list print_vl) vls
-      print_m m
+    !^ "letrec" ^^ with_paren (level (
+      PP.sepmap PP.hardline vl vls
+    )) ^^ PP.break1 ^^ !^ "in" ^^ level (
+      pp_m m
+    )
 
-and print_cont f = function
-  | CPS.Cvar v -> fp f "%a" print_var v
-  | CPS.C (v, m) -> fp f "\\c (%a).@[<v>@,%a@]" print_var v print_m m
+and pp_cont = function
+  | CPS.Cvar v -> pp_var v
+  | CPS.C (v, m) ->
+    !^ "\\c" ^^ PP.break1 ^^ pp_var v ^^ PP.dot ^^ level (
+      pp_m m
+    )
 
-and print_lambda f l =
+and pp_lambda l =
   let aux c vs m =
-    fp f "\\%c (@[<v>@,%a)@[<v>@,%a@]@]" c (print_list print_var) vs print_m m
+    !^ "\\" ^^ PP.char c ^^ level (
+      list pp_var vs
+    ) ^^ PP.dot ^^ level (
+      pp_m m
+    )
   in
   match l with
   | CPS.Lproc (vs, v, m) -> aux 'p' (vs @ [v]) m
   | CPS.Ljump (vs, m) -> aux 'j' vs m
+

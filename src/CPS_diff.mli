@@ -28,10 +28,10 @@
    *)
 
  (** *)
-val print_m      : Format.formatter -> CPS.m -> unit
+val pp_m      : CPS.m -> Pprint.document
 
 (** *)
-val print_cont   : Format.formatter -> CPS.cont -> unit
+val pp_cont   : CPS.cont -> Pprint.document
 
 (** *)
-val print_lambda : Format.formatter -> CPS.lambda -> unit
+val pp_lambda : CPS.lambda -> Pprint.document

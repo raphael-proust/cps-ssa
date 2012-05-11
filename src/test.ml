@@ -26,12 +26,10 @@ let run (id, prog) =
   let term = SSA2CPS.prog prog in
 
   let b = Buffer.create 10 in
-  let f = Format.formatter_of_buffer b in
-  let () = Format.fprintf f "@[%a@]" CPS_diff.print_m term in
-  let () = Format.pp_print_newline f () in
-  let () = Format.pp_print_newline f () in
+  let doc = CPS_diff.pp_m term in
+  let () = Pprint.Buffer.pretty 1. 100 b doc in
   let () = print_string (Buffer.contents b) in
-  let () = Buffer.clear Format.stdbuf in
+  let () = print_string "\n\n" in
   ()
 
 let zero =
