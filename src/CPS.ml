@@ -21,7 +21,10 @@
 type m =
   | Mapp  of (Prim.var * Prim.expr list * cont)
   | Mcont of (Prim.var * Prim.expr list)
-  | Mcond of (Prim.expr * (Prim.var * Prim.expr list) * (Prim.var * Prim.expr list))
+  | Mcond of ( Prim.expr
+             * (Prim.var * Prim.expr list)
+             * (Prim.var * Prim.expr list)
+             )
   | Mlet  of (Prim.var * Prim.expr * m)
   | Mrec  of ((Prim.var * lambda) list * m)
 
@@ -33,4 +36,5 @@ and lambda =
   | Lproc of (Prim.var list * Prim.var * m)
   | Ljump of (Prim.var list * m)
 
+(* This is for monad entry application. *)
 let var_run = Prim.var "run"

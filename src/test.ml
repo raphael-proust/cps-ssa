@@ -33,13 +33,13 @@ let run (id, prog) =
   ()
 
 let zero =
-  ("zero", [SSA.Procs.block [] (SSA.Blocks.zero ~label:SSA.label_main ())])
+  ("zero", [SSA.Procs.block [] (SSA.Blocks.return_0 ~label:SSA.label_main ())])
 
 let cond =
   ("cond", [SSA.Procs.cond ~label:SSA.label_main []
              Prim.(ONone (Vconst 0))
-             (SSA.Blocks.const 1)
-             (SSA.Blocks.const 2)
+             (SSA.Blocks.return_const 1)
+             (SSA.Blocks.return_const 2)
            ]
   )
 
@@ -58,7 +58,7 @@ let diamond =
   let var_merge = Prim.fresh_var () in
 
   let merge_block =
-    SSA.Blocks.expr
+    SSA.Blocks.return
       ~label:merge_label
       ~phis:[(var_merge, [(true_label, var var_true);
                           (false_label, var var_false);
@@ -100,7 +100,7 @@ let call =
     let arg = Prim.fresh_var () in
     SSA.(Procs.block
           [arg]
-          (Blocks.expr ~label:ret_label Prim.(ONone (Vvar arg)))
+          (Blocks.return ~label:ret_label Prim.(ONone (Vvar arg)))
     )
   in
   let entry =

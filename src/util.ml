@@ -66,3 +66,15 @@ module L = struct
 
 
 end
+
+module O = struct
+
+  let opt x = Some x
+
+  let none = None
+
+  let unopt = function
+    | None -> assert false
+    | Some v -> v
+
+end

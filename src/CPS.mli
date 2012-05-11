@@ -24,6 +24,7 @@
    *)
 
 
+(* [m] are CPS terms. *)
 type m =
   (** Application. The [var]iable can only be a procedure/function call. An
       extra continuation argument is needed.
@@ -41,12 +42,14 @@ type m =
   (** Recursive let binding. It binds lambdas. *)
   | Mrec  of ((Prim.var * lambda) list * m)
 
+(* [cont] are continuations. *)
 and cont =
     (** Continuation Variable. *)
   | Cvar of Prim.var
     (** Explicit Continuation. *)
   | C    of Prim.var * m
 
+(* [lambda] are lambdas translated from either join point or procedures. *)
 and lambda =
   (** Procedures. These are for source program functions/procedures translation.
       The last [var]iable is for continuation passing.
@@ -55,4 +58,6 @@ and lambda =
   (** Intra-procedure Jumps. E.g. for join points. *)
   | Ljump of (Prim.var list * m)
 
+(** [var_run] is for top-monad entry application. Fullfilling the same purpose
+    as to [SSA.label_main] somehow. *)
 val var_run: Prim.var

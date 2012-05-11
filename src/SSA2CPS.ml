@@ -18,6 +18,7 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(*TODO: memoize or build map.*)
 let block_of_label bs l =
   List.find (fun b -> b.SSA.b_label = l) bs
 
@@ -34,7 +35,9 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
     | SSA.Acall (x, f, es) :: l ->
       let f = Prim.var_of_label f in
       CPS.Mapp (f, es, CPS.C (x, aux l))
-    | [] -> match b_jump with (*somehow ugly*)
+    | [] ->
+      (* instead of returning, we translate the last bit: the jump. *)
+      match b_jump with
       | SSA.Jgoto l ->
         CPS.Mcont ((Prim.var_of_label l), (args_of_label l))
       | SSA.Jreturn e ->
@@ -49,6 +52,9 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
                   )
   in
 
+  (* the dominator computations has the entry-block pointing to itself, we
+     remove this phony domination edge in a somewhat crude way. *)
+  (*TODO: only apply filter fo the entry block. *)
   match List.filter ((<>) b) (Dom.G.pred dom b) with
   | [] -> aux b_assigns
   | l  ->
@@ -64,8 +70,7 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
     in
     CPS.Mrec (l, aux b_assigns)
 
-
-
+(* translate a whole procedure. *)
 and proc {SSA.p_args; p_blocks;} =
   match p_blocks with
   | [] -> failwith "Can't translate empty ssa procedure into cps"
@@ -74,6 +79,7 @@ and proc {SSA.p_args; p_blocks;} =
     let return = Prim.fresh_var () in
     CPS.Lproc (p_args, return, block dom return p_blocks entry)
 
+(* translate a whole program *)
 and prog proclist =
   if proclist = [] then
     failwith "Can't translate empty ssa program into cps"

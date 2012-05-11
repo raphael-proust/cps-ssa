@@ -25,3 +25,10 @@ module L :
     val unique : ('a -> 'b) -> 'a list -> bool
     val pick_one_such_as: ('a -> bool) -> 'a list -> ('a * 'a list)
   end
+
+module O :
+  sig
+    val opt: 'a -> 'a option
+    val none: 'a option
+    val unopt: 'a option -> 'a
+  end

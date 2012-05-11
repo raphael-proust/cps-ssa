@@ -41,7 +41,7 @@ val fresh_var : unit -> var
 
 (** Values are either variables or constants. *)
 type value =
-  | Vvar of var
+  | Vvar   of var
   | Vconst of const
 
 (** Expressions are operations on values (or just a value). *)

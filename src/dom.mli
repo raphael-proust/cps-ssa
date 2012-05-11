@@ -23,4 +23,10 @@ module G : Graph.Sig.P with type     V.t = SSA.block
                         and type     E.t = SSA.block * SSA.block
                         and type E.label = unit
 
+(** [dom_of_blocks blocks] evaluates to a dominator tree. The translation
+    assumes :
+      - the list of blocks is not empty
+      - the head of the (non-empty) list of blocks is the entry block
+      - the graph the blocks form is connex (dead-code much?)
+  *)
 val dom_of_blocks: SSA.block list -> G.t

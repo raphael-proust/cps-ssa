@@ -22,51 +22,54 @@
  * (with appropriate newline characters and what not), so that diff(1) can take
  * care of it. *)
 
+(* Pprint Operators and other facilities *)
 module PP = Pprint
 open PP.Operators
+let with_paren d = PP.lparen ^^ d ^^ PP.rparen
+let with_paren_br d = with_paren (d ^^ PP.break1)
+let comma_space = PP.comma ^^ PP.space
+let list ?(empty=PP.empty) pp = function
+  | [] -> empty
+  | l  ->  PP.sepmap PP.break1 pp l
+type ('a, 'b) either =
+  | Left of 'a
+  | Right of 'b
+let pp_either pl pr = function
+  | Left l  -> pl l
+  | Right r -> pr r
+let level d = PP.nest 2 (PP.break1 ^^ d)
+let unit = !^ "()"
+
+
+(*We define pp_* functions for pretty-printing. *)
 
 let pp_var v = !^ (Prim.string_of_var v)
 
 let pp_value = function
-  | Prim.Vvar v -> pp_var v
+  | Prim.Vvar v   -> pp_var v
   | Prim.Vconst c -> !^ (string_of_int c)
 
-let with_paren d = PP.lparen ^^ d ^^ PP.rparen
-let with_paren_br d = with_paren (d ^^ PP.break1)
-
-let comma_space = PP.comma ^^ PP.space
-
-let pp_expr = function
+let pp_expr e =
+  let pp_op v1 op v2 = pp_value v1 ^^ op ^^ pp_value v2 in
+  let pp_fn fn v1 v2 = 
+    fn ^^ PP.space ^^ with_paren (pp_value v1 ^^ comma_space ^^ pp_value v2)
+  in
+  match e with
+  (* Direct value *)
   | Prim.ONone v -> pp_value v
-  | Prim.OPlus  (v1, v2) -> (pp_value v1) ^^ PP.plus  ^^ (pp_value v2)
-  | Prim.OMult  (v1, v2) -> (pp_value v1) ^^ PP.star  ^^ (pp_value v2)
-  | Prim.OMinus (v1, v2) -> (pp_value v1) ^^ PP.minus ^^ (pp_value v2)
-  | Prim.ODiv   (v1, v2) -> (pp_value v1) ^^ PP.bar   ^^ (pp_value v2)
-  | Prim.OMax (v1, v2) -> (!^ "max") ^^ PP.space ^^ with_paren
-                            (pp_value v1 ^^ comma_space ^^ pp_value v2)
-  | Prim.OMin (v1, v2) -> (!^ "min") ^^ PP.space ^^ with_paren
-                            (pp_value v1 ^^ comma_space ^^ pp_value v2)
-
-let list ?(empty=PP.empty) pp = function
-  | [] -> empty
-  | l ->  PP.sepmap PP.break1 pp l
-
-type ('a, 'b) either =
-  | Left of 'a
-  | Right of 'b
-
-let pp_either pl pr = function
-  | Left l  -> pl l
-  | Right r -> pr r
-
-let level d = PP.nest 2 (PP.break1 ^^ d)
-
-let unit = !^ "()"
+  (* Arithmetic ops *)
+  | Prim.OPlus  (v1, v2) -> pp_op v1 PP.plus  v2
+  | Prim.OMult  (v1, v2) -> pp_op v1 PP.star  v2
+  | Prim.OMinus (v1, v2) -> pp_op v1 PP.minus v2
+  | Prim.ODiv   (v1, v2) -> pp_op v1 PP.bar   v2
+  (* Other primitive functions *)
+  | Prim.OMax (v1, v2) -> pp_fn (!^ "max") v1 v2
+  | Prim.OMin (v1, v2) -> pp_fn (!^ "min") v1 v2
 
 let rec pp_m = function
   | CPS.Mapp  (v, es, k) ->
     pp_var v ^^ level (
-      list
+      list (* This list is never empty *)
         (pp_either pp_expr pp_cont)
         (List.map (fun e -> Left e) es @ [Right k])
     )
@@ -100,6 +103,7 @@ let rec pp_m = function
     )
 
 and pp_l c vs m =
+  (* This is used for both lambdas and explicit continuations *)
   !^ "λ" ^^ PP.char c ^^ level (
     list ~empty:unit pp_var vs ^^ PP.break1 ^^ PP.dot
   ) ^^ with_paren_br (level (
@@ -107,10 +111,10 @@ and pp_l c vs m =
   ))
 
 and pp_cont = function
-  | CPS.Cvar v -> pp_var v
+  | CPS.Cvar v   -> pp_var v
   | CPS.C (v, m) -> pp_l 'c' [v] m
 
 and pp_lambda = function
   | CPS.Lproc (vs, v, m) -> pp_l 'p' (vs @ [v]) m
-  | CPS.Ljump (vs, m) -> pp_l 'j' vs m
+  | CPS.Ljump (vs, m)    -> pp_l 'j' vs m
 

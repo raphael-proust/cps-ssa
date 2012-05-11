@@ -75,7 +75,7 @@ let check_ssa prog =
 (* For building trivial blocks *)
 module Blocks = struct
 
-  let expr ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e = {
+  let return ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e = {
       b_order = 0;
       b_label = label;
        b_phis = phis;
@@ -83,10 +83,10 @@ module Blocks = struct
        b_jump = Jreturn e;
   }
 
-  let const ?label ?phis ?assigns c =
-    expr ?label ?phis ?assigns (Prim.ONone (Prim.Vconst c))
+  let return_const ?label ?phis ?assigns c =
+    return ?label ?phis ?assigns (Prim.ONone (Prim.Vconst c))
 
-  let zero ?label ?phis ?assigns () = const ?label ?phis ?assigns 0
+  let return_0 ?label ?phis ?assigns () = return_const ?label ?phis ?assigns 0
 
   let cond ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e l1 l2 =
     {
@@ -133,8 +133,8 @@ module Procs = struct
   }
 
   let cond_e ?label args e e1 e2 =
-    let b1 = Blocks.expr e1 in
-    let b2 = Blocks.expr e2 in
+    let b1 = Blocks.return e1 in
+    let b2 = Blocks.return e2 in
     cond ?label args e b1 b2
 
 

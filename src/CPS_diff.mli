@@ -23,15 +23,16 @@
      (way too many for the printing to be considered 'pretty').
    *)
 
- (** [print_α f x] prints [x] on formatter [f] (where [x] has type [CPS.α]). See
-     [CPS] module for details on different α.
+ (** [pp_α x] pretty-prints [x] into a [Pprint.document] (where [x] has type
+     [CPS.α]). See [CPS] module for details on different [α]. See
+     [Pprint.RENDERER]s for [document] printing.
    *)
 
- (** *)
+(** prettyr-prints CPS terms. *)
 val pp_m      : CPS.m -> Pprint.document
 
-(** *)
+(** prettyr-prints CPS continuations. *)
 val pp_cont   : CPS.cont -> Pprint.document
 
-(** *)
+(** prettyr-prints CPS lambdas (either merge points or source functions). *)
 val pp_lambda : CPS.lambda -> Pprint.document
