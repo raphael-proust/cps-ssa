@@ -100,7 +100,7 @@ let rec pp_m = function
     )
 
 and pp_l c vs m =
-  !^ "\\" ^^ PP.char c ^^ level (
+  !^ "λ" ^^ PP.char c ^^ level (
     list ~empty:unit pp_var vs ^^ PP.break1 ^^ PP.dot
   ) ^^ with_paren_br (level (
     pp_m m
