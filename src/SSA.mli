@@ -75,16 +75,16 @@ module Blocks :sig
     ?phis:phi list -> ?assigns:assign list ->
     jump -> block
 
-  val return:  ?label:Prim.label ->
+  val return: ?label:Prim.label ->
     ?phis:phi list -> ?assigns:assign list ->
     Prim.expr -> block
   val return_const: ?label:Prim.label ->
     ?phis:phi list -> ?assigns:assign list ->
     int -> block
-  val return_0:  ?label:Prim.label ->
+  val return_0: ?label:Prim.label ->
     ?phis:phi list -> ?assigns:assign list ->
     unit -> block
-  val return_var:  ?label:Prim.label ->
+  val return_var: ?label:Prim.label ->
     ?phis:phi list -> ?assigns:assign list ->
     Prim.var -> block
 
