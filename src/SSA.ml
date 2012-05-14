@@ -75,65 +75,52 @@ let check_ssa prog =
 (* For building trivial blocks *)
 module Blocks = struct
 
-  let return ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e = {
+  let block ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) j = {
       b_order = 0;
       b_label = label;
        b_phis = phis;
     b_assigns = assigns;
-       b_jump = Jreturn e;
+       b_jump = j;
   }
 
+  let return ?label ?phis ?assigns e =
+    block ?label ?phis ?assigns (Jreturn e)
+
   let return_const ?label ?phis ?assigns c =
-    return ?label ?phis ?assigns (Prim.ONone (Prim.Vconst c))
+    return ?label ?phis ?assigns Prim.(ONone (Vconst c))
 
   let return_0 ?label ?phis ?assigns () = return_const ?label ?phis ?assigns 0
 
   let return_var ?label ?phis ?assigns v =
     return ?label ?phis ?assigns Prim.(ONone (Vvar v))
 
-  let cond ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e l1 l2 =
-    {
-      b_order = 0;
-      b_label = label;
-       b_phis = phis;
-    b_assigns = assigns;
-       b_jump = Jcond (e, l1, l2);
-    }
+  let cond ?label ?phis ?assigns e l1 l2 =
+    block ?label ?phis ?assigns (Jcond (e, l1, l2))
 
-  let tail ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) l vs = {
-      b_order = 0;
-      b_label = label;
-       b_phis = phis;
-    b_assigns = assigns;
-       b_jump = Jtail (l, vs);
-  }
+  let tail ?label ?phis ?assigns l es =
+    block ?label ?phis ?assigns (Jtail (l, es))
 
-  let goto ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) l = {
-      b_order = 0;
-      b_label = label;
-       b_phis = phis;
-    b_assigns = assigns;
-       b_jump = Jgoto l;
-  }
+  let goto ?label ?phis ?assigns l =
+    block ?label ?phis ?assigns (Jgoto l)
 
 end
 
 (* For building simpl procs *)
 module Procs = struct
 
-  let block args b = {
+  let proc ?(args = []) ~blocks = {
       p_args = args;
-    p_blocks = [ b ];
+    p_blocks = blocks;
   }
 
-  let cond ?(label = Prim.fresh_label ()) args e b1 b2 = {
-      p_args = args;
-    p_blocks = [
-      Blocks.cond ~label e b1.b_label b2.b_label;
+  let block args b = proc ~args ~blocks:[b]
+
+  let cond ?label args e b1 b2 =
+    proc ~args ~blocks:[
+      Blocks.cond ?label e b1.b_label b2.b_label;
       b1;
       b2;
-    ];
-  }
+    ]
 
   let cond_e ?label args e e1 e2 =
     let b1 = Blocks.return e1 in
