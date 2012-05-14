@@ -33,10 +33,10 @@ let run (id, prog) =
   ()
 
 let zero =
-  ("zero", [SSA.Procs.block [] (SSA.Blocks.return_0 ~label:SSA.label_main ())])
+  ("zero", [SSA.Procs.block (SSA.Blocks.return_0 ~label:SSA.label_main ())])
 
 let cond =
-  ("cond", [SSA.Procs.cond ~label:SSA.label_main []
+  ("cond", [SSA.Procs.cond ~label:SSA.label_main
              Prim.(ONone (Vconst 0))
              (SSA.Blocks.return_const 1)
              (SSA.Blocks.return_const 2)
@@ -86,10 +86,8 @@ let diamond =
     (var entry_var) true_label false_label
   in
 
-  let diamond = {SSA.
-      p_args = [entry_var];
-    p_blocks = [entry_block; merge_block; true_block; false_block];
-  }
+  let diamond = SSA.Procs.proc ~args:[entry_var]
+    [entry_block; merge_block; true_block; false_block]
   in
 
   ("diamond",[diamond])
@@ -98,40 +96,31 @@ let call =
   let ret_label = Prim.fresh_label () in
   let ret =
     let arg = Prim.fresh_var () in
-    SSA.(Procs.block
-          [arg]
-          (Blocks.return ~label:ret_label Prim.(ONone (Vvar arg)))
+    SSA.(Procs.block ~args:[arg]
+          (Blocks.return_var ~label:ret_label arg)
     )
   in
   let entry =
     let arg = Prim.var "arg0" in
     let res = Prim.fresh_var () in
-    {SSA.
-      p_args = [arg];
-      p_blocks = [{SSA.
-        b_order = 0;
-        b_label = SSA.label_main;
-        b_phis = [];
-        b_assigns = [SSA.Acall (res,
-                                ret_label,
-                                [Prim.(ONone (Vvar arg))]
-                               )
-                    ];
-        b_jump = SSA.Jreturn Prim.(ONone (Vvar res));
-      }]
-    }
+    SSA.(Procs.block ~args:[arg]
+      (Blocks.return_var
+        ~label:SSA.label_main
+        ~assigns:[SSA.Acall (res, ret_label, [Prim.(ONone (Vvar arg))])]
+        res
+      )
+    )
   in
   ("call",[entry; ret])
 
 let loop =
-  ("loop", [SSA.(Procs.block [] (Blocks.tail ~label:label_main label_main []))])
+  ("loop", [SSA.(Procs.block (Blocks.tail ~label:label_main label_main []))])
 
 let io =
   let var1 = Prim.fresh_var () in
   let var2 = Prim.fresh_var () in
   ("io",
    [SSA.(Procs.block
-           []
            (Blocks.return_var ~label:label_main
               ~assigns:[Aexpr (var1, Prim.ORead);
                         Aexpr (var2, Prim.(OWrite (Vvar var1)));

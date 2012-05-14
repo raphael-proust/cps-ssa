@@ -71,6 +71,10 @@ val check_ssa : prog -> bool
 
 module Blocks :sig
 
+  val block: ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    jump -> block
+
   val return:  ?label:Prim.label ->
     ?phis:phi list -> ?assigns:assign list ->
     Prim.expr -> block
@@ -100,17 +104,19 @@ end
 
 module Procs : sig
 
-  val block: Prim.var list -> block -> proc
+  val proc: ?args:Prim.var list -> block list -> proc
+
+  val block: ?args:Prim.var list -> block -> proc
 
   val cond:
        ?label:Prim.label
-    -> Prim.var list
+    -> ?args:Prim.var list
     -> Prim.expr -> block -> block
     -> proc
 
   val cond_e:
        ?label:Prim.label
-    -> Prim.var list
+    -> ?args:Prim.var list
     -> Prim.expr -> Prim.expr -> Prim.expr
     -> proc
 

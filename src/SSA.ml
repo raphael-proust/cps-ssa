@@ -108,25 +108,20 @@ end
 (* For building simpl procs *)
 module Procs = struct
 
-  let proc ?(args = []) ~blocks = {
+  let proc ?(args = []) blocks = {
       p_args = args;
     p_blocks = blocks;
   }
 
-  let block args b = proc ~args ~blocks:[b]
+  let block ?args b = proc ?args [b]
 
-  let cond ?label args e b1 b2 =
-    proc ~args ~blocks:[
-      Blocks.cond ?label e b1.b_label b2.b_label;
-      b1;
-      b2;
-    ]
+  let cond ?label ?args e b1 b2 =
+    proc ?args [Blocks.cond ?label e b1.b_label b2.b_label; b1; b2;]
 
-  let cond_e ?label args e e1 e2 =
+  let cond_e ?label ?args e e1 e2 =
     let b1 = Blocks.return e1 in
     let b2 = Blocks.return e2 in
-    cond ?label args e b1 b2
-
+    cond ?label ?args e b1 b2
 
 end
 
