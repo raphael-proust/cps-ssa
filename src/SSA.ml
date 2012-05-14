@@ -88,6 +88,9 @@ module Blocks = struct
 
   let return_0 ?label ?phis ?assigns () = return_const ?label ?phis ?assigns 0
 
+  let return_var ?label ?phis ?assigns v =
+    return ?label ?phis ?assigns Prim.(ONone (Vvar v))
+
   let cond ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) e l1 l2 =
     {
       b_order = 0;

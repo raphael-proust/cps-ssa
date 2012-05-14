@@ -80,6 +80,9 @@ module Blocks :sig
   val return_0:  ?label:Prim.label ->
     ?phis:phi list -> ?assigns:assign list ->
     unit -> block
+  val return_var:  ?label:Prim.label ->
+    ?phis:phi list -> ?assigns:assign list ->
+    Prim.var -> block
 
   val cond: ?label:Prim.label ->
     ?phis:phi list -> ?assigns:assign list ->
