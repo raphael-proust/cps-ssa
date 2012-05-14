@@ -44,7 +44,8 @@ type value =
   | Vvar   of var
   | Vconst of const
 
-(** Expressions are operations on values (or just a value). *)
+(** Expressions are either values, arithmetical operations on values,
+    comparisons, or IO primitives. *)
 type expr =
   | ONone of value
   | OPlus  of (value * value)
@@ -53,6 +54,12 @@ type expr =
   | ODiv   of (value * value)
   | OMax of (value * value)
   | OMin of (value * value)
+  | OGt of (value * value)
+  | OGe of (value * value)
+  | OLt of (value * value)
+  | OLe of (value * value)
+  | ORead
+  | OWrite of value
 
 (** Labels. Like variables but for procedure block naming. *)
 type label = private string

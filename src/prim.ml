@@ -55,7 +55,12 @@ type expr =
   | ODiv   of (value * value)
   | OMax   of (value * value)
   | OMin   of (value * value)
-  (* etc. *)
+  | OGt of (value * value)
+  | OGe of (value * value)
+  | OLt of (value * value)
+  | OLe of (value * value)
+  | ORead
+  | OWrite of value
 
 (* labels are for jump. This is somehow specific to ssa and might get moved in
  * the corresponding module. Type is abstracted in the interface. *)

@@ -126,6 +126,21 @@ let call =
 let loop =
   ("loop", [SSA.(Procs.block [] (Blocks.tail ~label:label_main label_main []))])
 
+let io =
+  let var1 = Prim.fresh_var () in
+  let var2 = Prim.fresh_var () in
+  ("io",
+   [SSA.(Procs.block
+           []
+           (Blocks.return_var ~label:label_main
+              ~assigns:[Aexpr (var1, Prim.ORead);
+                        Aexpr (var2, Prim.(OWrite (Vvar var1)));
+                       ]
+              var2
+           )
+        );
+   ]
+  )
 
 let tests = [
   zero;
@@ -133,6 +148,7 @@ let tests = [
   diamond;
   call;
   loop;
+  io;
 ]
 
 let () =

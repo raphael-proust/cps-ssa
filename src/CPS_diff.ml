@@ -51,7 +51,8 @@ let pp_value = function
 
 let pp_expr e =
   let pp_op v1 op v2 = pp_value v1 ^^ op ^^ pp_value v2 in
-  let pp_fn fn v1 v2 = 
+  let pp_fn1 fn v = fn ^^ PP.space ^^ with_paren (pp_value v) in
+  let pp_fn2 fn v1 v2 =
     fn ^^ PP.space ^^ with_paren (pp_value v1 ^^ comma_space ^^ pp_value v2)
   in
   match e with
@@ -62,9 +63,17 @@ let pp_expr e =
   | Prim.OMult  (v1, v2) -> pp_op v1 PP.star  v2
   | Prim.OMinus (v1, v2) -> pp_op v1 PP.minus v2
   | Prim.ODiv   (v1, v2) -> pp_op v1 PP.bar   v2
-  (* Other primitive functions *)
-  | Prim.OMax (v1, v2) -> pp_fn (!^ "max") v1 v2
-  | Prim.OMin (v1, v2) -> pp_fn (!^ "min") v1 v2
+  (* Arithmetic functions *)
+  | Prim.OMax (v1, v2) -> pp_fn2 (!^ "max") v1 v2
+  | Prim.OMin (v1, v2) -> pp_fn2 (!^ "min") v1 v2
+  (* Comparisons *)
+  | Prim.OGt (v1, v2) -> pp_op v1 (!^ ">" ) v2
+  | Prim.OGe (v1, v2) -> pp_op v1 (!^ ">=") v2
+  | Prim.OLt (v1, v2) -> pp_op v1 (!^ "<" ) v2
+  | Prim.OLe (v1, v2) -> pp_op v1 (!^ "=<") v2
+  (* IO *)
+  | Prim.ORead -> !^ "read()"
+  | Prim.OWrite v -> pp_fn1 (!^ "write") v
 
 let rec pp_m = function
   | CPS.Mapp  (v, es, k) ->
