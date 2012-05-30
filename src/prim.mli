@@ -58,8 +58,11 @@ type expr =
   | OGe of (value * value)
   | OLt of (value * value)
   | OLe of (value * value)
-  | ORead
+  | OEq of (value * value)
+  | ONe of (value * value)
+  | ORead of value
   | OWrite of value
+  | OAlloc
 
 (** Labels. Like variables but for procedure block naming. *)
 type label = private string

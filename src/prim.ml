@@ -48,19 +48,22 @@ type value =
 (* expressions are operation (or not, see ONone) on values. Might be completed
  * later. It might also need to be lifted to a value lattice. *)
 type expr =
-  | ONone  of value
+  | ONone of value
   | OPlus  of (value * value)
   | OMult  of (value * value)
   | OMinus of (value * value)
   | ODiv   of (value * value)
-  | OMax   of (value * value)
-  | OMin   of (value * value)
+  | OMax of (value * value)
+  | OMin of (value * value)
   | OGt of (value * value)
   | OGe of (value * value)
   | OLt of (value * value)
   | OLe of (value * value)
-  | ORead
+  | OEq of (value * value)
+  | ONe of (value * value)
+  | ORead of value
   | OWrite of value
+  | OAlloc
 
 (* labels are for jump. This is somehow specific to ssa and might get moved in
  * the corresponding module. Type is abstracted in the interface. *)

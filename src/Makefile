@@ -8,6 +8,10 @@ MLS= \
 		 CPS_diff.ml \
 		 dom.ml \
 		 SSA2CPS.ml \
+		 LLVM.ml \
+		 llvm_parser.ml \
+		 llvm_lexer.ml \
+		 LLVM2SSA.ml \
 		 test.ml
 
 CMXS=$(MLS:.ml=.cmx)
@@ -17,6 +21,8 @@ CMOS=$(MLS:.ml=.cmo)
 MLIS=$(MLS:.ml=.mli)
 
 CMIS=$(MLS:.ml=.cmi)
+
+TRASH=llvm_parser.ml llvm_parser.mli llvm_lexer.ml llvm_lexer.mli
 
 
 LIBXS=$(shell ocamlfind query ocamlgraph)/graph.cmxa
@@ -31,6 +37,8 @@ OCAMLOPTOPTIONS=
 OCAMLCOPTIONS=-g
 OCAMLOPT=ocamlopt $(OCAMLOPTOPTIONS)
 OCAMLC=ocamlc $(OCAMLCOPTIONS)
+OCAMLLEX=ocamllex
+MENHIR=menhir
 OCAMLDEP=ocamldep
 
 
@@ -48,7 +56,7 @@ $(BINNAME).byte: $(CMOS)
 
 
 clean:
-	rm -f $(CMOS) $(CMIS) $(CMXS) $(MLS:.ml=.o)
+	rm -f $(CMOS) $(CMIS) $(CMXS) $(MLS:.ml=.o) $(TRASH)
 
 purge: clean
 	rm -f .depend $(BINNAME).native $(BINNAME).byte pprint.ml[i]
@@ -68,6 +76,12 @@ depend: $(MLS) $(MLIS)
 
 %.cmx: %.ml
 	$(OCAMLOPT) -I $(LIBDIRS) -c $<
+
+%.ml %.mli: %.mll
+	$(OCAMLLEX) $<
+
+%.ml %.mli: %.mly
+	$(MENHIR) $<
 
 pprint.ml:
 	ln -s ../pprint/pprint.ml .

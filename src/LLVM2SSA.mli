@@ -18,23 +18,4 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-let () = Printexc.record_backtrace true
-
-let run filename =
-  let ic = open_in filename in
-  let lexbuf = Lexing.from_channel ic in
-  let llvm_prog = Llvm_parser.prog (Llvm_lexer.token) lexbuf in
-  let ssa_prog = LLVM2SSA.prog llvm_prog in
-  ()
-
-let () =
-    Array.iter
-      (fun t ->
-        try
-          run t
-        with
-        | e ->
-          Printf.eprintf "%s\n" (Printexc.to_string e);
-          Printexc.print_backtrace stderr
-      )
-      (Array.sub Sys.argv 1 (Array.length Sys.argv - 1))
+val prog: LLVM.prog -> SSA.prog

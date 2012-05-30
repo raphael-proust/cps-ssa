@@ -18,23 +18,54 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-let () = Printexc.record_backtrace true
+type typ =
+  | Typ_I of int
+  | Typ_Pointer of typ
+  | Typ_Label
+  | Typ_Void
 
-let run filename =
-  let ic = open_in filename in
-  let lexbuf = Lexing.from_channel ic in
-  let llvm_prog = Llvm_parser.prog (Llvm_lexer.token) lexbuf in
-  let ssa_prog = LLVM2SSA.prog llvm_prog in
-  ()
+type ident =
+  | Id_Global of Prim.var
+  | Id_Local  of Prim.var
 
-let () =
-    Array.iter
-      (fun t ->
-        try
-          run t
-        with
-        | e ->
-          Printf.eprintf "%s\n" (Printexc.to_string e);
-          Printexc.print_backtrace stderr
-      )
-      (Array.sub Sys.argv 1 (Array.length Sys.argv - 1))
+type tident = typ * ident
+
+type value =
+  | Vvar of ident
+  | Vconst of Prim.const
+
+type tvalue = typ * value
+
+type prog = proc list
+
+and proc = {
+  ret_typ: typ;
+  name: Prim.label;
+  args: tident list;
+  instrs: instr list;
+}
+
+and instr =
+  | Alloca of (ident * typ)
+  | Add of (ident * typ * value * value)
+  | Store of (tident * tvalue)
+  | Load of (ident * typ * ident)
+  | Icmp of (ident * icmp * typ * value * value)
+  | Br_1 of (Prim.label)
+  | Br of (value * Prim.label * Prim.label)
+  | Ret of tvalue
+  | Label of Prim.label
+  | Phi of (ident * typ * (value * Prim.label) list)
+
+and icmp =
+  | Eq
+  | Ne
+  | Ugt
+  | Uge
+  | Ult
+  | Ule
+  | Sgt
+  | Sge
+  | Slt
+  | Sle
+

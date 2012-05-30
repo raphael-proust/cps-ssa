@@ -71,9 +71,12 @@ let pp_expr e =
   | Prim.OGe (v1, v2) -> pp_op v1 (!^ ">=") v2
   | Prim.OLt (v1, v2) -> pp_op v1 (!^ "<" ) v2
   | Prim.OLe (v1, v2) -> pp_op v1 (!^ "=<") v2
+  | Prim.OEq (v1, v2) -> pp_op v1 (!^ "==") v2
+  | Prim.ONe (v1, v2) -> pp_op v1 (!^ "<>") v2
   (* IO *)
-  | Prim.ORead -> !^ "read()"
+  | Prim.ORead v -> pp_fn1 (!^ "read") v
   | Prim.OWrite v -> pp_fn1 (!^ "write") v
+  | Prim.OAlloc -> !^ "alloc()"
 
 let rec pp_m = function
   | CPS.Mapp  (v, es, k) ->
