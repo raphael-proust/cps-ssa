@@ -16,3 +16,5 @@ src/llvm_parser.ml
 src/llvm_parser.mli
 .*.swp
 .*.swo
+tests/*.ll
+tests/*.bc
