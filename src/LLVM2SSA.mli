@@ -18,4 +18,4 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-val prog: LLVM.prog -> SSA.prog
+(* val prog: LLVM.prog -> SSA.prog *)

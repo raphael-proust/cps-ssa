@@ -23,9 +23,14 @@ let () = Printexc.record_backtrace true
 let run filename =
   let ic = open_in filename in
   let lexbuf = Lexing.from_channel ic in
-  let llvm_prog = Llvm_parser.prog (Llvm_lexer.token) lexbuf in
-  let ssa_prog = LLVM2SSA.prog llvm_prog in
-  ()
+  try
+    let llvm_prog = Llvm_parser.program (Llvm_lexer.token) lexbuf in
+    ()
+  with
+  | Llvm_parser.Error ->
+    Printf.eprintf "Uncaught parsing exception from %a to %a"
+    Llvm_parse_error.print_pos (Lexing.lexeme_start_p lexbuf)
+    Llvm_parse_error.print_pos (Lexing.lexeme_end_p   lexbuf)
 
 let () =
     Array.iter

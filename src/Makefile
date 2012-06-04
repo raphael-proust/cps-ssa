@@ -9,6 +9,7 @@ MLS= \
 		 dom.ml \
 		 SSA2CPS.ml \
 		 LLVM.ml \
+		 llvm_parse_error.ml \
 		 llvm_parser.ml \
 		 llvm_lexer.ml \
 		 LLVM2SSA.ml \
@@ -27,7 +28,7 @@ TRASH=llvm_parser.ml llvm_parser.mli llvm_lexer.ml llvm_lexer.mli
 
 LIBXS=$(shell ocamlfind query ocamlgraph)/graph.cmxa
 LIBS=$(LIBXS:.cmxa=.cma)
-LIBDIRS=$(shell ocamlfind query ocamlgraph)
+LIBDIRS= -I $(shell ocamlfind query ocamlgraph)/
 
 
 BINNAME=run
@@ -69,13 +70,13 @@ depend: $(MLS) $(MLIS)
 -include .depend
 
 %.cmo: %.ml
-	$(OCAMLC) -I $(LIBDIRS) -c $<
+	$(OCAMLC) $(LIBDIRS) -c $<
 
 %.cmi: %.mli
-	$(OCAMLC) -I $(LIBDIRS) -c $<
+	$(OCAMLC) $(LIBDIRS) -c $<
 
 %.cmx: %.ml
-	$(OCAMLOPT) -I $(LIBDIRS) -c $<
+	$(OCAMLOPT) $(LIBDIRS) -c $<
 
 %.ml %.mli: %.mll
 	$(OCAMLLEX) $<

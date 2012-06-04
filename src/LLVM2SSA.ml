@@ -18,6 +18,7 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(*
 
 let is_jump = function
   | LLVM.Br_1 _
@@ -32,8 +33,8 @@ let is_jump = function
   | LLVM.Label _ -> false
 
 let ident = function
-  | LLVM.Id_Global v -> Prim.var ("@" ^ Prim.string_of_var v)
-  | LLVM.Id_Local  v -> Prim.var ("%" ^ Prim.string_of_var v)
+  | LLVM.ID_Global v -> Prim.var ("@" ^ Prim.string_of_var v)
+  | LLVM.ID_Local  v -> Prim.var ("%" ^ Prim.string_of_var v)
 
 let var i = Prim.ONone (Prim.Vvar (ident i))
 
@@ -129,3 +130,4 @@ let proc {LLVM.name; args; instrs} =
 
 let prog = List.map proc
 
+*)
