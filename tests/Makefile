@@ -1,16 +1,16 @@
 
 CS= return.c fibonacci.c if0.c
-BITCODES=$(CS:.c=.bc)
+BCS=$(CS:.c=.bc)
 LLS=$(CS:.c=.ll)
 
-all: $(BITCODES)
+all: lls
 
-bitcodes: $(BITCODES)
+bcs: $(BCS)
 
 lls: $(LLS)
 
 clean:
-	rm -f $(BITCODES) $(LLS)
+	rm -f $(BCS) $(LLS)
 
 %.bc: %.c
 	clang $< -O0 -emit-llvm -c -o $@
