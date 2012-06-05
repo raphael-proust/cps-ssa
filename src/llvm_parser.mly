@@ -25,11 +25,12 @@
 %}
 
 (*TODO: vectors and vector types *)
+(*TODO: floats *)
 (*TODO: don't throw things away *)
+(*TODO: what is it with labels? *)
 
-%token DEFINE
 %token<string> GLOBAL LOCAL
-%token LPAREN RPAREN LCURLY RCURLY EQ COMMA EOL EOF
+%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE EQ COMMA EOL EOF
 
 %token<string> STRING
 %token<int> INTEGER
@@ -37,16 +38,21 @@
 %token<bool> BOOL
 %token NULL
 
-%token PRIVATE LINKER_PRIVATE LINKER_PRIVATE_WEAK LINKER_PRIVATE_WEAK_DEF_AUTO INTERNAL AVAILABLE_EXTERNALLY LINKONCE WEAK COMMON APPENDING EXTERN_WEAK LINKONCE_ODR WEAK_ODR EXTERNAL DLLIMPORT DLLEXPORT
-%token DEFAULT HIDDEN PROTECTED
-%token CCC FASTCC COLDCC CC
-%token ZEROEXT SIGNEXT INREG BYVAL SRET NOALIAS NOCAPTURE NEST
-%token ADDRESS_SAFETY ALIGNSTACK ALWAYSINLINE NONLAZYBIND INLINEHINT NAKED NOIMPLICITFLOAT NOINLINE NOREDZONE NORETURN NOUNWIND OPTSIZE READNONE READONLY RETURNS_TWICE SSP SSPREQ UWTABLE
-%token ALIGN
-%token GC
-%token ADD FADD SUB FSUB MUL FMUL UDIV SDIV FDIV UREM SREM FREM SHL LSHR ASHR AND OR XOR ICMP FCMP PHI CALL TRUNC ZEXT SEXT FPTRUNC FPEXT UITOFP SITOFP FPTOUI FPTOSI INTTOPTR PTRTOINT BITCAST SELECT VAARG RET BR SWITCH INDIRECTBR INVOKE RESUME UNREACHABLE ALLOCA LOAD STORE ATOMICCMPXCHG ATOMICRMW FENCE GETELEMENTPTR EXTRACTELEMENT INSERTELEMENT SHUFFLEVECTOR EXTRACTVALUE INSERTVALUE LANDINGPAD
-%token<int> TI
-%token TVOID THALF TFLOAT TDOUBLE TX86_FP80 TFP128 TPPC_FP128 TLABEL TMETADATA TX86_MMX
+%token KW_DEFINE
+%token KW_PRIVATE KW_LINKER_PRIVATE KW_LINKER_PRIVATE_WEAK KW_LINKER_PRIVATE_WEAK_DEF_AUTO KW_INTERNAL KW_AVAILABLE_EXTERNALLY KW_LINKONCE KW_WEAK KW_COMMON KW_APPENDING KW_EXTERN_WEAK KW_LINKONCE_ODR KW_WEAK_ODR KW_EXTERNAL KW_DLLIMPORT KW_DLLEXPORT
+%token KW_DEFAULT KW_HIDDEN KW_PROTECTED
+%token KW_CCC KW_FASTCC KW_COLDCC KW_CC
+%token KW_ZEROEXT KW_SIGNEXT KW_INREG KW_BYVAL KW_SRET KW_NOALIAS KW_NOCAPTURE KW_NEST
+%token KW_ADDRESS_SAFETY KW_ALIGNSTACK KW_ALWAYSINLINE KW_NONLAZYBIND KW_INLINEHINT KW_NAKED KW_NOIMPLICITFLOAT KW_NOINLINE KW_NOREDZONE KW_NORETURN KW_NOUNWIND KW_OPTSIZE KW_READNONE KW_READONLY KW_RETURNS_TWICE KW_SSP KW_SSPREQ KW_UWTABLE
+%token KW_ALIGN
+%token KW_GC
+%token KW_ADD KW_FADD KW_SUB KW_FSUB KW_MUL KW_FMUL KW_UDIV KW_SDIV KW_FDIV KW_UREM KW_SREM KW_FREM KW_SHL KW_LSHR KW_ASHR KW_AND KW_OR KW_XOR KW_ICMP KW_FCMP KW_PHI KW_CALL KW_TRUNC KW_ZEXT KW_SEXT KW_FPTRUNC KW_FPEXT KW_UITOFP KW_SITOFP KW_FPTOUI KW_FPTOSI KW_INTTOPTR KW_PTRTOINT KW_BITCAST KW_SELECT KW_VAARG KW_RET KW_BR KW_SWITCH KW_INDIRECTBR KW_INVOKE KW_RESUME KW_UNREACHABLE KW_ALLOCA KW_LOAD KW_STORE KW_ATOMICCMPXCHG KW_ATOMICRMW KW_FENCE KW_GETELEMENTPTR KW_EXTRACTELEMENT KW_INSERTELEMENT KW_SHUFFLEVECTOR KW_EXTRACTVALUE KW_INSERTVALUE KW_LANDINGPAD
+%token<int> I
+%token KW_VOID KW_HALF KW_FLOAT KW_DOUBLE KW_X86_FP80 KW_FP128 KW_PPC_FP128 KW_LABEL KW_METADATA KW_X86_MMX
+%token KW_UNWIND KW_TO
+%token KW_NUW KW_NSW
+%token KW_EXACT
+%token KW_EQ KW_NE KW_UGT KW_UGE KW_ULT KW_ULE KW_SGT KW_SGE KW_SLT KW_SLE
 
 
 %start<LLVM.prog> program
@@ -54,168 +60,228 @@
 %%
 
 program:
-  | procedure EOF { [ ] }
+  | p = procedure EOF { [p] }
 
 
 procedure:
-  | DEFINE linkage? visibility? cconv?
-    ret_typ = ret_type name = global
-    LPAREN args = separated_list(COMMA,arg) RPAREN
-    list(fn_attr) align? gc?
-    LCURLY
-    instrs = procedure_body
-    RCURLY { {ret_typ; name; args; instrs;} }
+  | KW_DEFINE linkage? visibility? cconv?
+           ret_typ = ret_type name = global
+           LPAREN args = separated_list(COMMA, decl_arg) RPAREN
+           list(fn_attr) align? gc?
+           LCURLY EOL
+           instrs = procedure_body
+           RCURLY
+    { {ret_typ; name; args; instrs;} }
 
 linkage:
-  | PRIVATE                      { LINKAGE_Private }
-  | LINKER_PRIVATE               { LINKAGE_Linker_private }
-  | LINKER_PRIVATE_WEAK          { LINKAGE_Linker_private_weak }
-  | LINKER_PRIVATE_WEAK_DEF_AUTO { LINKAGE_Linker_private_weak_def_auto }
-  | INTERNAL                     { LINKAGE_Internal }
-  | AVAILABLE_EXTERNALLY         { LINKAGE_Available_externally }
-  | LINKONCE                     { LINKAGE_Linkonce }
-  | WEAK                         { LINKAGE_Weak }
-  | COMMON                       { LINKAGE_Common }
-  | APPENDING                    { LINKAGE_Appending }
-  | EXTERN_WEAK                  { LINKAGE_Extern_weak }
-  | LINKONCE_ODR                 { LINKAGE_Linkonce_odr }
-  | WEAK_ODR                     { LINKAGE_Weak_odr }
-  | EXTERNAL                     { LINKAGE_External }
-  | DLLIMPORT                    { LINKAGE_Dllimport }
-  | DLLEXPORT                    { LINKAGE_Dllexport }
+  | KW_PRIVATE                      { LINKAGE_Private }
+  | KW_LINKER_PRIVATE               { LINKAGE_Linker_private }
+  | KW_LINKER_PRIVATE_WEAK          { LINKAGE_Linker_private_weak }
+  | KW_LINKER_PRIVATE_WEAK_DEF_AUTO { LINKAGE_Linker_private_weak_def_auto }
+  | KW_INTERNAL                     { LINKAGE_Internal }
+  | KW_AVAILABLE_EXTERNALLY         { LINKAGE_Available_externally }
+  | KW_LINKONCE                     { LINKAGE_Linkonce }
+  | KW_WEAK                         { LINKAGE_Weak }
+  | KW_COMMON                       { LINKAGE_Common }
+  | KW_APPENDING                    { LINKAGE_Appending }
+  | KW_EXTERN_WEAK                  { LINKAGE_Extern_weak }
+  | KW_LINKONCE_ODR                 { LINKAGE_Linkonce_odr }
+  | KW_WEAK_ODR                     { LINKAGE_Weak_odr }
+  | KW_EXTERNAL                     { LINKAGE_External }
+  | KW_DLLIMPORT                    { LINKAGE_Dllimport }
+  | KW_DLLEXPORT                    { LINKAGE_Dllexport }
 
 visibility:
-  | DEFAULT   { VISIBILITY_Default }
-  | HIDDEN    { VISIBILITY_Hidden }
-  | PROTECTED { VISIBILITY_Protected }
+  | KW_DEFAULT   { VISIBILITY_Default }
+  | KW_HIDDEN    { VISIBILITY_Hidden }
+  | KW_PROTECTED { VISIBILITY_Protected }
 
 cconv:
-  | CCC          { CC_Ccc }
-  | FASTCC       { CC_Fastcc }
-  | COLDCC       { CC_Coldcc }
-  | CC n=INTEGER { CC_Cc n }
+  | KW_CCC          { CC_Ccc }
+  | KW_FASTCC       { CC_Fastcc }
+  | KW_COLDCC       { CC_Coldcc }
+  | KW_CC n=INTEGER { CC_Cc n }
 
 ret_type:
   | list(typ_attr) t = typ { t }
 
 typ:
-  | n = TI     { TYPE_I n }
-  | TVOID      { TYPE_Tvoid }
-  | THALF      { TYPE_Thalf }
-  | TFLOAT     { TYPE_Tfloat }
-  | TDOUBLE    { TYPE_Tdouble }
-  | TX86_FP80  { TYPE_Tx86_fp80 }
-  | TFP128     { TYPE_Tfp128 }
-  | TPPC_FP128 { TYPE_Tppc_fp128 }
-  | TLABEL     { TYPE_Tlabel }
-  | TMETADATA  { TYPE_Tmetadata }
-  | TX86_MMX   { TYPE_Tx86_mmx }
+  | n = I        { TYPE_I n }
+  | KW_VOID      { TYPE_Void }
+  | KW_HALF      { TYPE_Half }
+  | KW_FLOAT     { TYPE_Float }
+  | KW_DOUBLE    { TYPE_Double }
+  | KW_X86_FP80  { TYPE_X86_fp80 }
+  | KW_FP128     { TYPE_Fp128 }
+  | KW_PPC_FP128 { TYPE_Ppc_fp128 }
+  | KW_LABEL     { TYPE_Label }
+  | KW_METADATA  { TYPE_Metadata }
+  | KW_X86_MMX   { TYPE_X86_mmx }
+
+typ_i:
+  | n = I { n }
 
 typ_attr:
-  | ZEROEXT   { TYPEATTR_Zeroext }
-  | SIGNEXT   { TYPEATTR_Signext }
-  | INREG     { TYPEATTR_Inreg }
-  | BYVAL     { TYPEATTR_Byval }
-  | SRET      { TYPEATTR_Sret }
-  | NOALIAS   { TYPEATTR_Noalias }
-  | NOCAPTURE { TYPEATTR_Nocapture }
-  | NEST      { TYPEATTR_Nest }
+  | KW_ZEROEXT   { TYPEATTR_Zeroext }
+  | KW_SIGNEXT   { TYPEATTR_Signext }
+  | KW_INREG     { TYPEATTR_Inreg }
+  | KW_BYVAL     { TYPEATTR_Byval }
+  | KW_SRET      { TYPEATTR_Sret }
+  | KW_NOALIAS   { TYPEATTR_Noalias }
+  | KW_NOCAPTURE { TYPEATTR_Nocapture }
+  | KW_NEST      { TYPEATTR_Nest }
 
-arg:
-  | t = typ list(typ_attr) i = local { (t, i) }
+decl_arg:
+  | t = typ list(typ_attr) i = ident { (t, i) }
+
+call_arg:
+  | t = typ list(typ_attr) i = value { (t, i) }
 
 fn_attr:
-  | ADDRESS_SAFETY                      { FNATTR_Address_safety }
-  | ALIGNSTACK LPAREN p = power2 RPAREN { FNATTR_Alignstack p }
-  | ALWAYSINLINE                        { FNATTR_Alwaysinline }
-  | NONLAZYBIND                         { FNATTR_Nonlazybind }
-  | INLINEHINT                          { FNATTR_Inlinehint }
-  | NAKED                               { FNATTR_Naked }
-  | NOIMPLICITFLOAT                     { FNATTR_Noimplicitfloat }
-  | NOINLINE                            { FNATTR_Noinline }
-  | NOREDZONE                           { FNATTR_Noredzone }
-  | NORETURN                            { FNATTR_Noreturn }
-  | NOUNWIND                            { FNATTR_Nounwind }
-  | OPTSIZE                             { FNATTR_Optsize }
-  | READNONE                            { FNATTR_Readnone }
-  | READONLY                            { FNATTR_Readonly }
-  | RETURNS_TWICE                       { FNATTR_Returns_twice }
-  | SSP                                 { FNATTR_Ssp }
-  | SSPREQ                              { FNATTR_Sspreq }
-  | UWTABLE                             { FNATTR_Uwtable }
+  | KW_ADDRESS_SAFETY                      { FNATTR_Address_safety }
+  | KW_ALIGNSTACK LPAREN p = power2 RPAREN { FNATTR_Alignstack p }
+  | KW_ALWAYSINLINE                        { FNATTR_Alwaysinline }
+  | KW_NONLAZYBIND                         { FNATTR_Nonlazybind }
+  | KW_INLINEHINT                          { FNATTR_Inlinehint }
+  | KW_NAKED                               { FNATTR_Naked }
+  | KW_NOIMPLICITFLOAT                     { FNATTR_Noimplicitfloat }
+  | KW_NOINLINE                            { FNATTR_Noinline }
+  | KW_NOREDZONE                           { FNATTR_Noredzone }
+  | KW_NORETURN                            { FNATTR_Noreturn }
+  | KW_NOUNWIND                            { FNATTR_Nounwind }
+  | KW_OPTSIZE                             { FNATTR_Optsize }
+  | KW_READNONE                            { FNATTR_Readnone }
+  | KW_READONLY                            { FNATTR_Readonly }
+  | KW_RETURNS_TWICE                       { FNATTR_Returns_twice }
+  | KW_SSP                                 { FNATTR_Ssp }
+  | KW_SSPREQ                              { FNATTR_Sspreq }
+  | KW_UWTABLE                             { FNATTR_Uwtable }
 
 power2:
   | n = INTEGER { assert (List.mem n [0;1;2;4;8;16;32;64]); n }
 
 align:
-  | ALIGN power2 { }
+  | KW_ALIGN power2 { }
 
 gc:
-  | GC STRING { }
+  | KW_GC STRING { }
 
 procedure_body: (*TODO*)
-  | i = list(instr) { i }
+  | i = separated_list(EOL, instr) { i }
+
+%public binop(KW):
+  | i = ident EQ KW t = typ o1 = value COMMA o2 = value
+    { (i, t, o1, o2) }
 
 instr:
-  | i = ident EQ ADD t = typ o1 = operand COMMA o2 = operand
-    { INSTR_Add (i, t, o1, o2) }
-  | FADD           { INSTR_FAdd }
-  | SUB            { INSTR_Sub }
-  | FSUB           { INSTR_FSub }
-  | MUL            { INSTR_Mul }
-  | FMUL           { INSTR_FMul }
-  | UDIV           { INSTR_UDiv }
-  | SDIV           { INSTR_SDiv }
-  | FDIV           { INSTR_FDiv }
-  | UREM           { INSTR_URem }
-  | SREM           { INSTR_SRem }
-  | FREM           { INSTR_FRem }
-  | SHL            { INSTR_Shl }
-  | LSHR           { INSTR_LShr }
-  | ASHR           { INSTR_AShr }
-  | AND            { INSTR_And }
-  | OR             { INSTR_Or }
-  | XOR            { INSTR_Xor }
-  | ICMP           { INSTR_ICmp }
-  | FCMP           { INSTR_FCmp }
-  | PHI            { INSTR_PHI }
-  | CALL           { INSTR_Call }
-  | TRUNC          { INSTR_Trunc }
-  | ZEXT           { INSTR_ZExt }
-  | SEXT           { INSTR_SExt }
-  | FPTRUNC        { INSTR_FPTrunc }
-  | FPEXT          { INSTR_FPExt }
-  | UITOFP         { INSTR_UIToFP }
-  | SITOFP         { INSTR_SIToFP }
-  | FPTOUI         { INSTR_FPToUI }
-  | FPTOSI         { INSTR_FPToSI }
-  | INTTOPTR       { INSTR_IntToPtr }
-  | PTRTOINT       { INSTR_PtrToInt }
-  | BITCAST        { INSTR_BitCast }
-  | SELECT         { INSTR_Select }
-  | VAARG          { INSTR_VAArg }
-  | RET            { INSTR_Ret }
-  | BR             { INSTR_Br }
-  | SWITCH         { INSTR_Switch }
-  | INDIRECTBR     { INSTR_IndirectBr }
-  | INVOKE         { INSTR_Invoke }
-  | RESUME         { INSTR_Resume }
-  | UNREACHABLE    { INSTR_Unreachable }
-  | ALLOCA         { INSTR_Alloca }
-  | LOAD           { INSTR_Load }
-  | STORE          { INSTR_Store }
-  | ATOMICCMPXCHG  { INSTR_AtomicCmpXchg }
-  | ATOMICRMW      { INSTR_AtomicRMW }
-  | FENCE          { INSTR_Fence }
-  | GETELEMENTPTR  { INSTR_GetElementPtr }
-  | EXTRACTELEMENT { INSTR_ExtractElement }
-  | INSERTELEMENT  { INSTR_InsertElement }
-  | SHUFFLEVECTOR  { INSTR_ShuffleVector }
-  | EXTRACTVALUE   { INSTR_ExtractValue }
-  | INSERTVALUE    { INSTR_InsertValue }
-  | LANDINGPAD     { INSTR_LandingPad }
+  (* arith, binop *)
+  | b = binop(KW_ADD) { INSTR_Add b } (*TODO: support nuw and nsw *)
+  | KW_FADD           { INSTR_FAdd } (*TODO*)
+  | b = binop(KW_SUB) { INSTR_Sub b } (*TODO: support nuw and nsw *)
+  | KW_FSUB           { INSTR_FSub } (*TODO*)
+  | b = binop(KW_MUL) { INSTR_Mul b }
+  | KW_FMUL           { INSTR_FMul }
+  | b = binop(KW_UDIV) { INSTR_UDiv b } (*TODO: support exact *)
+  | b = binop(KW_SDIV) { INSTR_SDiv b } (*TODO: support exact *)
+  | KW_FDIV           { INSTR_FDiv } (*TODO*)
+  | b = binop(KW_UREM) { INSTR_URem b }
+  | b = binop(KW_SREM) { INSTR_SRem b }
+  | KW_FREM           { INSTR_FRem }
 
-operand:
+  (* bitwise, binop *)
+  | b = binop(KW_SHL) { INSTR_Shl b }
+  | b = binop(KW_LSHR) { INSTR_LShr b }
+  | b = binop(KW_ASHR) { INSTR_AShr b }
+  | b = binop(KW_AND) { INSTR_And b }
+  | b = binop(KW_OR) { INSTR_Or b }
+  | b = binop(KW_XOR) { INSTR_Xor b }
+
+  (* comparison *)
+  | i = ident KW_ICMP KW_EQ t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Eq, t, o1, o2) }
+  | i = ident KW_ICMP KW_NE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ne, t, o1, o2) }
+  | i = ident KW_ICMP KW_UGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ugt, t, o1, o2) }
+  | i = ident KW_ICMP KW_UGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Uge, t, o1, o2) }
+  | i = ident KW_ICMP KW_ULT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ult, t, o1, o2) }
+  | i = ident KW_ICMP KW_ULE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ule, t, o1, o2) }
+  | i = ident KW_ICMP KW_SGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sgt, t, o1, o2) }
+  | i = ident KW_ICMP KW_SGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sge, t, o1, o2) }
+  | i = ident KW_ICMP KW_SLT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Slt, t, o1, o2) }
+  | i = ident KW_ICMP KW_SLE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sle, t, o1, o2) }
+
+  | KW_FCMP           { INSTR_FCmp } (*TODO*)
+
+  (* phi *)
+  | i = ident KW_PHI t = typ
+                     table = separated_nonempty_list(COMMA, phi_table_entry)
+    { INSTR_PHI (i, t, table) }
+
+  (* call *)
+  | KW_CALL           { INSTR_Call }
+
+  (* conversions *)
+  | KW_TRUNC          { INSTR_Trunc }
+  | KW_ZEXT           { INSTR_ZExt }
+  | KW_SEXT           { INSTR_SExt }
+  | KW_FPTRUNC        { INSTR_FPTrunc }
+  | KW_FPEXT          { INSTR_FPExt }
+  | KW_UITOFP         { INSTR_UIToFP }
+  | KW_SITOFP         { INSTR_SIToFP }
+  | KW_FPTOUI         { INSTR_FPToUI }
+  | KW_FPTOSI         { INSTR_FPToSI }
+  | KW_INTTOPTR       { INSTR_IntToPtr }
+  | KW_PTRTOINT       { INSTR_PtrToInt }
+  | KW_BITCAST        { INSTR_BitCast }
+
+  (* other *)
+  | KW_SELECT         { INSTR_Select }
+  | KW_VAARG          { INSTR_VAArg }
+
+  (* terminator *)
+  | KW_RET t = typ o = value { INSTR_Ret (t, o) }
+  | KW_RET KW_VOID           { INSTR_Ret (TYPE_Void, VALUE_Void) }
+  | KW_BR t = typ_i o = value COMMA
+          KW_LABEL o1 = value COMMA KW_LABEL o2 = value
+    { assert (t = 1); INSTR_Br (o, o1, o2) }
+  | KW_BR KW_LABEL o = value       { INSTR_Br_1 o }
+  | KW_SWITCH t = typ v = value COMMA
+              KW_LABEL def = value
+              LSQUARE table = list(switch_table_entry) RSQUARE
+    { INSTR_Switch (t, v, def, table) }
+  | KW_INDIRECTBR     { INSTR_IndirectBr } (*TODO *)
+  | KW_INVOKE cconv? t = ret_type i = ident
+              LPAREN a = separated_list(COMMA, call_arg) RPAREN
+              list(fn_attr)
+              KW_TO KW_LABEL l1 = value
+              KW_UNWIND KW_LABEL l2 = value
+    { INSTR_Invoke (t, i, a, l1, l2)  }
+  | KW_RESUME t = typ o = value { INSTR_Resume (t, o) }
+  | KW_UNREACHABLE    { INSTR_Unreachable }
+
+  (* memory instrs, partial support *)
+  | KW_ALLOCA         { INSTR_Alloca }
+  | KW_LOAD           { INSTR_Load }
+  | KW_STORE          { INSTR_Store }
+  | KW_ATOMICCMPXCHG  { INSTR_AtomicCmpXchg }
+  | KW_ATOMICRMW      { INSTR_AtomicRMW }
+  | KW_FENCE          { INSTR_Fence }
+  | KW_GETELEMENTPTR  { INSTR_GetElementPtr }
+
+  (* vector ops, not supported *)
+  | KW_EXTRACTELEMENT { INSTR_ExtractElement }
+  | KW_INSERTELEMENT  { INSTR_InsertElement }
+  | KW_SHUFFLEVECTOR  { INSTR_ShuffleVector }
+
+  (* aggregate ops, not supported *)
+  | KW_EXTRACTVALUE   { INSTR_ExtractValue }
+  | KW_INSERTVALUE    { INSTR_InsertValue }
+  | KW_LANDINGPAD     { INSTR_LandingPad }
+
+phi_table_entry:
+  | v = value COMMA l = ident { (v, l) }
+switch_table_entry:
+  | t = typ o = value COMMA KW_LABEL l = value { (t, o, l) }
+
+value:
   | i = INTEGER  { VALUE_Integer i }
   | f = FLOAT    { VALUE_Float f }
   | b = BOOL     { VALUE_Bool b }

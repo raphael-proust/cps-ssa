@@ -80,16 +80,28 @@ type fn_attr =
 type typ =
   | TYPE_I of int
   | TYPE_Pointer of typ
-  | TYPE_Tvoid
-  | TYPE_Thalf
-  | TYPE_Tfloat
-  | TYPE_Tdouble
-  | TYPE_Tx86_fp80
-  | TYPE_Tfp128
-  | TYPE_Tppc_fp128
-  | TYPE_Tlabel
-  | TYPE_Tmetadata
-  | TYPE_Tx86_mmx
+  | TYPE_Void
+  | TYPE_Half
+  | TYPE_Float
+  | TYPE_Double
+  | TYPE_X86_fp80
+  | TYPE_Fp128
+  | TYPE_Ppc_fp128
+  | TYPE_Label
+  | TYPE_Metadata
+  | TYPE_X86_mmx
+
+type cmp =
+  | Cmp_Eq
+  | Cmp_Ne
+  | Cmp_Ugt
+  | Cmp_Uge
+  | Cmp_Ult
+  | Cmp_Ule
+  | Cmp_Sgt
+  | Cmp_Sge
+  | Cmp_Slt
+  | Cmp_Sle
 
 type ident =
   | ID_Global of string
@@ -103,6 +115,7 @@ type value =
   | VALUE_Float of float
   | VALUE_Bool of bool
   | VALUE_Null
+  | VALUE_Void (* for 'return void' only *)
 
 type tvalue = typ * value
 
@@ -115,28 +128,30 @@ and proc = {
   instrs: instr list;
 }
 
+and binop_assign = ident * typ * value * value
+
 and instr =
-  | INSTR_Add of (ident * typ * value * value)
+  | INSTR_Add of binop_assign
   | INSTR_FAdd
-  | INSTR_Sub
+  | INSTR_Sub of binop_assign
   | INSTR_FSub
-  | INSTR_Mul
+  | INSTR_Mul of binop_assign
   | INSTR_FMul
-  | INSTR_UDiv
-  | INSTR_SDiv
+  | INSTR_UDiv of binop_assign
+  | INSTR_SDiv of binop_assign
   | INSTR_FDiv
-  | INSTR_URem
-  | INSTR_SRem
+  | INSTR_URem of binop_assign
+  | INSTR_SRem of binop_assign
   | INSTR_FRem
-  | INSTR_Shl
-  | INSTR_LShr
-  | INSTR_AShr
-  | INSTR_And
-  | INSTR_Or
-  | INSTR_Xor
-  | INSTR_ICmp
+  | INSTR_Shl of binop_assign
+  | INSTR_LShr of binop_assign
+  | INSTR_AShr of binop_assign
+  | INSTR_And of binop_assign
+  | INSTR_Or of binop_assign
+  | INSTR_Xor of binop_assign
+  | INSTR_ICmp of (ident * cmp * typ * value * value)
   | INSTR_FCmp
-  | INSTR_PHI
+  | INSTR_PHI of (ident * typ * (value * ident) list)
   | INSTR_Call
   | INSTR_Trunc
   | INSTR_ZExt
@@ -152,12 +167,13 @@ and instr =
   | INSTR_BitCast
   | INSTR_Select
   | INSTR_VAArg
-  | INSTR_Ret
-  | INSTR_Br
-  | INSTR_Switch
+  | INSTR_Ret of (typ * value)
+  | INSTR_Br of (value * value * value) (*types are constant *)
+  | INSTR_Br_1 of value
+  | INSTR_Switch of (typ * value * value * (typ * value * value) list)
   | INSTR_IndirectBr
-  | INSTR_Invoke
-  | INSTR_Resume
+  | INSTR_Invoke of (typ * ident * (typ * value) list * value * value)
+  | INSTR_Resume of (typ * value)
   | INSTR_Unreachable
   | INSTR_Alloca
   | INSTR_Load

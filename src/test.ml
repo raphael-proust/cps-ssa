@@ -25,7 +25,7 @@ let run filename =
   let lexbuf = Lexing.from_channel ic in
   try
     let llvm_prog = Llvm_parser.program (Llvm_lexer.token) lexbuf in
-    ()
+    ignore llvm_prog
   with
   | Llvm_parser.Error ->
     Printf.eprintf "Uncaught parsing exception from %a to %a"
