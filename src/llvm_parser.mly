@@ -220,16 +220,16 @@ instr:
   | b = binop(KW_XOR)  { INSTR_Xor  b }
 
   (* comparison *)
-  | i = ident KW_ICMP KW_EQ t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Eq, t, o1, o2) }
-  | i = ident KW_ICMP KW_NE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ne, t, o1, o2) }
-  | i = ident KW_ICMP KW_UGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ugt, t, o1, o2) }
-  | i = ident KW_ICMP KW_UGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Uge, t, o1, o2) }
-  | i = ident KW_ICMP KW_ULT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ult, t, o1, o2) }
-  | i = ident KW_ICMP KW_ULE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ule, t, o1, o2) }
-  | i = ident KW_ICMP KW_SGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sgt, t, o1, o2) }
-  | i = ident KW_ICMP KW_SGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sge, t, o1, o2) }
-  | i = ident KW_ICMP KW_SLT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Slt, t, o1, o2) }
-  | i = ident KW_ICMP KW_SLE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sle, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_EQ t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Eq, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_NE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ne, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_UGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ugt, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_UGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Uge, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_ULT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ult, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_ULE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ule, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_SGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sgt, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_SGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sge, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_SLT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Slt, t, o1, o2) }
+  | i = ident EQ KW_ICMP KW_SLE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sle, t, o1, o2) }
 
   | KW_FCMP           { INSTR_FCmp } (*TODO*)
 
