@@ -29,8 +29,8 @@ let run filename =
   with
   | e ->
     Printf.eprintf "Uncaught exception while lexing/parsing from %a to %a"
-    Llvm_parse_error.print_pos (Lexing.lexeme_start_p lexbuf)
-    Llvm_parse_error.print_pos (Lexing.lexeme_end_p   lexbuf);
+    Util.P.print_pos (Lexing.lexeme_start_p lexbuf)
+    Util.P.print_pos (Lexing.lexeme_end_p   lexbuf);
     raise e
 
 let () =

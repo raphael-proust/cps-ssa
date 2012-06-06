@@ -82,3 +82,15 @@ module O = struct
     | Some v -> v
 
 end
+
+module P = struct
+
+  let pos_char pos = pos.Lexing.pos_cnum - pos.Lexing.pos_bol
+  let pos_line pos = pos.Lexing.pos_lnum
+
+  let print_pos ch pos =
+    Printf.fprintf ch "line %d, character %d" (pos_line pos) (pos_char pos)
+
+end
+
+

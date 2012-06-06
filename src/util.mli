@@ -32,3 +32,8 @@ module O :
     val none: 'a option
     val unopt: 'a option -> 'a
   end
+
+module P :
+  sig
+    val print_pos : out_channel -> Lexing.position -> unit
+  end

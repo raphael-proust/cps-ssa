@@ -9,7 +9,6 @@ MLS= \
 		 dom.ml \
 		 SSA2CPS.ml \
 		 LLVM.ml \
-		 llvm_parse_error.ml \
 		 llvm_parser.ml \
 		 llvm_lexer.ml \
 		 LLVM2SSA.ml \
