@@ -44,6 +44,7 @@ let fresh_var =
 type value =
   | Vvar of var
   | Vconst of const
+  | Vnull
 
 (* expressions are operation (or not, see ONone) on values. Might be completed
  * later. It might also need to be lifted to a value lattice. *)
@@ -53,6 +54,7 @@ type expr =
   | OMult  of (value * value)
   | OMinus of (value * value)
   | ODiv   of (value * value)
+  | ORem   of (value * value)
   | OMax of (value * value)
   | OMin of (value * value)
   | OGt of (value * value)
@@ -62,8 +64,10 @@ type expr =
   | OEq of (value * value)
   | ONe of (value * value)
   | ORead of value
-  | OWrite of value
-  | OAlloc
+
+type mem_w =
+  | MWrite of value
+  | MAlloc
 
 (* labels are for jump. This is somehow specific to ssa and might get moved in
  * the corresponding module. Type is abstracted in the interface. *)

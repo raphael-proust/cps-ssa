@@ -40,6 +40,7 @@ type m =
   | Mlet  of (Prim.var * Prim.expr * m)
   (** Recursive let binding. It binds lambdas. *)
   | Mrec  of ((Prim.var * lambda) list * m)
+  | Mseq  of (Prim.var * Prim.mem_w * m)
 
 (* [cont] are continuations. *)
 and cont =

@@ -272,11 +272,11 @@ instr:
 
   (* terminator *)
   | KW_RET t = typ o = value { INSTR_Ret (t, o) }
-  | KW_RET KW_VOID           { INSTR_Ret (TYPE_Void, VALUE_Void) }
+  | KW_RET KW_VOID           { INSTR_Ret_void }
   | KW_BR t = typ_i o = value COMMA
-          KW_LABEL o1 = value COMMA KW_LABEL o2 = value
+          KW_LABEL o1 = ident COMMA KW_LABEL o2 = ident
     { assert (t = 1); INSTR_Br (o, o1, o2) }
-  | KW_BR KW_LABEL o = value       { INSTR_Br_1 o }
+  | KW_BR KW_LABEL o = ident       { INSTR_Br_1 o }
   | KW_SWITCH t = typ v = value COMMA
               KW_LABEL def = value
               LSQUARE table = list(switch_table_entry) RSQUARE
@@ -324,7 +324,7 @@ comma_align:
 phi_table_entry:
   | v = value COMMA l = ident { (v, l) }
 switch_table_entry:
-  | t = typ o = value COMMA KW_LABEL l = value { (t, o, l) }
+  | t = typ o = value COMMA KW_LABEL l = ident { (t, o, l) }
 
 value:
   | i = INTEGER  { VALUE_Integer i }

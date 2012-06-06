@@ -34,17 +34,19 @@ and block = {
   mutable b_order  : int;
   (*   *) b_label  : Prim.label;
   (*   *) b_phis   : phi list;
-  (*   *) b_assigns: assign list;
+  (*   *) b_core_instrs: core_instr list;
   (*   *) b_jump   : jump;
 }
 
-and assign =
-  | Aexpr of (Prim.var * Prim.expr)
-  | Acall of (Prim.var * Prim.label * Prim.expr list)
+and core_instr =
+  | IAssignExpr of (Prim.var * Prim.expr)
+  | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
+  | IMemWrite of (Prim.var * Prim.mem_w)
 
 and jump =
   | Jgoto of (Prim.label)
   | Jreturn of Prim.expr
+  | Jreturnvoid
   | Jtail of (Prim.label * Prim.expr list)
   | Jcond of (Prim.expr * Prim.label * Prim.label)
 
@@ -61,12 +63,16 @@ let check_ssa prog =
   let blocks = Util.L.concat_map (fun p -> p.p_blocks) prog in
 
   (* no two labels are identical *)
-  Util.L.unique (fun b -> b.b_label) blocks &&
+  Util.L.unique (fun b -> Some b.b_label) blocks &&
 
   (* no two assignments share their rhs variable *)
   Util.L.unique
-    (function | Aexpr (v, _) | Acall (v, _, _) -> v)
-    (Util.L.concat_map (fun b -> b.b_assigns) blocks)
+    (function
+      | IAssignExpr (v, _)
+      | IAssigncall (v, _, _) -> Some v
+      | IMemWrite _ -> None
+    )
+    (Util.L.concat_map (fun b -> b.b_core_instrs) blocks)
 
   (* TODO: check def dominates use (requires dominator info, not necessary) *)
   (* TODO? do one pass check? *)
@@ -75,33 +81,33 @@ let check_ssa prog =
 (* For building trivial blocks *)
 module Blocks = struct
 
-  let block ?(label = Prim.fresh_label ()) ?(phis = []) ?(assigns = []) j = {
-      b_order = 0;
-      b_label = label;
-       b_phis = phis;
-    b_assigns = assigns;
-       b_jump = j;
+  let block ?(label = Prim.fresh_label ()) ?(phis = []) ?(instrs = []) j = {
+          b_order = 0;
+          b_label = label;
+           b_phis = phis;
+    b_core_instrs = instrs;
+           b_jump = j;
   }
 
-  let return ?label ?phis ?assigns e =
-    block ?label ?phis ?assigns (Jreturn e)
+  let return ?label ?phis ?instrs e =
+    block ?label ?phis ?instrs (Jreturn e)
 
-  let return_const ?label ?phis ?assigns c =
-    return ?label ?phis ?assigns Prim.(ONone (Vconst c))
+  let return_const ?label ?phis ?instrs c =
+    return ?label ?phis ?instrs Prim.(ONone (Vconst c))
 
-  let return_0 ?label ?phis ?assigns () = return_const ?label ?phis ?assigns 0
+  let return_0 ?label ?phis ?instrs () = return_const ?label ?phis ?instrs 0
 
-  let return_var ?label ?phis ?assigns v =
-    return ?label ?phis ?assigns Prim.(ONone (Vvar v))
+  let return_var ?label ?phis ?instrs v =
+    return ?label ?phis ?instrs Prim.(ONone (Vvar v))
 
-  let cond ?label ?phis ?assigns e l1 l2 =
-    block ?label ?phis ?assigns (Jcond (e, l1, l2))
+  let cond ?label ?phis ?instrs e l1 l2 =
+    block ?label ?phis ?instrs (Jcond (e, l1, l2))
 
-  let tail ?label ?phis ?assigns l es =
-    block ?label ?phis ?assigns (Jtail (l, es))
+  let tail ?label ?phis ?instrs l es =
+    block ?label ?phis ?instrs (Jtail (l, es))
 
-  let goto ?label ?phis ?assigns l =
-    block ?label ?phis ?assigns (Jgoto l)
+  let goto ?label ?phis ?instrs l =
+    block ?label ?phis ?instrs (Jgoto l)
 
 end
 

@@ -38,14 +38,16 @@ and block = {
   mutable b_order : int;
   (*   *) b_label  : Prim.label;
   (*   *) b_phis   : phi list;
-  (*   *) b_assigns: assign list;
+  (*   *) b_core_instrs: core_instr list;
   (*   *) b_jump   : jump;
 }
 
-(** Assignements of direct expressions or function calls. *)
-and assign =
-  | Aexpr of (Prim.var * Prim.expr)
-  | Acall of (Prim.var * Prim.label * Prim.expr list)
+(** Instructions are assignements of direct expressions or function calls or
+    memory writes. *)
+and core_instr =
+  | IAssignExpr of (Prim.var * Prim.expr)
+  | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
+  | IMemWrite of (Prim.var * Prim.mem_w)
 
 (** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
     or conditional jumping.
@@ -53,6 +55,7 @@ and assign =
 and jump =
   | Jgoto of (Prim.label)
   | Jreturn of Prim.expr
+  | Jreturnvoid
   | Jtail of (Prim.label * Prim.expr list)
   | Jcond of (Prim.expr * Prim.label * Prim.label)
 
@@ -72,32 +75,32 @@ val check_ssa : prog -> bool
 module Blocks :sig
 
   val block: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     jump -> block
 
   val return: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     Prim.expr -> block
   val return_const: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     int -> block
   val return_0: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     unit -> block
   val return_var: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     Prim.var -> block
 
   val cond: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     Prim.expr -> Prim.label -> Prim.label -> block
 
   val tail: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     Prim.label -> Prim.expr list -> block
 
   val goto: ?label:Prim.label ->
-    ?phis:phi list -> ?assigns:assign list ->
+    ?phis:phi list -> ?instrs:core_instr list ->
     Prim.label -> block
 
 end

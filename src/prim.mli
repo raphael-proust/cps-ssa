@@ -43,6 +43,7 @@ val fresh_var : unit -> var
 type value =
   | Vvar   of var
   | Vconst of const
+  | Vnull
 
 (** Expressions are either values, arithmetical operations on values,
     comparisons, or IO primitives. *)
@@ -52,6 +53,7 @@ type expr =
   | OMult  of (value * value)
   | OMinus of (value * value)
   | ODiv   of (value * value)
+  | ORem   of (value * value)
   | OMax of (value * value)
   | OMin of (value * value)
   | OGt of (value * value)
@@ -61,8 +63,10 @@ type expr =
   | OEq of (value * value)
   | ONe of (value * value)
   | ORead of value
-  | OWrite of value
-  | OAlloc
+
+type mem_w =
+  | MWrite of value
+  | MAlloc
 
 (** Labels. Like variables but for procedure block naming. *)
 type label = private string

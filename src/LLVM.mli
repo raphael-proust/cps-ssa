@@ -115,7 +115,6 @@ type value =
   | VALUE_Float of float
   | VALUE_Bool of bool
   | VALUE_Null
-  | VALUE_Void (* for 'return void' only *)
 
 type tvalue = typ * value
 
@@ -175,9 +174,10 @@ and instr =
   | INSTR_Select
   | INSTR_VAArg
   | INSTR_Ret of (typ * value)
-  | INSTR_Br of (value * value * value) (*types are constant *)
-  | INSTR_Br_1 of value
-  | INSTR_Switch of (typ * value * value * (typ * value * value) list)
+  | INSTR_Ret_void
+  | INSTR_Br of (value * ident * ident) (*types are constant *)
+  | INSTR_Br_1 of ident
+  | INSTR_Switch of (typ * value * value * (typ * value * ident) list)
   | INSTR_IndirectBr
   | INSTR_Invoke of (typ * ident * (typ * value) list * value * value)
   | INSTR_Resume of (typ * value)

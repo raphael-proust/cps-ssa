@@ -27,6 +27,7 @@ type m =
              )
   | Mlet  of (Prim.var * Prim.expr * m)
   | Mrec  of ((Prim.var * lambda) list * m)
+  | Mseq  of (Prim.var * Prim.mem_w * m)
 
 and cont =
   | Cvar of Prim.var

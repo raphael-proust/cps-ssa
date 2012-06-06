@@ -40,7 +40,7 @@ let vertices_of_block blocks b =
   (* we get a list of jumps out of a block *)
   match b.SSA.b_jump with
   (* inter-procedural jumps are ignored in the translation *)
-  | SSA.Jreturn _ | SSA.Jtail _ -> []
+  | SSA.Jreturnvoid | SSA.Jreturn _ | SSA.Jtail _ -> []
   (* intra-procedural simple jump *)
   | SSA.Jgoto label -> [G.E.create b () (block_of_label blocks label)]
   (* intra-procedural conditional jump *)

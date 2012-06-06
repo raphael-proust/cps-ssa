@@ -40,16 +40,20 @@ module L = struct
       | [] -> true
       | h::t ->
         let x = extract h in
-        let h = Hashtbl.hash x in
-        try
-          if Hashtbl.find hshtbl h = x then
-            false
-          else
-            raise Not_found (*hackish way to DRY*)
-        with
-          | Not_found ->
-            Hashtbl.add hshtbl h x;
-            aux t
+        match x with
+        | Some x -> begin
+          let h = Hashtbl.hash x in
+          try
+            if Hashtbl.find hshtbl h = x then
+              false
+            else
+              raise Not_found (*hackish way to DRY*)
+          with
+            | Not_found ->
+              Hashtbl.add hshtbl h x;
+              aux t
+          end
+        | None -> aux t
     in
     aux l
 

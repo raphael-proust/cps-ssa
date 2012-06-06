@@ -22,7 +22,7 @@
 let block_of_label bs l =
   List.find (fun b -> b.SSA.b_label = l) bs
 
-let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
+let rec block dom return bs ({SSA.b_label; b_phis; b_core_instrs; b_jump;} as b) =
 
   let args_of_label l =
     List.map
@@ -31,10 +31,11 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
   in
 
   let rec aux = function
-    | SSA.Aexpr (x, e)     :: l -> CPS.Mlet (x, e,  aux l)
-    | SSA.Acall (x, f, es) :: l ->
+    | SSA.IAssignExpr (x, e)     :: l -> CPS.Mlet (x, e,  aux l)
+    | SSA.IAssigncall (x, f, es) :: l ->
       let f = Prim.var_of_label f in
       CPS.Mapp (f, es, CPS.C (x, aux l))
+    | SSA.IMemWrite (x, e)       :: l -> CPS.Mseq (x, e,  aux l)
     | [] ->
       (* instead of returning, we translate the last bit: the jump. *)
       match b_jump with
@@ -42,6 +43,8 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
         CPS.Mcont ((Prim.var_of_label l), (args_of_label l))
       | SSA.Jreturn e ->
         CPS.Mcont (return, [e])
+      | SSA.Jreturnvoid ->
+        CPS.Mcont (return, [])
       | SSA.Jtail (f, es) ->
         let f = Prim.var_of_label f in
         CPS.Mapp (f, es, CPS.Cvar return)
@@ -54,7 +57,7 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
 
   (* We translate immediate dominatees as local lambdas *)
   match Dom.G.pred dom b with
-  | [] -> aux b_assigns
+  | [] -> aux b_core_instrs
   | l  ->
     let l =
       List.map
@@ -66,7 +69,7 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_assigns; b_jump;} as b) =
         )
         l
     in
-    CPS.Mrec (l, aux b_assigns)
+    CPS.Mrec (l, aux b_core_instrs)
 
 (* translate a whole procedure. *)
 and proc {SSA.p_args; p_blocks;} =

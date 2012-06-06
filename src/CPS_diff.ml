@@ -48,21 +48,23 @@ let pp_var v = !^ (Prim.string_of_var v)
 let pp_value = function
   | Prim.Vvar v   -> pp_var v
   | Prim.Vconst c -> !^ (string_of_int c)
+  | Prim.Vnull    -> !^ "null"
+
+let pp_op v1 op v2 = pp_value v1 ^^ op ^^ pp_value v2
+let pp_fn1 fn v = fn ^^ PP.space ^^ with_paren (pp_value v)
+let pp_fn2 fn v1 v2 =
+  fn ^^ PP.space ^^ with_paren (pp_value v1 ^^ comma_space ^^ pp_value v2)
 
 let pp_expr e =
-  let pp_op v1 op v2 = pp_value v1 ^^ op ^^ pp_value v2 in
-  let pp_fn1 fn v = fn ^^ PP.space ^^ with_paren (pp_value v) in
-  let pp_fn2 fn v1 v2 =
-    fn ^^ PP.space ^^ with_paren (pp_value v1 ^^ comma_space ^^ pp_value v2)
-  in
   match e with
   (* Direct value *)
   | Prim.ONone v -> pp_value v
   (* Arithmetic ops *)
-  | Prim.OPlus  (v1, v2) -> pp_op v1 PP.plus  v2
-  | Prim.OMult  (v1, v2) -> pp_op v1 PP.star  v2
-  | Prim.OMinus (v1, v2) -> pp_op v1 PP.minus v2
-  | Prim.ODiv   (v1, v2) -> pp_op v1 PP.bar   v2
+  | Prim.OPlus  (v1, v2) -> pp_op v1 PP.plus    v2
+  | Prim.OMult  (v1, v2) -> pp_op v1 PP.star    v2
+  | Prim.OMinus (v1, v2) -> pp_op v1 PP.minus   v2
+  | Prim.ODiv   (v1, v2) -> pp_op v1 PP.bar     v2
+  | Prim.ORem   (v1, v2) -> pp_op v1 PP.percent v2
   (* Arithmetic functions *)
   | Prim.OMax (v1, v2) -> pp_fn2 (!^ "max") v1 v2
   | Prim.OMin (v1, v2) -> pp_fn2 (!^ "min") v1 v2
@@ -75,8 +77,10 @@ let pp_expr e =
   | Prim.ONe (v1, v2) -> pp_op v1 (!^ "<>") v2
   (* IO *)
   | Prim.ORead v -> pp_fn1 (!^ "read") v
-  | Prim.OWrite v -> pp_fn1 (!^ "write") v
-  | Prim.OAlloc -> !^ "alloc()"
+
+let pp_mem_w = function
+  | Prim.MWrite v -> pp_fn1 (!^ "write") v
+  | Prim.MAlloc -> !^ "alloc()"
 
 let rec pp_m = function
   | CPS.Mapp  (v, es, k) ->
@@ -111,6 +115,12 @@ let rec pp_m = function
     !^ "letrec" ^^ with_paren (level (
       PP.sepmap PP.hardline vl vls
     )) ^^ PP.break1 ^^ !^ "in" ^^ level (
+      pp_m m
+    )
+  | CPS.Mseq (v, w, m) ->
+    !^ "let" ^^ PP.space ^^ PP.lparen ^^ PP.rparen ^^ PP.space ^^ PP.equals ^^ level (
+      pp_mem_w w
+    ) ^^ PP.break1 ^^ !^ "in" ^^ level (
       pp_m m
     )
 
