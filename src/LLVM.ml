@@ -119,9 +119,14 @@ type value =
 
 type tvalue = typ * value
 
-type prog = proc list
+type module_ = toplevelentry list
 
-and proc = {
+and toplevelentry =
+  | TLE_Target of string
+  | TLE_Datalayout of string
+  | TLE_Definition of definition
+
+and definition = {
   ret_typ: typ;
   name: ident;
   args: tident list;

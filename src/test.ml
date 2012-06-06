@@ -24,13 +24,14 @@ let run filename =
   let ic = open_in filename in
   let lexbuf = Lexing.from_channel ic in
   try
-    let llvm_prog = Llvm_parser.program (Llvm_lexer.token) lexbuf in
+    let llvm_prog = Llvm_parser.module_ (Llvm_lexer.token) lexbuf in
     ignore llvm_prog
   with
-  | Llvm_parser.Error ->
-    Printf.eprintf "Uncaught parsing exception from %a to %a"
+  | e ->
+    Printf.eprintf "Uncaught exception while lexing/parsing from %a to %a"
     Llvm_parse_error.print_pos (Lexing.lexeme_start_p lexbuf)
-    Llvm_parse_error.print_pos (Lexing.lexeme_end_p   lexbuf)
+    Llvm_parse_error.print_pos (Lexing.lexeme_end_p   lexbuf);
+    raise e
 
 let () =
     Array.iter

@@ -52,6 +52,9 @@ rule token = parse
   | ']' { RSQUARE }
 
   (* keywords *) (* semi-auto generated *)
+  | "target" { KW_TARGET }
+  | "datalayout" { KW_DATALAYOUT }
+  | "triple" { KW_TRIPLE }
   | "define" { KW_DEFINE }
   | "private" { KW_PRIVATE }
   | "linker_private" { KW_LINKER_PRIVATE }
