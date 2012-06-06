@@ -196,6 +196,10 @@ instr_eol:
   | i = ident EQ KW OPT1? OPT2? t = typ o1 = value COMMA o2 = value
     { (i, t, o1, o2) }
 
+%public conversion(KW):
+  | i = ident EQ KW t = typ v = value KW_TO t2 = typ
+    { (i, t, v, t2) }
+
 instr:
   (* arith, binop *)
   | b = binop2(KW_ADD,KW_NUW,KW_NSW) { INSTR_Add  b }
@@ -245,18 +249,18 @@ instr:
     { INSTR_Call (i, t, n, a) }
 
   (* conversions *)
-  | KW_TRUNC          { INSTR_Trunc }
-  | KW_ZEXT           { INSTR_ZExt }
-  | KW_SEXT           { INSTR_SExt }
-  | KW_FPTRUNC        { INSTR_FPTrunc }
-  | KW_FPEXT          { INSTR_FPExt }
-  | KW_UITOFP         { INSTR_UIToFP }
-  | KW_SITOFP         { INSTR_SIToFP }
-  | KW_FPTOUI         { INSTR_FPToUI }
-  | KW_FPTOSI         { INSTR_FPToSI }
-  | KW_INTTOPTR       { INSTR_IntToPtr }
-  | KW_PTRTOINT       { INSTR_PtrToInt }
-  | KW_BITCAST        { INSTR_BitCast }
+  | c = conversion(KW_TRUNC)    { INSTR_Trunc c }
+  | c = conversion(KW_ZEXT)     { INSTR_ZExt c }
+  | c = conversion(KW_SEXT)     { INSTR_SExt c }
+  | c = conversion(KW_FPTRUNC)  { INSTR_FPTrunc c }
+  | c = conversion(KW_FPEXT)    { INSTR_FPExt c }
+  | c = conversion(KW_UITOFP)   { INSTR_UIToFP c }
+  | c = conversion(KW_SITOFP)   { INSTR_SIToFP c }
+  | c = conversion(KW_FPTOUI)   { INSTR_FPToUI c }
+  | c = conversion(KW_FPTOSI)   { INSTR_FPToSI c }
+  | c = conversion(KW_INTTOPTR) { INSTR_IntToPtr c }
+  | c = conversion(KW_PTRTOINT) { INSTR_PtrToInt c }
+  | c = conversion(KW_BITCAST)  { INSTR_BitCast c }
 
   (* other *)
   | KW_SELECT         { INSTR_Select }

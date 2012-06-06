@@ -135,6 +135,8 @@ and definition = {
 
 and binop_assign = ident * typ * value * value
 
+and conversion_assign = ident * typ * value * typ
+
 and instr =
   | INSTR_Add of binop_assign
   | INSTR_FAdd
@@ -158,18 +160,18 @@ and instr =
   | INSTR_FCmp
   | INSTR_PHI of (ident * typ * (value * ident) list)
   | INSTR_Call of (ident * typ * ident * (typ * value) list)
-  | INSTR_Trunc
-  | INSTR_ZExt
-  | INSTR_SExt
-  | INSTR_FPTrunc
-  | INSTR_FPExt
-  | INSTR_UIToFP
-  | INSTR_SIToFP
-  | INSTR_FPToUI
-  | INSTR_FPToSI
-  | INSTR_IntToPtr
-  | INSTR_PtrToInt
-  | INSTR_BitCast
+  | INSTR_Trunc of conversion_assign
+  | INSTR_ZExt of conversion_assign
+  | INSTR_SExt of conversion_assign
+  | INSTR_FPTrunc of conversion_assign
+  | INSTR_FPExt of conversion_assign
+  | INSTR_UIToFP of conversion_assign
+  | INSTR_SIToFP of conversion_assign
+  | INSTR_FPToUI of conversion_assign
+  | INSTR_FPToSI of conversion_assign
+  | INSTR_IntToPtr of conversion_assign
+  | INSTR_PtrToInt of conversion_assign
+  | INSTR_BitCast of conversion_assign
   | INSTR_Select
   | INSTR_VAArg
   | INSTR_Ret of (typ * value)

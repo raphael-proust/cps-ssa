@@ -1,5 +1,5 @@
 
-CS= return.c fibonacci.c if0.c
+CS= return.c fibonacci.c if0.c for.c
 BCS=$(CS:.c=.bc)
 LLS=$(CS:.c=.ll)
 
