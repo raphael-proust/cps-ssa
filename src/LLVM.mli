@@ -180,7 +180,7 @@ and instr =
   | INSTR_Invoke of (typ * ident * (typ * value) list * value * value)
   | INSTR_Resume of (typ * value)
   | INSTR_Unreachable
-  | INSTR_Alloca
+  | INSTR_Alloca of (ident * typ)
   | INSTR_Load
   | INSTR_Store
   | INSTR_AtomicCmpXchg

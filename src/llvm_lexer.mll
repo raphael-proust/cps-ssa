@@ -142,6 +142,7 @@ rule token = parse
   | "metadata" { KW_METADATA }
   | "x86_mmx" { KW_X86_MMX }
   | 'i' (digit+ as i) { I (int_of_string i) }
+  | '*' { STAR }
 
   (* instrs *)
   | "add" { KW_ADD }

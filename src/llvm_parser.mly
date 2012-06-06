@@ -30,7 +30,7 @@
 (*TODO: what is it with labels? *)
 
 %token<string> GLOBAL LOCAL
-%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE EQ COMMA EOF EOL
+%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE EQ COMMA EOF EOL STAR
 
 %token<string> STRING
 %token<int> INTEGER
@@ -124,6 +124,7 @@ typ:
   | KW_LABEL     { TYPE_Label }
   | KW_METADATA  { TYPE_Metadata }
   | KW_X86_MMX   { TYPE_X86_mmx }
+  | t = typ STAR { TYPE_Pointer t }
 
 typ_i:
   | n = I { n }
@@ -276,7 +277,7 @@ instr:
   | KW_UNREACHABLE    { INSTR_Unreachable }
 
   (* memory instrs, partial support *)
-  | KW_ALLOCA         { INSTR_Alloca }
+  | i = ident EQ KW_ALLOCA t = typ alloc_align? { INSTR_Alloca (i, t) } (*TODO: support NumElements *)
   | KW_LOAD           { INSTR_Load }
   | KW_STORE          { INSTR_Store }
   | KW_ATOMICCMPXCHG  { INSTR_AtomicCmpXchg }
@@ -296,6 +297,9 @@ instr:
 
   (* explicit labels *)
   | l = LABEL { INSTR_Label (ID_Local l) }
+
+alloc_align:
+  | COMMA align { }
 
 phi_table_entry:
   | v = value COMMA l = ident { (v, l) }
