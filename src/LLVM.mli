@@ -182,7 +182,7 @@ and instr =
   | INSTR_Unreachable
   | INSTR_Alloca of (ident * typ)
   | INSTR_Load
-  | INSTR_Store
+  | INSTR_Store of (typ * value * typ * ident)
   | INSTR_AtomicCmpXchg
   | INSTR_AtomicRMW
   | INSTR_Fence

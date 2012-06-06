@@ -56,6 +56,7 @@
 %token KW_EXACT
 %token KW_EQ KW_NE KW_UGT KW_UGE KW_ULT KW_ULE KW_SGT KW_SGE KW_SLT KW_SLE
 %token KW_TAIL
+%token KW_VOLATILE
 
 
 %start<LLVM.module_> module_
@@ -277,9 +278,13 @@ instr:
   | KW_UNREACHABLE    { INSTR_Unreachable }
 
   (* memory instrs, partial support *)
-  | i = ident EQ KW_ALLOCA t = typ alloc_align? { INSTR_Alloca (i, t) } (*TODO: support NumElements *)
+  | i = ident EQ KW_ALLOCA t = typ comma_align? { INSTR_Alloca (i, t) } (*TODO: support NumElements *)
   | KW_LOAD           { INSTR_Load }
-  | KW_STORE          { INSTR_Store }
+  | KW_STORE KW_VOLATILE? tv = typ v = value COMMA
+                          ti = typ i = ident
+                          comma_align? (*TODO: support atomic and non-temporal*)
+    { assert (match ti with | TYPE_Pointer _ -> true | _ -> false);
+      INSTR_Store (tv, v, ti, i) }
   | KW_ATOMICCMPXCHG  { INSTR_AtomicCmpXchg }
   | KW_ATOMICRMW      { INSTR_AtomicRMW }
   | KW_FENCE          { INSTR_Fence }
@@ -298,7 +303,7 @@ instr:
   (* explicit labels *)
   | l = LABEL { INSTR_Label (ID_Local l) }
 
-alloc_align:
+comma_align:
   | COMMA align { }
 
 phi_table_entry:
