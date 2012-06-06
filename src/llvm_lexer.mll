@@ -31,8 +31,9 @@ let upletter = ['A'-'Z']
 let lowletter = ['a'-'z']
 let letter = upletter | lowletter
 let alphanum = digit | letter
-let ident_fst = alphanum | ['$' '.' '_']
-let ident_nxt = alphanum | ['$' '.' '_']
+let ident_fst = alphanum | ['-' '$' '.' '_']
+let ident_nxt = alphanum | ['-' '$' '.' '_']
+let label_char = alphanum | ['-' '$' '.' '_']
 
 
 rule token = parse
@@ -112,6 +113,10 @@ rule token = parse
   | '@' (digit+               ) as i { GLOBAL i }
   | '%' (ident_fst ident_nxt* ) as i { LOCAL  i }
   | '%' (digit+               ) as i { LOCAL  i }
+
+  (* labels *)
+  (*FIXME: causes a 'transition table overflow' *)
+(*   | (label_char)+ as l ':' { LABEL l } *)
 
   (* constants *)
   | ( '-'? digit+ ) as d { INTEGER (int_of_string d) }

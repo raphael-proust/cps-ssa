@@ -188,4 +188,5 @@ and instr =
   | INSTR_ExtractValue
   | INSTR_InsertValue
   | INSTR_LandingPad
+  | INSTR_Label of ident
 
