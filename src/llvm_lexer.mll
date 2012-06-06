@@ -39,7 +39,7 @@ let label_char = alphanum | ['-' '$' '.' '_']
 rule token = parse
   (* seps and stuff *)
   | ws+ { token lexbuf }
-  | eol+ { EOL }
+  | eol { Lexing.new_line lexbuf; EOL }
   | eof { EOF }
   | ';' { comment lexbuf }
   | '=' { EQ }
@@ -128,6 +128,7 @@ rule token = parse
   | "true" { BOOL true }
   | "false" { BOOL false }
   | "null" { NULL }
+  | '"' { STRING (string (Buffer.create 10) lexbuf) }
 
   (* types *)
   | "void" { KW_VOID }
@@ -214,5 +215,9 @@ rule token = parse
   | "sle" { KW_SLE }
 
 and comment = parse
-  | eol { token lexbuf }
+  | eol { Lexing.new_line lexbuf; token lexbuf }
   | _ { comment lexbuf }
+
+and string b = parse
+  | '"' { Buffer.contents b }
+  | _ as c { Buffer.add_char b c; string b lexbuf }

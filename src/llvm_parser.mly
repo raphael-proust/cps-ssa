@@ -58,20 +58,24 @@
 %token KW_TAIL
 
 
-%start<LLVM.prog> program
+%start<LLVM.module_> module_
 
 %%
 
-program:
-  | p = procedure EOF { [p] }
+module_:
+  | m = separated_list(EOL+,toplevelentry) EOF { m }
 
+toplevelentry:
+  | d = definition { TLE_Definition d }
+  | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s }
+  | KW_TARGET KW_TRIPLE EQ s = STRING { TLE_Target s }
 
-procedure:
+definition:
   | KW_DEFINE linkage? visibility? cconv?
            ret_typ = ret_type name = global
            LPAREN args = separated_list(COMMA, decl_arg) RPAREN
            list(fn_attr) align? gc?
-           LCURLY EOL
+           LCURLY EOL+
            instrs = procedure_body
            RCURLY
     { {ret_typ; name; args; instrs;} }
@@ -170,7 +174,7 @@ gc:
   | KW_GC STRING { }
 
 procedure_body: (*TODO*)
-  | i = separated_list(EOL,instr) { i }
+  | i = separated_list(EOL+,instr) { i }
 
 %public binop(KW):
   | i = ident EQ KW t = typ o1 = value COMMA o2 = value
