@@ -181,7 +181,7 @@ and instr =
   | INSTR_Resume of (typ * value)
   | INSTR_Unreachable
   | INSTR_Alloca of (ident * typ)
-  | INSTR_Load
+  | INSTR_Load of (ident * typ * ident)
   | INSTR_Store of (typ * value * typ * ident)
   | INSTR_AtomicCmpXchg
   | INSTR_AtomicRMW

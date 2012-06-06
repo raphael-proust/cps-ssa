@@ -285,7 +285,8 @@ instr:
 
   (* memory instrs, partial support *)
   | i = ident EQ KW_ALLOCA t = typ comma_align? { INSTR_Alloca (i, t) } (*TODO: support NumElements *)
-  | KW_LOAD           { INSTR_Load }
+  | i = ident EQ KW_LOAD KW_VOLATILE? tp = typ p = ident comma_align? (*TODO: support more options *)
+    { INSTR_Load (i, tp, p) }
   | KW_STORE KW_VOLATILE? tv = typ v = value COMMA
                           ti = typ i = ident
                           comma_align? (*TODO: support atomic and non-temporal*)
