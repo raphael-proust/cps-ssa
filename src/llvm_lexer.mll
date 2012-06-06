@@ -40,6 +40,7 @@ rule token = parse
   | ws+ { token lexbuf }
   | eol+ { EOL }
   | eof { EOF }
+  | ';' { comment lexbuf }
   | '=' { EQ }
   | ',' { COMMA }
   | '(' { LPAREN }
@@ -204,4 +205,6 @@ rule token = parse
   | "slt" { KW_SLT }
   | "sle" { KW_SLE }
 
-
+and comment = parse
+  | eol { token lexbuf }
+  | _ { comment lexbuf }
