@@ -200,6 +200,10 @@ instr_eol:
   | i = ident EQ KW t = typ v = value KW_TO t2 = typ
     { (i, t, v, t2) }
 
+%public icmp(KW):
+  | i = ident EQ KW_ICMP KW t = typ o1 = value COMMA o2 = value
+    { (i, t, o1, o2) }
+
 instr:
   (* arith, binop *)
   | b = binop2(KW_ADD,KW_NUW,KW_NSW) { INSTR_Add  b }
@@ -224,16 +228,16 @@ instr:
   | b = binop(KW_XOR)  { INSTR_Xor  b }
 
   (* comparison *)
-  | i = ident EQ KW_ICMP KW_EQ t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Eq, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_NE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ne, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_UGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ugt, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_UGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Uge, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_ULT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ult, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_ULE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Ule, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_SGT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sgt, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_SGE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sge, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_SLT t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Slt, t, o1, o2) }
-  | i = ident EQ KW_ICMP KW_SLE t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Sle, t, o1, o2) }
+  | i = icmp(KW_EQ ) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Eq,  t, o1, o2) }
+  | i = icmp(KW_NE ) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ne,  t, o1, o2) }
+  | i = icmp(KW_UGT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ugt, t, o1, o2) }
+  | i = icmp(KW_UGE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Uge, t, o1, o2) }
+  | i = icmp(KW_ULT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ult, t, o1, o2) }
+  | i = icmp(KW_ULE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ule, t, o1, o2) }
+  | i = icmp(KW_SGT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Sgt, t, o1, o2) }
+  | i = icmp(KW_SGE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Sge, t, o1, o2) }
+  | i = icmp(KW_SLT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Slt, t, o1, o2) }
+  | i = icmp(KW_SLE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Sle, t, o1, o2) }
 
   | KW_FCMP           { INSTR_FCmp } (*TODO*)
 
