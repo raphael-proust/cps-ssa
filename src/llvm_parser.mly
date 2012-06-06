@@ -53,6 +53,7 @@
 %token KW_NUW KW_NSW
 %token KW_EXACT
 %token KW_EQ KW_NE KW_UGT KW_UGE KW_ULT KW_ULE KW_SGT KW_SGE KW_SLT KW_SLE
+%token KW_TAIL
 
 
 %start<LLVM.prog> program
@@ -173,16 +174,24 @@ procedure_body: (*TODO*)
   | i = ident EQ KW t = typ o1 = value COMMA o2 = value
     { (i, t, o1, o2) }
 
+%public binop1(KW,OPT1):
+  | i = ident EQ KW OPT1? t = typ o1 = value COMMA o2 = value
+    { (i, t, o1, o2) }
+
+%public binop2(KW,OPT1,OPT2):
+  | i = ident EQ KW OPT1? OPT2? t = typ o1 = value COMMA o2 = value
+    { (i, t, o1, o2) }
+
 instr:
   (* arith, binop *)
-  | b = binop(KW_ADD) { INSTR_Add b } (*TODO: support nuw and nsw *)
+  | b = binop2(KW_ADD,KW_NUW,KW_NSW) { INSTR_Add b }
   | KW_FADD           { INSTR_FAdd } (*TODO*)
-  | b = binop(KW_SUB) { INSTR_Sub b } (*TODO: support nuw and nsw *)
+  | b = binop2(KW_SUB,KW_NUW,KW_NSW) { INSTR_Sub b }
   | KW_FSUB           { INSTR_FSub } (*TODO*)
-  | b = binop(KW_MUL) { INSTR_Mul b }
+  | b = binop2(KW_MUL,KW_NUW,KW_NSW) { INSTR_Mul b }
   | KW_FMUL           { INSTR_FMul }
-  | b = binop(KW_UDIV) { INSTR_UDiv b } (*TODO: support exact *)
-  | b = binop(KW_SDIV) { INSTR_SDiv b } (*TODO: support exact *)
+  | b = binop1(KW_UDIV,KW_EXACT) { INSTR_UDiv b }
+  | b = binop1(KW_SDIV,KW_EXACT) { INSTR_SDiv b }
   | KW_FDIV           { INSTR_FDiv } (*TODO*)
   | b = binop(KW_UREM) { INSTR_URem b }
   | b = binop(KW_SREM) { INSTR_SRem b }
@@ -216,7 +225,10 @@ instr:
     { INSTR_PHI (i, t, table) }
 
   (* call *)
-  | KW_CALL           { INSTR_Call }
+  | i = ident EQ KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
+                 n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
+                 list(fn_attr)
+    { INSTR_Call (i, t, n, a) }
 
   (* conversions *)
   | KW_TRUNC          { INSTR_Trunc }
