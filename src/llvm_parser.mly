@@ -64,7 +64,10 @@
 %%
 
 module_:
-  | m = separated_list(EOL+,toplevelentry) EOF { m }
+  | m = list(toplevelentry_eol) EOF { m }
+
+toplevelentry_eol:
+  | tle = toplevelentry EOL+ { tle }
 
 toplevelentry:
   | d = definition { TLE_Definition d }
@@ -176,7 +179,10 @@ gc:
   | KW_GC STRING { }
 
 procedure_body: (*TODO*)
-  | i = separated_list(EOL+,instr) { i }
+  | il = list(instr_eol) { il }
+
+instr_eol:
+  | i = instr EOL+ { i }
 
 %public binop(KW):
   | i = ident EQ KW t = typ o1 = value COMMA o2 = value
