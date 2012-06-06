@@ -30,7 +30,7 @@
 (*TODO: what is it with labels? *)
 
 %token<string> GLOBAL LOCAL
-%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE EQ COMMA EOL EOF
+%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE EQ COMMA EOF EOL
 
 %token<string> STRING
 %token<int> INTEGER
@@ -168,7 +168,7 @@ gc:
   | KW_GC STRING { }
 
 procedure_body: (*TODO*)
-  | i = separated_list(EOL, instr) { i }
+  | i = separated_list(EOL,instr) { i }
 
 %public binop(KW):
   | i = ident EQ KW t = typ o1 = value COMMA o2 = value
@@ -184,26 +184,26 @@ procedure_body: (*TODO*)
 
 instr:
   (* arith, binop *)
-  | b = binop2(KW_ADD,KW_NUW,KW_NSW) { INSTR_Add b }
-  | KW_FADD           { INSTR_FAdd } (*TODO*)
-  | b = binop2(KW_SUB,KW_NUW,KW_NSW) { INSTR_Sub b }
-  | KW_FSUB           { INSTR_FSub } (*TODO*)
-  | b = binop2(KW_MUL,KW_NUW,KW_NSW) { INSTR_Mul b }
-  | KW_FMUL           { INSTR_FMul }
-  | b = binop1(KW_UDIV,KW_EXACT) { INSTR_UDiv b }
-  | b = binop1(KW_SDIV,KW_EXACT) { INSTR_SDiv b }
-  | KW_FDIV           { INSTR_FDiv } (*TODO*)
-  | b = binop(KW_UREM) { INSTR_URem b }
-  | b = binop(KW_SREM) { INSTR_SRem b }
-  | KW_FREM           { INSTR_FRem }
+  | b = binop2(KW_ADD,KW_NUW,KW_NSW) { INSTR_Add  b }
+  | KW_FADD (*TODO*)                 { INSTR_FAdd   }
+  | b = binop2(KW_SUB,KW_NUW,KW_NSW) { INSTR_Sub  b }
+  | KW_FSUB (*TODO*)                 { INSTR_FSub   }
+  | b = binop2(KW_MUL,KW_NUW,KW_NSW) { INSTR_Mul  b }
+  | KW_FMUL (*TODO*)                 { INSTR_FMul   }
+  | b = binop1(KW_UDIV,KW_EXACT)     { INSTR_UDiv b }
+  | b = binop1(KW_SDIV,KW_EXACT)     { INSTR_SDiv b }
+  | KW_FDIV (*TODO*)                 { INSTR_FDiv   }
+  | b = binop (KW_UREM)              { INSTR_URem b }
+  | b = binop (KW_SREM)              { INSTR_SRem b }
+  | KW_FREM  (*TODO*)                { INSTR_FRem   }
 
   (* bitwise, binop *)
-  | b = binop(KW_SHL) { INSTR_Shl b }
+  | b = binop(KW_SHL)  { INSTR_Shl  b }
   | b = binop(KW_LSHR) { INSTR_LShr b }
   | b = binop(KW_ASHR) { INSTR_AShr b }
-  | b = binop(KW_AND) { INSTR_And b }
-  | b = binop(KW_OR) { INSTR_Or b }
-  | b = binop(KW_XOR) { INSTR_Xor b }
+  | b = binop(KW_AND)  { INSTR_And  b }
+  | b = binop(KW_OR)   { INSTR_Or   b }
+  | b = binop(KW_XOR)  { INSTR_Xor  b }
 
   (* comparison *)
   | i = ident KW_ICMP KW_EQ t = typ o1 = value COMMA o2 = value { INSTR_ICmp (i, Cmp_Eq, t, o1, o2) }

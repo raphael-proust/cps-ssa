@@ -152,7 +152,7 @@ and instr =
   | INSTR_ICmp of (ident * cmp * typ * value * value)
   | INSTR_FCmp
   | INSTR_PHI of (ident * typ * (value * ident) list)
-  | INSTR_Call
+  | INSTR_Call of (ident * typ * ident * (typ * value) list)
   | INSTR_Trunc
   | INSTR_ZExt
   | INSTR_SExt

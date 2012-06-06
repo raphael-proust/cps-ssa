@@ -104,6 +104,7 @@ rule token = parse
   | "gc" { KW_GC }
   | "to" { KW_TO }
   | "unwind" { KW_UNWIND }
+  | "tail" { KW_TAIL }
 
   (* identifier *)
   | '@' (ident_fst ident_nxt* ) as i { GLOBAL i }
