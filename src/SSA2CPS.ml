@@ -27,7 +27,7 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_core_instrs; b_jump;} as b)
   let args_of_label l =
     List.map
       (fun (_, p) -> List.assoc b_label p)
-      ((block_of_label bs l).SSA.b_phis)
+      ((SSA.block_of_label bs l).SSA.b_phis)
   in
 
   let rec aux = function

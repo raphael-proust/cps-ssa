@@ -62,6 +62,9 @@ and jump =
 (** SSA-magic is made of phi-functions. *)
 and phi = Prim.var * (Prim.label * Prim.expr) list
 
+(** find a block in a list by its label *)
+val block_of_label: block list -> Prim.label -> block
+
 (** Label for program entry point. *)
 val label_main : Prim.label
 

@@ -52,6 +52,16 @@ and jump =
 
 and phi = Prim.var * (Prim.label * Prim.expr) list
 
+(* inefficient! but only used with a low number of blocks *)
+(*TODO: memoize or build a map before use *)
+let block_of_label blocks label =
+  try
+    List.find (fun p -> p.b_label = label) blocks
+  with
+  | Not_found as e ->
+    Printf.eprintf "Block not found: %s" (Prim.string_of_label label);
+    raise e
+
 let check_ssa prog =
 
   (* no procedure should be empty *)

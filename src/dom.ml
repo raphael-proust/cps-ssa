@@ -31,22 +31,17 @@ end
 
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
 
-(* *VERY* inefficient! *)
-(*TODO: memoize or build a map before use *)
-let block_of_label blocks label =
-  List.find (fun p -> p.SSA.b_label = label) blocks
-
 let vertices_of_block blocks b =
   (* we get a list of jumps out of a block *)
   match b.SSA.b_jump with
   (* inter-procedural jumps are ignored in the translation *)
   | SSA.Jreturnvoid | SSA.Jreturn _ | SSA.Jtail _ -> []
   (* intra-procedural simple jump *)
-  | SSA.Jgoto label -> [G.E.create b () (block_of_label blocks label)]
+  | SSA.Jgoto label -> [G.E.create b () (SSA.block_of_label blocks label)]
   (* intra-procedural conditional jump *)
   | SSA.Jcond (_, label1, label2) ->
-    [G.E.create b () (block_of_label blocks label1);
-     G.E.create b () (block_of_label blocks label2);
+    [G.E.create b () (SSA.block_of_label blocks label1);
+     G.E.create b () (SSA.block_of_label blocks label2);
     ]
 
 let graph_of_blocks blocks =
