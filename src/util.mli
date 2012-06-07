@@ -18,6 +18,7 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+type ('a, 'b) either = Left of 'a | Right of 'b
 module L :
   sig
     val concat_map : ('a -> 'b list) -> 'a list -> 'b list
@@ -37,4 +38,17 @@ module O :
 module P :
   sig
     val print_pos : out_channel -> Lexing.position -> unit
+  end
+
+module PP :
+  sig
+    val with_paren : Pprint.document -> Pprint.document
+    val with_paren_br : Pprint.document -> Pprint.document
+    val comma_space : Pprint.document
+    val list :
+      ?empty:Pprint.document ->
+      ('a -> Pprint.document) -> 'a list -> Pprint.document
+    val pp_either : ('a -> 'b) -> ('c -> 'b) -> ('a, 'c) either -> 'b
+    val level : Pprint.document -> Pprint.document
+    val unit : Pprint.document
   end

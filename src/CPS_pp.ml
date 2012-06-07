@@ -23,22 +23,11 @@
  * care of it. *)
 
 (* Pprint Operators and other facilities *)
-module PP = Pprint
+module PP = struct
+  include Pprint
+  include Util.PP
+end
 open PP.Operators
-let with_paren d = PP.lparen ^^ d ^^ PP.rparen
-let with_paren_br d = with_paren (d ^^ PP.break1)
-let comma_space = PP.comma ^^ PP.space
-let list ?(empty=PP.empty) pp = function
-  | [] -> empty
-  | l  ->  PP.sepmap PP.break1 pp l
-type ('a, 'b) either =
-  | Left of 'a
-  | Right of 'b
-let pp_either pl pr = function
-  | Left l  -> pl l
-  | Right r -> pr r
-let level d = PP.nest 2 (PP.break1 ^^ d)
-let unit = !^ "()"
 
 
 (*We define pp_* functions for pretty-printing. *)
@@ -51,9 +40,9 @@ let pp_value = function
   | Prim.Vnull    -> !^ "null"
 
 let pp_op v1 op v2 = pp_value v1 ^^ op ^^ pp_value v2
-let pp_fn1 fn v = fn ^^ PP.space ^^ with_paren (pp_value v)
+let pp_fn1 fn v = fn ^^ PP.space ^^ PP.with_paren (pp_value v)
 let pp_fn2 fn v1 v2 =
-  fn ^^ PP.space ^^ with_paren (pp_value v1 ^^ comma_space ^^ pp_value v2)
+  fn ^^ PP.space ^^ PP.with_paren (pp_value v1 ^^ PP.comma_space ^^ pp_value v2)
 
 let pp_expr e =
   match e with
@@ -84,51 +73,53 @@ let pp_mem_w = function
 
 let rec pp_m = function
   | CPS.Mapp  (v, es, k) ->
-    pp_var v ^^ level (
-      list (* This list is never empty *)
-        (pp_either pp_expr pp_cont)
-        (List.map (fun e -> Left e) es @ [Right k])
+    pp_var v ^^ PP.level (
+      PP.list (* This list is never empty *)
+        (PP.pp_either pp_expr pp_cont)
+        (List.map (fun e -> Util.Left e) es @ [Util.Right k])
     )
 
   | CPS.Mcont (v, es) ->
-    pp_var v ^^ level (list ~empty:unit pp_expr es)
+    pp_var v ^^ PP.level (PP.list ~empty:PP.unit pp_expr es)
 
   | CPS.Mcond (e, (v1, es1), (v2, es2)) ->
     !^ "if0" ^^ PP.break0 ^^
-    with_paren (pp_expr e) ^^ level (
-      with_paren (pp_var v1 ^^ level (list ~empty:unit pp_expr es1)) ^^
+    PP.with_paren (pp_expr e) ^^ PP.level (
+      PP.with_paren
+        (pp_var v1 ^^ PP.level (PP.list ~empty:PP.unit pp_expr es1)) ^^
       PP.break1 ^^
-      with_paren (pp_var v2 ^^ level (list ~empty:unit pp_expr es2))
+      PP.with_paren (pp_var v2 ^^ PP.level (PP.list ~empty:PP.unit pp_expr es2))
     )
 
   | CPS.Mlet  (v, e, m) ->
-    !^ "let" ^^ PP.space ^^ pp_var v ^^ PP.space ^^ PP.equals ^^ level (
+    !^ "let" ^^ PP.space ^^ pp_var v ^^ PP.space ^^ PP.equals ^^ PP.level (
       pp_expr e
-    ) ^^ PP.break1 ^^ !^ "in" ^^ level (
+    ) ^^ PP.break1 ^^ !^ "in" ^^ PP.level (
       pp_m m
     )
 
   | CPS.Mrec  (vls, m) ->
     let vl (v, l) =
-      pp_var v ^^ PP.space ^^ PP.equals ^^ level (pp_lambda l) ^^ PP.break1
+      pp_var v ^^ PP.space ^^ PP.equals ^^ PP.level (pp_lambda l) ^^ PP.break1
     in
-    !^ "letrec" ^^ with_paren (level (
+    !^ "letrec" ^^ PP.with_paren (PP.level (
       PP.sepmap PP.hardline vl vls
-    )) ^^ PP.break1 ^^ !^ "in" ^^ level (
+    )) ^^ PP.break1 ^^ !^ "in" ^^ PP.level (
       pp_m m
     )
   | CPS.Mseq (v, w, m) ->
-    !^ "let" ^^ PP.space ^^ PP.lparen ^^ PP.rparen ^^ PP.space ^^ PP.equals ^^ level (
-      pp_mem_w w
-    ) ^^ PP.break1 ^^ !^ "in" ^^ level (
-      pp_m m
-    )
+    !^ "let" ^^ PP.space ^^ PP.lparen ^^ PP.rparen ^^ PP.space ^^ PP.equals ^^
+    PP.level (
+        pp_mem_w w
+      ) ^^ PP.break1 ^^ !^ "in" ^^ PP.level (
+        pp_m m
+      )
 
 and pp_l c vs m =
   (* This is used for both lambdas and explicit continuations *)
-  !^ "λ" ^^ PP.char c ^^ level (
-    list ~empty:unit pp_var vs ^^ PP.break1 ^^ PP.dot
-  ) ^^ with_paren_br (level (
+  !^ "λ" ^^ PP.char c ^^ PP.level (
+    PP.list ~empty:PP.unit pp_var vs ^^ PP.break1 ^^ PP.dot
+  ) ^^ PP.with_paren_br (PP.level (
     pp_m m
   ))
 

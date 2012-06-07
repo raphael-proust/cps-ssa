@@ -18,6 +18,8 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+type ('a, 'b) either = Left of 'a | Right of 'b
+
 module L = struct
 
   let concat_map f l = List.concat (List.map f l)
@@ -99,4 +101,20 @@ module P = struct
 
 end
 
+module PP = struct
 
+  open Pprint.Operators
+
+  let with_paren d = Pprint.lparen ^^ d ^^ Pprint.rparen
+  let with_paren_br d = with_paren (d ^^ Pprint.break1)
+  let comma_space = Pprint.comma ^^ Pprint.space
+  let list ?(empty=Pprint.empty) pp = function
+    | [] -> empty
+    | l  ->  Pprint.sepmap Pprint.break1 pp l
+  let pp_either pl pr = function
+    | Left l  -> pl l
+    | Right r -> pr r
+  let level d = Pprint.nest 2 (Pprint.break1 ^^ d)
+  let unit = !^ "()"
+
+end

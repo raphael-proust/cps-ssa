@@ -1,10 +1,10 @@
 
 MLS= \
+		 pprint.ml \
 		 util.ml \
 		 prim.ml \
 		 SSA.ml \
 		 CPS.ml \
-		 pprint.ml \
 		 CPS_pp.ml \
 		 dom.ml \
 		 SSA2CPS.ml \
