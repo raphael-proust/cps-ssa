@@ -5,7 +5,7 @@ MLS= \
 		 SSA.ml \
 		 CPS.ml \
 		 pprint.ml \
-		 CPS_diff.ml \
+		 CPS_pp.ml \
 		 dom.ml \
 		 SSA2CPS.ml \
 		 LLVM.ml \

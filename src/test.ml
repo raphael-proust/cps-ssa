@@ -34,7 +34,10 @@ let run filename =
       raise e
   in
   let ssa_prog = LLVM2SSA.prog llvm_prog in
-  ignore ssa_prog
+  let cps_m    = SSA2CPS.prog ssa_prog in
+  let cps_doc  = CPS_pp.pp_m cps_m in
+  let () = Pprint.Channel.pretty 0. 100 stdout cps_doc in
+  ()
 
 let () =
     Array.iter
