@@ -66,7 +66,7 @@ and phi = Prim.var * (Prim.label * Prim.expr) list
 val block_of_label: block list -> Prim.label -> block
 
 (** Label for program entry point. *)
-val label_main : Prim.label
+val label_entry : Prim.label
 
 (** checks that the ssa program is indeed ssa. In particular, it checks that
     each variable is assigned to, only once, there is exactly one main procedure,

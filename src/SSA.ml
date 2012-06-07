@@ -20,7 +20,7 @@
 
 (* SSA terms. We only enforce SSA property dynamically. *)
 
-let label_main = Prim.label "main"
+let label_entry = Prim.label "entry"
 
 type prog = proc list
 
@@ -68,7 +68,7 @@ let check_ssa prog =
   List.for_all (fun p -> p.p_blocks <> []) prog &&
 
   (* one procedure is the "main" *)
-  Util.L.exists_one (fun p -> (List.hd p.p_blocks).b_label = label_main) prog &&
+  Util.L.exists_one (fun p -> (List.hd p.p_blocks).b_label = label_entry) prog &&
 
   let blocks = Util.L.concat_map (fun p -> p.p_blocks) prog in
 
