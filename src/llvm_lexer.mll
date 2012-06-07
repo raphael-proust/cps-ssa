@@ -207,10 +207,8 @@ rule token = parse
   | (label_char)+ as l ':' { LABEL l }
 
   (* identifier *)
-  | '@' (ident_fst ident_nxt* ) as i { GLOBAL i }
-  | '@' (digit+               ) as i { GLOBAL i }
-  | '%' (ident_fst ident_nxt* ) as i { LOCAL  i }
-  | '%' (digit+               ) as i { LOCAL  i }
+  | '@' ((ident_fst ident_nxt* ) as i) { GLOBAL i }
+  | '%' ((ident_fst ident_nxt* ) as i) { LOCAL  i }
 
   (* constants *)
   | ( '-'? digit+ ) as d { INTEGER (int_of_string d) }

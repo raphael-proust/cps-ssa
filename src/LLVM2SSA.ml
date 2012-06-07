@@ -104,7 +104,7 @@ let block_of_instrs instrs =
       (label l, instrs)
     | _ ->
       let lbl = "%" ^ string_of_int (get_running_idx ()) in
-      (Prim.label lbl, instrs)
+      (Prim.label_of_var (Prim.var lbl), instrs)
 
   in
 
