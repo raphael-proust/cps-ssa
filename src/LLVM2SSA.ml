@@ -71,17 +71,49 @@ let value = function
 
 let value_expr v = Prim.ONone (value v)
 
+let running_idx = ref 0
+let update_runnig_idx i =
+  assert (i = !running_idx + 1);
+  incr running_idx
+let get_running_idx () =
+  incr running_idx;
+  !running_idx
+
+let ident_left = function
+  | LLVM.ID_Global v -> Prim.var ("@" ^ v)
+  | LLVM.ID_Local  v ->
+    let () =
+      try
+        let i = int_of_string v in
+        update_runnig_idx i
+      with
+        | Failure "int_of_string" -> ()
+    in
+    Prim.var ("%" ^ v)
+
+let var_left i = Prim.Vvar (ident_left i)
+
+let var_expr_left i = Prim.ONone (var_left i)
+
+
 let block_of_instrs instrs =
 
   (*TODO: labels are hard!*)
-  let get_label   instrs = failwith "TODO" in
+  let get_label   instrs = match instrs with
+    | LLVM.INSTR_Label l :: instrs ->
+      (label l, instrs)
+    | _ ->
+      let lbl = "%" ^ string_of_int (get_running_idx ()) in
+      (Prim.label lbl, instrs)
+
+  in
 
   let get_phis    instrs =
     let rec aux accu = function
       | [] -> assert false
       | LLVM.INSTR_PHI (res, _, assocs) :: instrs ->
         let flip_val (x,y) = (label y, value_expr x) in
-        aux ((ident res, List.map flip_val assocs) :: accu) instrs
+        aux ((ident_left res, List.map flip_val assocs) :: accu) instrs
       | instrs -> (List.rev accu, instrs)
     in
     aux [] instrs
@@ -99,21 +131,21 @@ let block_of_instrs instrs =
       -> assert false
 
       | INSTR_Add (i, _, v0, v1) :: instrs ->
-        aux (SSA.IAssignExpr (ident i, Prim.OPlus (value v0, value v1)) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i, Prim.OPlus (value v0, value v1)) :: accu) instrs
       | INSTR_FAdd :: instrs -> unsupported_feature "INSTR_FAdd"
       | INSTR_Sub (i, _, v0, v1) :: instrs ->
-        aux (SSA.IAssignExpr (ident i, Prim.OMinus (value v0, value v1)) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i, Prim.OMinus (value v0, value v1)) :: accu) instrs
       | INSTR_FSub :: instrs -> unsupported_feature "INSTR_FSub"
       | INSTR_Mul (i, _, v0, v1) :: instrs ->
-        aux (SSA.IAssignExpr (ident i, Prim.OMult (value v0, value v1)) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i, Prim.OMult (value v0, value v1)) :: accu) instrs
       | INSTR_FMul :: instrs -> unsupported_feature "INSTR_FMul"
       | INSTR_UDiv (i, _, v0, v1) :: instrs
       | INSTR_SDiv (i, _, v0, v1) :: instrs ->
-        aux (SSA.IAssignExpr (ident i, Prim.ODiv (value v0, value v1)) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i, Prim.ODiv (value v0, value v1)) :: accu) instrs
       | INSTR_FDiv :: instrs -> unsupported_feature "INSTR_FDiv"
       | INSTR_URem (i, _, v0, v1) :: instrs
       | INSTR_SRem (i, _, v0, v1) :: instrs ->
-        aux (SSA.IAssignExpr (ident i, Prim.ORem (value v0, value v1)) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i, Prim.ORem (value v0, value v1)) :: accu) instrs
       | INSTR_FRem :: instrs -> unsupported_feature "INSTR_FRem"
       | INSTR_Shl _ :: instrs -> unsupported_feature "INSTR_Shl"
       | INSTR_LShr _ :: instrs -> unsupported_feature "INSTR_LShr"
@@ -134,11 +166,11 @@ let block_of_instrs instrs =
           | Cmp_Ule
           | Cmp_Sle -> Prim.OLe (value v1, value v2)
         in
-        aux (SSA.IAssignExpr (ident i, expr) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i, expr) :: accu) instrs
       | INSTR_FCmp :: instrs -> unsupported_feature "INSTR_FCmp"
       | INSTR_Call (i, _, fn, args) :: instrs ->
         let args = List.map (fun (_, v) -> value_expr v) args in
-        aux (SSA.IAssigncall (ident i, label fn, args) :: accu) instrs
+        aux (SSA.IAssigncall (ident_left i, label fn, args) :: accu) instrs
       | ( INSTR_Trunc (i, _, v, _)
         | INSTR_ZExt (i, _, v, _)
         | INSTR_SExt (i, _, v, _)
@@ -152,13 +184,13 @@ let block_of_instrs instrs =
         | INSTR_PtrToInt (i, _, v, _)
         | INSTR_BitCast (i, _, v, _)
         ) :: instrs ->
-        aux (SSA.IAssignExpr (ident i, value_expr v) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i, value_expr v) :: accu) instrs
       | INSTR_Select :: instrs -> unsupported_feature "INSTR_Select"
       | INSTR_VAArg :: instrs -> unsupported_feature "INSTR_VAArg"
       | INSTR_Alloca (i, _) :: instrs ->
-        aux (SSA.IMemWrite (ident i, Prim.MAlloc) :: accu) instrs
+        aux (SSA.IMemWrite (ident_left i, Prim.MAlloc) :: accu) instrs
       | INSTR_Load (i1, _, i2) :: instrs ->
-        aux (SSA.IAssignExpr (ident i1, Prim.ORead (var i2)) :: accu) instrs
+        aux (SSA.IAssignExpr (ident_left i1, Prim.ORead (var i2)) :: accu) instrs
       | INSTR_Store (_, v, _, i) :: instrs ->
         aux (SSA.IMemWrite (ident i, Prim.MWrite (value v)) :: accu) instrs
       | INSTR_AtomicCmpXchg :: instrs -> unsupported_feature "INSTR_AtomicCmpXchg"
@@ -216,7 +248,6 @@ let block_of_instrs instrs =
   let instrs, terminator = get_assigns instrs in
   let terminator         = get_terminator    terminator   in
 
-  assert (instrs = []);
   SSA.Blocks.block ~label ~phis ~instrs terminator
 
 let blocks_of_instrs instrs =
