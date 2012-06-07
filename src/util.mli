@@ -24,6 +24,7 @@ module L :
     val exists_one : ('a -> bool) -> 'a list -> bool
     val unique : ('a -> 'b option) -> 'a list -> bool
     val pick_one_such_as: ('a -> bool) -> 'a list -> ('a * 'a list)
+    val map_option: ('a -> 'b option) -> 'a list -> 'b list
   end
 
 module O :

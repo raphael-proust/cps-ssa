@@ -21,17 +21,20 @@
 let () = Printexc.record_backtrace true
 
 let run filename =
-  let ic = open_in filename in
-  let lexbuf = Lexing.from_channel ic in
-  try
-    let llvm_prog = Llvm_parser.module_ (Llvm_lexer.token) lexbuf in
-    ignore llvm_prog
-  with
-  | e ->
-    Printf.eprintf "Uncaught exception while lexing/parsing from %a to %a"
-    Util.P.print_pos (Lexing.lexeme_start_p lexbuf)
-    Util.P.print_pos (Lexing.lexeme_end_p   lexbuf);
-    raise e
+  let in_chan = open_in filename            in
+  let lexbuf  = Lexing.from_channel in_chan in
+  let llvm_prog =
+    try
+        Llvm_parser.module_ (Llvm_lexer.token) lexbuf
+    with
+    | e ->
+      Printf.eprintf "Uncaught exception while lexing/parsing from %a to %a"
+      Util.P.print_pos (Lexing.lexeme_start_p lexbuf)
+      Util.P.print_pos (Lexing.lexeme_end_p   lexbuf);
+      raise e
+  in
+  let ssa_prog = LLVM2SSA.prog llvm_prog in
+  ignore ssa_prog
 
 let () =
     Array.iter

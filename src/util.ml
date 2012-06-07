@@ -68,6 +68,12 @@ module L = struct
     in
     aux [] l
 
+  let rec map_option f l = match l with
+    | [] -> []
+    | h::t -> match f h with
+      | None -> map_option f t
+      | Some h -> h :: map_option f t
+
 
 end
 

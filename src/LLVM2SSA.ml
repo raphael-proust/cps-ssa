@@ -274,5 +274,10 @@ let proc {LLVM.name; args; instrs} =
     p_blocks = blocks_of_instrs (LLVM.INSTR_Label name :: instrs);
   }
 
-let prog = List.map proc
+let tpl = function
+  | LLVM.TLE_Target _
+  | LLVM.TLE_Datalayout _ -> None
+  | LLVM.TLE_Definition d -> Some (proc d)
+
+let prog = Util.L.map_option tpl
 
