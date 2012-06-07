@@ -285,8 +285,8 @@ instr:
   | KW_INVOKE cconv? t = ret_type i = ident
               LPAREN a = separated_list(COMMA, call_arg) RPAREN
               list(fn_attr)
-              KW_TO KW_LABEL l1 = value
-              KW_UNWIND KW_LABEL l2 = value
+              KW_TO KW_LABEL l1 = ident
+              KW_UNWIND KW_LABEL l2 = ident
     { INSTR_Invoke (t, i, a, l1, l2)  }
   | KW_RESUME t = typ o = value { INSTR_Resume (t, o) }
   | KW_UNREACHABLE    { INSTR_Unreachable }

@@ -45,9 +45,10 @@ let rec block dom return bs ({SSA.b_label; b_phis; b_core_instrs; b_jump;} as b)
         CPS.Mcont (return, [e])
       | SSA.Jreturnvoid ->
         CPS.Mcont (return, [])
-      | SSA.Jtail (f, es) ->
+      | SSA.Jtail (f, es, d) ->
         let f = Prim.var_of_label f in
-        CPS.Mapp (f, es, CPS.Cvar return)
+        let d = Prim.var_of_label d in
+        CPS.Mapp (f, es, CPS.Cvar d)
       | SSA.Jcond (c, l1, l2) ->
         CPS.Mcond (c,
                    (Prim.var_of_label l1, (args_of_label l1)),

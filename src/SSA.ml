@@ -47,7 +47,7 @@ and jump =
   | Jgoto of (Prim.label)
   | Jreturn of Prim.expr
   | Jreturnvoid
-  | Jtail of (Prim.label * Prim.expr list)
+  | Jtail of (Prim.label * Prim.expr list * Prim.label)
   | Jcond of (Prim.expr * Prim.label * Prim.label)
 
 and phi = Prim.var * (Prim.label * Prim.expr) list
@@ -103,8 +103,8 @@ module Blocks = struct
   let cond ?label ?phis ?instrs e l1 l2 =
     block ?label ?phis ?instrs (Jcond (e, l1, l2))
 
-  let tail ?label ?phis ?instrs l es =
-    block ?label ?phis ?instrs (Jtail (l, es))
+  let tail ?label ?phis ?instrs l es d =
+    block ?label ?phis ?instrs (Jtail (l, es, d))
 
   let goto ?label ?phis ?instrs l =
     block ?label ?phis ?instrs (Jgoto l)

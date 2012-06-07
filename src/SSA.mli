@@ -56,7 +56,7 @@ and jump =
   | Jgoto of (Prim.label)
   | Jreturn of Prim.expr
   | Jreturnvoid
-  | Jtail of (Prim.label * Prim.expr list)
+  | Jtail of (Prim.label * Prim.expr list * Prim.label)
   | Jcond of (Prim.expr * Prim.label * Prim.label)
 
 (** SSA-magic is made of phi-functions. *)
@@ -97,7 +97,7 @@ module Blocks :sig
 
   val tail: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
-    Prim.label -> Prim.expr list -> block
+    Prim.label -> Prim.expr list -> Prim.label -> block
 
   val goto: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->

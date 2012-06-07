@@ -179,7 +179,7 @@ and instr =
   | INSTR_Br_1 of ident
   | INSTR_Switch of (typ * value * value * (typ * value * ident) list)
   | INSTR_IndirectBr
-  | INSTR_Invoke of (typ * ident * (typ * value) list * value * value)
+  | INSTR_Invoke of (typ * ident * (typ * value) list * ident * ident)
   | INSTR_Resume of (typ * value)
   | INSTR_Unreachable
   | INSTR_Alloca of (ident * typ)
