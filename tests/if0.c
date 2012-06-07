@@ -1,4 +1,4 @@
-int if0 (int n){
+int entry (int n){
   int res = 0;
   if (n==0) {
     res = 0;
