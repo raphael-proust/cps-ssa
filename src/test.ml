@@ -41,6 +41,8 @@ let run filename =
       Printf.eprintf "Uncaught exception while translating LLVM to SSA\n";
       raise e
   in
+  let ssa_doc = SSA_pp.pp_prog ssa_prog in
+  let () = Pprint.Channel.pretty 1. 20 stdout ssa_doc in
   let cps_m =
     try
       SSA2CPS.prog ssa_prog
@@ -49,14 +51,7 @@ let run filename =
       Printf.eprintf "Uncaught exception while translating SSA to CPS\n";
       raise e
   in
-  let cps_doc =
-    try
-      CPS_pp.pp_m cps_m
-    with
-    | e ->
-      Printf.eprintf "Uncaught exception while pretty printing CPS\n";
-      raise e
-  in
+  let cps_doc = CPS_pp.pp_m cps_m in
   let () = Pprint.Channel.pretty 0. 100 stdout cps_doc in
   ()
 

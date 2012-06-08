@@ -5,6 +5,7 @@ MLS= \
 		 prim.ml \
 		 prim_pp.ml \
 		 SSA.ml \
+		 SSA_pp.ml \
 		 CPS.ml \
 		 CPS_pp.ml \
 		 dom.ml \
