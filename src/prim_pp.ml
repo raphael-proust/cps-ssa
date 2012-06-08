@@ -18,45 +18,46 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type ('a, 'b) either = Left of 'a | Right of 'b
-module L :
-  sig
-    val concat_map : ('a -> 'b list) -> 'a list -> 'b list
-    val exists_one : ('a -> bool) -> 'a list -> bool
-    val unique : ('a -> 'b option) -> 'a list -> bool
-    val pick_one_such_as: ('a -> bool) -> 'a list -> ('a * 'a list)
-    val map_option: ('a -> 'b option) -> 'a list -> 'b list
-  end
+(* Pprint Operators and other facilities *)
+module PP = struct
+  include Pprint
+  include Util.PP
+end
+open PP.Operators
 
-module O :
-  sig
-    val opt: 'a -> 'a option
-    val none: 'a option
-    val unopt: 'a option -> 'a
-  end
+let pp_var v = !^ (Prim.string_of_var v)
 
-module P :
-  sig
-    val print_pos : out_channel -> Lexing.position -> unit
-  end
+let pp_label l = !^ (Prim.string_of_label l)
 
-module PP :
-  sig
-    val with_paren : Pprint.document -> Pprint.document
-    val with_paren_br : Pprint.document -> Pprint.document
-    val comma_space : Pprint.document
-    val list :
-      ?empty:Pprint.document -> ?sep:Pprint.document ->
-      ('a -> Pprint.document) -> 'a list -> Pprint.document
-    val either : ('a -> 'b) -> ('c -> 'b) -> ('a, 'c) either -> 'b
-    val level : Pprint.document -> Pprint.document
-    val unit : Pprint.document
-    val op :
-      ('a -> Pprint.document) ->
-      'a -> Pprint.document -> 'a -> Pprint.document
-    val fn1 :
-      ('a -> Pprint.document) -> Pprint.document -> 'a -> Pprint.document
-    val fn2 :
-      ('a -> Pprint.document) ->
-      Pprint.document -> 'a -> 'a -> Pprint.document
-  end
+let pp_value = function
+  | Prim.Vvar v   -> pp_var v
+  | Prim.Vconst c -> !^ (string_of_int c)
+  | Prim.Vnull    -> !^ "null"
+
+let pp_expr e =
+  match e with
+  (* Direct value *)
+  | Prim.ONone v -> pp_value v
+  (* Arithmetic ops *)
+  | Prim.OPlus  (v1, v2) -> PP.op pp_value v1 Pprint.plus    v2
+  | Prim.OMult  (v1, v2) -> PP.op pp_value v1 Pprint.star    v2
+  | Prim.OMinus (v1, v2) -> PP.op pp_value v1 Pprint.minus   v2
+  | Prim.ODiv   (v1, v2) -> PP.op pp_value v1 Pprint.bar     v2
+  | Prim.ORem   (v1, v2) -> PP.op pp_value v1 Pprint.percent v2
+  (* Arithmetic functions *)
+  | Prim.OMax (v1, v2) -> PP.fn2 pp_value (!^ "max") v1 v2
+  | Prim.OMin (v1, v2) -> PP.fn2 pp_value (!^ "min") v1 v2
+  (* Comparisons *)
+  | Prim.OGt (v1, v2) -> PP.op pp_value v1 (!^ ">" ) v2
+  | Prim.OGe (v1, v2) -> PP.op pp_value v1 (!^ ">=") v2
+  | Prim.OLt (v1, v2) -> PP.op pp_value v1 (!^ "<" ) v2
+  | Prim.OLe (v1, v2) -> PP.op pp_value v1 (!^ "=<") v2
+  | Prim.OEq (v1, v2) -> PP.op pp_value v1 (!^ "==") v2
+  | Prim.ONe (v1, v2) -> PP.op pp_value v1 (!^ "<>") v2
+  (* IO *)
+  | Prim.ORead v -> PP.fn1 pp_value (!^ "read") v
+
+let pp_mem_w = function
+  | Prim.MWrite v -> PP.fn1 pp_value (!^ "write") v
+  | Prim.MAlloc -> !^ "alloc()"
+

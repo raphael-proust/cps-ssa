@@ -18,45 +18,8 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type ('a, 'b) either = Left of 'a | Right of 'b
-module L :
-  sig
-    val concat_map : ('a -> 'b list) -> 'a list -> 'b list
-    val exists_one : ('a -> bool) -> 'a list -> bool
-    val unique : ('a -> 'b option) -> 'a list -> bool
-    val pick_one_such_as: ('a -> bool) -> 'a list -> ('a * 'a list)
-    val map_option: ('a -> 'b option) -> 'a list -> 'b list
-  end
-
-module O :
-  sig
-    val opt: 'a -> 'a option
-    val none: 'a option
-    val unopt: 'a option -> 'a
-  end
-
-module P :
-  sig
-    val print_pos : out_channel -> Lexing.position -> unit
-  end
-
-module PP :
-  sig
-    val with_paren : Pprint.document -> Pprint.document
-    val with_paren_br : Pprint.document -> Pprint.document
-    val comma_space : Pprint.document
-    val list :
-      ?empty:Pprint.document -> ?sep:Pprint.document ->
-      ('a -> Pprint.document) -> 'a list -> Pprint.document
-    val either : ('a -> 'b) -> ('c -> 'b) -> ('a, 'c) either -> 'b
-    val level : Pprint.document -> Pprint.document
-    val unit : Pprint.document
-    val op :
-      ('a -> Pprint.document) ->
-      'a -> Pprint.document -> 'a -> Pprint.document
-    val fn1 :
-      ('a -> Pprint.document) -> Pprint.document -> 'a -> Pprint.document
-    val fn2 :
-      ('a -> Pprint.document) ->
-      Pprint.document -> 'a -> 'a -> Pprint.document
-  end
+val pp_var  : Prim.var   -> Pprint.document
+val pp_label: Prim.label -> Pprint.document
+val pp_value: Prim.value -> Pprint.document
+val pp_expr : Prim.expr  -> Pprint.document
+val pp_mem_w: Prim.mem_w -> Pprint.document

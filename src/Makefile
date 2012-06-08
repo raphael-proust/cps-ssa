@@ -3,6 +3,7 @@ MLS= \
 		 pprint.ml \
 		 util.ml \
 		 prim.ml \
+		 prim_pp.ml \
 		 SSA.ml \
 		 CPS.ml \
 		 CPS_pp.ml \
