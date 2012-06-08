@@ -24,29 +24,29 @@ module L :
     val concat_map : ('a -> 'b list) -> 'a list -> 'b list
     val exists_one : ('a -> bool) -> 'a list -> bool
     val unique : ('a -> 'b option) -> 'a list -> bool
-    val pick_one_such_as: ('a -> bool) -> 'a list -> ('a * 'a list)
-    val map_option: ('a -> 'b option) -> 'a list -> 'b list
+    val pick_one_such_as : ('a -> bool) -> 'a list -> 'a * 'a list
+    val map_option : ('a -> 'b option) -> 'a list -> 'b list
   end
-
 module O :
   sig
-    val opt: 'a -> 'a option
-    val none: 'a option
-    val unopt: 'a option -> 'a
+    val opt : 'a -> 'a option
+    val none : 'a option
+    val unopt : 'a option -> 'a
   end
-
 module P :
   sig
+    val pos_char : Lexing.position -> int
+    val pos_line : Lexing.position -> int
     val print_pos : out_channel -> Lexing.position -> unit
   end
-
 module PP :
   sig
     val with_paren : Pprint.document -> Pprint.document
     val with_paren_br : Pprint.document -> Pprint.document
     val comma_space : Pprint.document
     val list :
-      ?empty:Pprint.document -> ?sep:Pprint.document ->
+      ?empty:Pprint.document ->
+      ?sep:Pprint.document ->
       ('a -> Pprint.document) -> 'a list -> Pprint.document
     val either : ('a -> 'b) -> ('c -> 'b) -> ('a, 'c) either -> 'b
     val level : Pprint.document -> Pprint.document
