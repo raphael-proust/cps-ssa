@@ -28,14 +28,35 @@ let run filename =
         Llvm_parser.module_ (Llvm_lexer.token) lexbuf
     with
     | e ->
-      Printf.eprintf "Uncaught exception while lexing/parsing from %a to %a"
+      Printf.eprintf "Uncaught exception while lexing/parsing from %a to %a\n"
       Util.P.print_pos (Lexing.lexeme_start_p lexbuf)
       Util.P.print_pos (Lexing.lexeme_end_p   lexbuf);
       raise e
   in
-  let ssa_prog = LLVM2SSA.prog llvm_prog in
-  let cps_m    = SSA2CPS.prog ssa_prog in
-  let cps_doc  = CPS_pp.pp_m cps_m in
+  let ssa_prog =
+    try
+      LLVM2SSA.prog llvm_prog
+    with
+    | e ->
+      Printf.eprintf "Uncaught exception while translating LLVM to SSA\n";
+      raise e
+  in
+  let cps_m =
+    try
+      SSA2CPS.prog ssa_prog
+    with
+    | e ->
+      Printf.eprintf "Uncaught exception while translating SSA to CPS\n";
+      raise e
+  in
+  let cps_doc =
+    try
+      CPS_pp.pp_m cps_m
+    with
+    | e ->
+      Printf.eprintf "Uncaught exception while pretty printing CPS\n";
+      raise e
+  in
   let () = Pprint.Channel.pretty 0. 100 stdout cps_doc in
   ()
 
