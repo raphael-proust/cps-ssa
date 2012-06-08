@@ -25,9 +25,17 @@ type prog = proc list
 
 (** A procedure has arguments and a body (constituted of blocks). *)
 and proc = {
+  p_name  : Prim.label;
   p_args  : Prim.var list;
+  p_entry_block: entry_block;
   p_blocks: block list; (* First block is entry block. Hence it dominates
                            non-dead blocks *)
+}
+
+(** The entry block has no label nor phi nodes. It's [order] is always 0. *)
+and entry_block = {
+   eb_core_instrs: core_instr list;
+   eb_jump   : jump;
 }
 
 (** BLocks are not represented exactly as in Kesley's paper but the two forms
@@ -75,6 +83,25 @@ val label_entry : Prim.label
 val check_ssa : prog -> bool
 
 
+module Entry_blocks :sig
+
+  val entry_block: ?instrs:core_instr list -> jump -> entry_block
+
+  val return: ?instrs:core_instr list -> Prim.expr -> entry_block
+  val return_const: ?instrs:core_instr list -> int -> entry_block
+  val return_0: ?instrs:core_instr list -> unit -> entry_block
+  val return_var: ?instrs:core_instr list -> Prim.var -> entry_block
+
+  val cond: ?instrs:core_instr list ->
+    Prim.expr -> Prim.label -> Prim.label -> entry_block
+
+  val tail: ?instrs:core_instr list ->
+    Prim.label -> Prim.expr list -> Prim.label -> entry_block
+
+  val goto: ?instrs:core_instr list -> Prim.label -> entry_block
+
+end
+
 module Blocks :sig
 
   val block: ?label:Prim.label ->
@@ -110,18 +137,19 @@ end
 
 module Procs : sig
 
-  val proc: ?args:Prim.var list -> block list -> proc
+  val proc: name:Prim.label -> ?args:Prim.var list ->
+    entry_block -> block list -> proc
 
-  val block: ?args:Prim.var list -> block -> proc
+  val entry_block: name:Prim.label -> ?args:Prim.var list -> entry_block -> proc
 
   val cond:
-       ?label:Prim.label
+       name:Prim.label
     -> ?args:Prim.var list
     -> Prim.expr -> block -> block
     -> proc
 
   val cond_e:
-       ?label:Prim.label
+       name:Prim.label
     -> ?args:Prim.var list
     -> Prim.expr -> Prim.expr -> Prim.expr
     -> proc

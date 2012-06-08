@@ -25,9 +25,15 @@ let label_entry = Prim.label "entry"
 type prog = proc list
 
 and proc = {
-  p_args  : Prim.var list;
-  p_blocks: block list; (* First block is entry block. Hence it dominates
-                           non-dead blocks *)
+  p_name       : Prim.label;
+  p_args       : Prim.var list;
+  p_entry_block: entry_block;
+  p_blocks     : block list;
+}
+
+and entry_block = {
+   eb_core_instrs: core_instr list;
+   eb_jump   : jump;
 }
 
 and block = {
@@ -64,9 +70,6 @@ let block_of_label blocks label =
 
 let check_ssa prog =
 
-  (* no procedure should be empty *)
-  List.for_all (fun p -> p.p_blocks <> []) prog &&
-
   (* one procedure is the "main" *)
   Util.L.exists_one (fun p -> (List.hd p.p_blocks).b_label = label_entry) prog &&
 
@@ -74,6 +77,11 @@ let check_ssa prog =
 
   (* no two labels are identical *)
   Util.L.unique (fun b -> Some b.b_label) blocks &&
+
+  (* no internal block has procedure name *)
+  List.for_all
+    (fun p -> List.for_all (fun b -> b.b_label <> p.p_name) p.p_blocks)
+    prog &&
 
   (* no two assignments share their rhs variable *)
   Util.L.unique
@@ -87,6 +95,30 @@ let check_ssa prog =
   (* TODO: check def dominates use (requires dominator info, not necessary) *)
   (* TODO? do one pass check? *)
 
+
+(* For making entry blocks *)
+module Entry_blocks = struct
+
+  let entry_block ?(instrs = []) j = {
+    eb_core_instrs = instrs;
+           eb_jump = j;
+  }
+
+  let return ?instrs e = entry_block ?instrs (Jreturn e)
+
+  let return_const ?instrs c = return ?instrs Prim.(ONone (Vconst c))
+
+  let return_0 ?instrs () = return_const ?instrs 0
+
+  let return_var ?instrs v = return ?instrs Prim.(ONone (Vvar v))
+
+  let cond ?instrs e l1 l2 = entry_block ?instrs (Jcond (e, l1, l2))
+
+  let tail ?instrs l es d = entry_block ?instrs (Jtail (l, es, d))
+
+  let goto ?instrs l = entry_block ?instrs (Jgoto l)
+
+end
 
 (* For building trivial blocks *)
 module Blocks = struct
@@ -124,20 +156,22 @@ end
 (* For building simpl procs *)
 module Procs = struct
 
-  let proc ?(args = []) blocks = {
-      p_args = args;
-    p_blocks = blocks;
+  let proc ~name ?(args = []) entry_block blocks = {
+           p_name = name;
+           p_args = args;
+    p_entry_block = entry_block;
+         p_blocks = blocks;
   }
 
-  let block ?args b = proc ?args [b]
+  let entry_block ~name ?args eb = proc ~name ?args eb []
 
-  let cond ?label ?args e b1 b2 =
-    proc ?args [Blocks.cond ?label e b1.b_label b2.b_label; b1; b2;]
+  let cond ~name ?args e b1 b2 =
+    proc ~name ?args (Entry_blocks.cond e b1.b_label b2.b_label) [b1; b2;]
 
-  let cond_e ?label ?args e e1 e2 =
+  let cond_e ~name ?args e e1 e2 =
     let b1 = Blocks.return e1 in
     let b2 = Blocks.return e2 in
-    cond ?label ?args e b1 b2
+    cond ~name ?args e b1 b2
 
 end
 
