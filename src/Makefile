@@ -1,5 +1,6 @@
 
 MLS= \
+		 options.ml \
 		 pprint.ml \
 		 util.ml \
 		 prim.ml \
