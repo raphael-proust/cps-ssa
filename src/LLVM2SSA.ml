@@ -77,6 +77,7 @@ let value = function
 let value_expr v = Prim.ONone (value v)
 
 let running_idx = ref 0
+let reset_running_idx () = running_idx := 0
 let update_runnig_idx i =
   assert (i = !running_idx + 1);
   incr running_idx
@@ -300,5 +301,7 @@ let tpl = function
   | LLVM.TLE_Datalayout _ -> None
   | LLVM.TLE_Definition d -> Some (proc d)
 
-let prog = Util.L.map_option tpl
+let prog m =
+  reset_running_idx ();
+  Util.L.map_option tpl m
 

@@ -22,11 +22,18 @@
 
 let ll_files = ref []
 
+let optimisations = ref []
+
 
 (*Parsing *)
 
-let arg_parsing = [
-  ]
+let dashdash = ref false
+
+let witness_dashdash () =
+  if !dashdash then
+    raise (Arg.Bad "Multiple '--' witnessed")
+  else
+    dashdash := true
 
 let add_ll_file s =
   if Filename.check_suffix s ".ll" then
@@ -34,13 +41,26 @@ let add_ll_file s =
   else
     raise (Arg.Bad (s ^ " is not an .ll file"))
 
-let usage = "run.{byte,native} [options] file.ll [other_file.ll ..]"
+let add_optimistation s =
+  optimisations := s :: !optimisations
 
-let () = Arg.parse arg_parsing add_ll_file usage
+let parse_fn = function
+  | "--" -> witness_dashdash ()
+  | s ->
+    if !dashdash then
+      add_optimistation s
+    else
+      add_ll_file s
+
+let args = Array.sub Sys.argv 1 (Array.length Sys.argv - 1)
+
+let () = Array.iter parse_fn args
 
 
 (* Exporting dereferenced values *)
 
 let ll_files = !ll_files
+
+let optimisations = !optimisations
 
 

@@ -22,6 +22,8 @@ let () = Printexc.record_backtrace true
 
 let run ll_file =
 
+  let base_file = Filename.chop_suffix ll_file ".ll" in
+
   (* Phase 1: parse LLVM *)
   let in_ll = open_in ll_file in
   let lexbuf  = Lexing.from_channel in_ll in
@@ -30,9 +32,10 @@ let run ll_file =
         Llvm_parser.module_ (Llvm_lexer.token) lexbuf
     with
     | e ->
-      Printf.eprintf "Uncaught exception while lexing/parsing from %a to %a\n"
-      Util.P.print_pos (Lexing.lexeme_start_p lexbuf)
-      Util.P.print_pos (Lexing.lexeme_end_p   lexbuf);
+      Printf.eprintf "Uncaught exception while lexing/parsing %s: %a -> %a\n"
+        base_file
+        Util.P.print_pos (Lexing.lexeme_start_p lexbuf)
+        Util.P.print_pos (Lexing.lexeme_end_p   lexbuf);
       raise e
   in
   let () = close_in in_ll in
@@ -43,11 +46,12 @@ let run ll_file =
       LLVM2SSA.prog llvm_prog
     with
     | e ->
-      Printf.eprintf "Uncaught exception while translating LLVM to SSA\n";
-      raise e
+      Printf.eprintf "Uncaught exception while translating %s from LLVM to SSA\n"
+        base_file;
+        raise e
   in
   let ssa_doc = SSA_pp.pp_prog ssa_prog in
-  let ssa_file = Filename.chop_suffix ll_file ".ll" ^ ".ssa" in
+  let ssa_file = base_file ^ ".ssa" in
   let out_ssa = open_out ssa_file in
   let () = Pprint.Channel.pretty 1. 20 out_ssa ssa_doc in
   let () = close_out out_ssa in
@@ -59,21 +63,57 @@ let run ll_file =
       SSA2CPS.prog ssa_prog
     with
     | e ->
-      Printf.eprintf "Uncaught exception while translating SSA to CPS\n";
+      Printf.eprintf "Uncaught exception while translating %s SSA to CPS\n"
+        base_file;
       raise e
   in
   let cps_doc = CPS_pp.pp_m cps_m in
-  let cps_file = Filename.chop_suffix ll_file ".ll" ^ ".cps" in
+  let cps_file = base_file ^ ".cps" in
   let out_cps = open_out cps_file in
   let () = Pprint.Channel.pretty 0. 100 out_cps cps_doc in
   let () = close_out out_cps in
   ()
 
+let generate_optimised ll_file optimisations =
+  let base_file = Filename.chop_suffix ll_file ".ll" in
+  let optimised =
+    List.fold_left
+      (fun accu optim ->
+        let optimised_name =
+          Printf.sprintf "%s.%s.ll" base_file optim
+        in
+        let command =
+          (Printf.sprintf "opt -S -o %s.%s.ll -%s %s"
+            base_file optim optim ll_file
+          )
+        in
+        Printf.eprintf "Executing: %s\n" command;
+        let rc = Sys.command command in
+        flush_all ();
+        let accu =
+          if rc = 0 then
+            optimised_name :: accu
+          else begin
+            Printf.eprintf "Error occured on optimisation %s on file %s\n"
+              optim ll_file;
+            accu
+          end
+        in
+        flush_all ();
+        accu
+      )
+      []
+      optimisations
+  in
+  ll_file :: optimised
+
+
 let () =
     List.iter
       (fun t ->
         try
-          run t
+          let lls = generate_optimised t Options.optimisations in
+          List.iter run lls
         with
         | e ->
           Printf.eprintf "%s\n" (Printexc.to_string e);
