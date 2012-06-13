@@ -42,24 +42,34 @@ end
 
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
 
-let vertices_of_block proc b =
-  let rb = Util.Right b in
-  (* we get a list of jumps out of a block *)
-  match b.SSA.b_jump with
+let vertices_of_jump proc v0 j =
+  match j with
   (* inter-procedural jumps are ignored in the translation *)
   | SSA.Jreturnvoid | SSA.Jreturn _ | SSA.Jtail _ -> []
   (* intra-procedural simple jump *)
   | SSA.Jgoto label ->
-    [G.E.create rb () (SSA.block_of_label_p proc label)]
+    [G.E.create v0 () (SSA.block_of_label_p proc label)]
   (* intra-procedural conditional jump *)
   | SSA.Jcond (_, label1, label2) ->
-    [G.E.create rb () (SSA.block_of_label_p proc label1);
-     G.E.create rb () (SSA.block_of_label_p proc label2);
+    [G.E.create v0 () (SSA.block_of_label_p proc label1);
+     G.E.create v0 () (SSA.block_of_label_p proc label2);
     ]
+
+let vertices_of_block proc b =
+  vertices_of_jump proc (Util.Right b) b.SSA.b_jump
+
+let vertices_of_entry_block proc eb =
+  vertices_of_jump proc (Util.Left eb) eb.SSA.eb_jump
 
 let graph_of_proc proc =
   (* straight-forward translation: we iterate over the blocks adding vertices
      and edges. *)
+  let initial_graph = (*TODO: factorisation*)
+    List.fold_left
+      G.add_edge_e
+      (G.add_vertex G.empty (Util.Left proc.SSA.p_entry_block))
+      (vertices_of_entry_block proc proc.SSA.p_entry_block)
+  in
   let graph =
     List.fold_left (* list of (list of jumps | blocks) *)
       (fun g block ->
@@ -69,7 +79,7 @@ let graph_of_proc proc =
           (G.add_vertex g rblock)
           (vertices_of_block proc block)
       )
-      (G.add_vertex G.empty (Util.Left proc.SSA.p_entry_block))
+      initial_graph
       proc.SSA.p_blocks
   in
   graph
@@ -85,8 +95,8 @@ let mark_postorder g =
   let process = ref [] in
   DFS_Traverse.postfix
     (function
-      | (Util.Left _) as t ->
-        assert (!id = 0);
+      | (Util.Left eb) as t ->
+        eb.SSA.eb_order <- !id;
         incr id;
         process := t :: !process
       | (Util.Right b) as t ->
@@ -99,7 +109,7 @@ let mark_postorder g =
               in the dominator fixpoint research. *)
 
 let order = function
-  | Util.Left _ -> 0
+  | Util.Left eb -> eb.SSA.eb_order
   | Util.Right b -> b.SSA.b_order
 
 let intersect dom b1 b2 =

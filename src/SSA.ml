@@ -32,8 +32,9 @@ and proc = {
 }
 
 and entry_block = {
-   eb_core_instrs: core_instr list;
-   eb_jump   : jump;
+  mutable eb_order  : int;
+  (*   *) eb_core_instrs: core_instr list;
+  (*   *) eb_jump   : jump;
 }
 
 and block = {
@@ -112,6 +113,7 @@ let check_ssa prog =
 module Entry_blocks = struct
 
   let entry_block ?(instrs = []) j = {
+          eb_order = 0;
     eb_core_instrs = instrs;
            eb_jump = j;
   }

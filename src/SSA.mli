@@ -34,8 +34,9 @@ and proc = {
 
 (** The entry block has no label nor phi nodes. It's [order] is always 0. *)
 and entry_block = {
-   eb_core_instrs: core_instr list;
-   eb_jump   : jump;
+  mutable eb_order : int;
+  (*   *) eb_core_instrs: core_instr list;
+  (*   *) eb_jump   : jump;
 }
 
 (** BLocks are not represented exactly as in Kesley's paper but the two forms
