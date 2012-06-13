@@ -81,7 +81,7 @@ val label_entry : Prim.label
     each variable is assigned to, only once, there is exactly one main procedure,
     and other things.
   *)
-val check_ssa : prog -> bool
+val check_ssa : prog -> unit
 
 
 module Entry_blocks :sig

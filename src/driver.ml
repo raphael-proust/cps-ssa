@@ -51,6 +51,7 @@ let run ll_file =
   let out_ssa = open_out ssa_file in
   let () = Pprint.Channel.pretty 1. 20 out_ssa ssa_doc in
   let () = close_out out_ssa in
+  let () = SSA.check_ssa ssa_prog in
 
   (* Phase 3: transform to CPS *)
   let cps_m =

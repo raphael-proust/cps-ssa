@@ -81,26 +81,29 @@ let block_of_label proc label =
 let check_ssa prog =
 
   (* one procedure is the "main" *)
-  Util.L.exists_one (fun p -> (List.hd p.p_blocks).b_label = label_entry) prog &&
+  assert (Util.L.exists_one (fun p -> p.p_name = label_entry) prog);
 
   let blocks = Util.L.concat_map (fun p -> p.p_blocks) prog in
 
   (* no two labels are identical *)
-  Util.L.unique (fun b -> Some b.b_label) blocks &&
+  assert (Util.L.unique (fun b -> Some b.b_label) blocks);
 
   (* no internal block has procedure name *)
-  List.for_all
-    (fun p -> List.for_all (fun b -> b.b_label <> p.p_name) p.p_blocks)
-    prog &&
+  assert (
+    List.for_all
+      (fun p -> List.for_all (fun b -> b.b_label <> p.p_name) p.p_blocks)
+      prog
+  );
 
   (* no two assignments share their rhs variable *)
-  Util.L.unique
+  assert (Util.L.unique
     (function
       | IAssignExpr (v, _)
       | IAssigncall (v, _, _) -> Some v
       | IMemWrite _ -> None
     )
     (Util.L.concat_map (fun b -> b.b_core_instrs) blocks)
+  )
 
   (* TODO: check def dominates use (requires dominator info, not necessary) *)
   (* TODO? do one pass check? *)
