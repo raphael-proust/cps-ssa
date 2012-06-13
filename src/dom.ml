@@ -57,7 +57,7 @@ let vertices_of_block proc b =
      G.E.create rb () (SSA.block_of_label_p proc label2);
     ]
 
-let graph_of_blocks proc blocks =
+let graph_of_proc proc =
   (* straight-forward translation: we iterate over the blocks adding vertices
      and edges. *)
   let graph =
@@ -69,8 +69,8 @@ let graph_of_blocks proc blocks =
           (G.add_vertex g rblock)
           (vertices_of_block proc block)
       )
-      G.empty
-      blocks
+      (G.add_vertex G.empty (Util.Left proc.SSA.p_entry_block))
+      proc.SSA.p_blocks
   in
   graph
 
@@ -122,11 +122,9 @@ let intersect dom b1 b2 =
 
 let dom_of_proc proc =
 
-  let blocks = proc.SSA.p_blocks in
-
   let lentry = Util.Left proc.SSA.p_entry_block in
 
-  let graph = graph_of_blocks proc blocks in
+  let graph = graph_of_proc proc in
 
   (*init*)
   let dom = Array.make (G.nb_vertex graph) None in
