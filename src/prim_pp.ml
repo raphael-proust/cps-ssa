@@ -59,5 +59,5 @@ let pp_expr e =
 
 let pp_mem_w = function
   | Prim.MWrite v -> (!^ "<-") ^^ PP.space ^^ pp_value v
-  | Prim.MAlloc -> !^ "alloc()"
+  | Prim.MAlloc -> !^ "<- alloc ()"
 

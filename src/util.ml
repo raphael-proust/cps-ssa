@@ -114,7 +114,7 @@ module PP = struct
   let either pl pr = function
     | Left l  -> pl l
     | Right r -> pr r
-  let level d = Pprint.nest 2 (Pprint.break1 ^^ d)
+  let level d = Pprint.nest 2 (Pprint.break0 ^^ d)
   let unit = !^ "()"
   let op pp_v v1 op v2 = pp_v v1 ^^ op ^^ pp_v v2
   let fn1 pp_v fn v = fn ^^ Pprint.space ^^ with_paren (pp_v v)
