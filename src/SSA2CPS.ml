@@ -21,7 +21,7 @@
 let expr_of_var v = Prim.ONone (Prim.Vvar v)
 
 let args_of_label proc label =
-  let right_block = SSA.block_of_label_p proc label in
+  let right_block = SSA.block_of_label proc label in
   match right_block with
   | Util.Left _ -> assert false (* no jump to entry block *)
   | Util.Right block ->

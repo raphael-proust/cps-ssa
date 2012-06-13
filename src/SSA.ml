@@ -61,7 +61,7 @@ and phi = Prim.var * (Prim.label * Prim.expr) list
 
 (* inefficient! but only used with a low number of blocks *)
 (*TODO: memoize or build a map before use *)
-let block_of_label_p proc label =
+let block_of_label proc label =
   if label = proc.p_name then
     Util.Left proc.p_entry_block
   else
@@ -69,17 +69,14 @@ let block_of_label_p proc label =
       Util.Right (List.find (fun b -> b.b_label = label) proc.p_blocks)
     with
     | Not_found as e ->
-      Printf.eprintf "Block not found: %s" (Prim.string_of_label label);
+      Printf.eprintf "Block not found: %s\nAvailable blocks: %s %s\n"
+        (Prim.string_of_label label)
+        (Prim.string_of_label proc.p_name)
+        (String.concat " "
+          (List.map (fun b -> Prim.string_of_label b.b_label) proc.p_blocks)
+        )
+        ;
       raise e
-
-let block_of_label_b blocks label =
-  try
-    List.find (fun b -> b.b_label = label) blocks
-  with
-  | Not_found as e ->
-    Printf.eprintf "Block not found: %s" (Prim.string_of_label label);
-    raise e
-
 
 let check_ssa prog =
 

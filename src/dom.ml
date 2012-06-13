@@ -48,11 +48,11 @@ let vertices_of_jump proc v0 j =
   | SSA.Jreturnvoid | SSA.Jreturn _ | SSA.Jtail _ -> []
   (* intra-procedural simple jump *)
   | SSA.Jgoto label ->
-    [G.E.create v0 () (SSA.block_of_label_p proc label)]
+    [G.E.create v0 () (SSA.block_of_label proc label)]
   (* intra-procedural conditional jump *)
   | SSA.Jcond (_, label1, label2) ->
-    [G.E.create v0 () (SSA.block_of_label_p proc label1);
-     G.E.create v0 () (SSA.block_of_label_p proc label2);
+    [G.E.create v0 () (SSA.block_of_label proc label1);
+     G.E.create v0 () (SSA.block_of_label proc label2);
     ]
 
 let vertices_of_block proc b =
