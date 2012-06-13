@@ -18,9 +18,10 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-module G : Graph.Sig.P with type     V.t = SSA.block
-                        and type V.label = SSA.block
-                        and type     E.t = SSA.block * SSA.block
+type node = (SSA.entry_block, SSA.block) Util.either
+module G : Graph.Sig.P with type     V.t = node
+                        and type V.label = node
+                        and type     E.t = node * node
                         and type E.label = unit
 
 (** [dom_of_blocks blocks] evaluates to a dominator tree. The translation
@@ -29,4 +30,4 @@ module G : Graph.Sig.P with type     V.t = SSA.block
       - the head of the (non-empty) list of blocks is the entry block
       - the graph the blocks form is connex (dead-code much?)
   *)
-val dom_of_blocks: SSA.block list -> G.t
+val dom_of_proc: SSA.proc -> G.t

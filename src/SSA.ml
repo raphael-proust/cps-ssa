@@ -60,13 +60,25 @@ and phi = Prim.var * (Prim.label * Prim.expr) list
 
 (* inefficient! but only used with a low number of blocks *)
 (*TODO: memoize or build a map before use *)
-let block_of_label blocks label =
+let block_of_label_p proc label =
+  if label = proc.p_name then
+    Util.Left proc.p_entry_block
+  else
+    try
+      Util.Right (List.find (fun b -> b.b_label = label) proc.p_blocks)
+    with
+    | Not_found as e ->
+      Printf.eprintf "Block not found: %s" (Prim.string_of_label label);
+      raise e
+
+let block_of_label_b blocks label =
   try
-    List.find (fun p -> p.b_label = label) blocks
+    List.find (fun b -> b.b_label = label) blocks
   with
   | Not_found as e ->
     Printf.eprintf "Block not found: %s" (Prim.string_of_label label);
     raise e
+
 
 let check_ssa prog =
 
@@ -174,5 +186,3 @@ module Procs = struct
     cond ~name ?args e b1 b2
 
 end
-
-(*TODO? some ast -> ssa automatic translator?*)

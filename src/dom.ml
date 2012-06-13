@@ -20,40 +20,54 @@
 
 open Util (* provides L and O *)
 
+type node = (SSA.entry_block, SSA.block) Util.either
 (*Let's have a persistent graph. We only use labels in the functor argument
   because SSA's hypotheses lets us do it. *)
 module BlockVertex = struct
-  type t = SSA.block
-  let compare b1 b2 = Pervasives.compare b1.SSA.b_label b2.SSA.b_label
-  let hash b  = Hashtbl.hash b.SSA.b_label
-  let equal b1 b2 = b1.SSA.b_label = b2.SSA.b_label
+  type t = (SSA.entry_block, SSA.block) Util.either
+  let compare b1 b2 = match (b1, b2) with
+   | Left _, Right _ -> -1
+   | Left e1, Left e2 -> assert (e1 = e2); 0
+   | Right _, Left _ -> 1
+   | Right b1, Right b2 -> Pervasives.compare b1.SSA.b_label b2.SSA.b_label
+  let hash b = match b with
+   | Left e -> Hashtbl.hash "entryblock"
+   | Right b -> Hashtbl.hash b.SSA.b_label
+  let equal b1 b2 = match (b1, b2) with
+   | Left _, Right _ -> false
+   | Left e1, Left e2 -> assert (e1 = e2); true
+   | Right _, Left _ -> false
+   | Right b1, Right b2 -> b1.SSA.b_label = b2.SSA.b_label
 end
 
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
 
-let vertices_of_block blocks b =
+let vertices_of_block proc b =
+  let rb = Util.Right b in
   (* we get a list of jumps out of a block *)
   match b.SSA.b_jump with
   (* inter-procedural jumps are ignored in the translation *)
   | SSA.Jreturnvoid | SSA.Jreturn _ | SSA.Jtail _ -> []
   (* intra-procedural simple jump *)
-  | SSA.Jgoto label -> [G.E.create b () (SSA.block_of_label blocks label)]
+  | SSA.Jgoto label ->
+    [G.E.create rb () (SSA.block_of_label_p proc label)]
   (* intra-procedural conditional jump *)
   | SSA.Jcond (_, label1, label2) ->
-    [G.E.create b () (SSA.block_of_label blocks label1);
-     G.E.create b () (SSA.block_of_label blocks label2);
+    [G.E.create rb () (SSA.block_of_label_p proc label1);
+     G.E.create rb () (SSA.block_of_label_p proc label2);
     ]
 
-let graph_of_blocks blocks =
+let graph_of_blocks proc blocks =
   (* straight-forward translation: we iterate over the blocks adding vertices
      and edges. *)
   let graph =
     List.fold_left (* list of (list of jumps | blocks) *)
       (fun g block ->
+        let rblock = Util.Right block in
         List.fold_left (* (list of jumps | block) *)
           G.add_edge_e
-          (G.add_vertex g block)
-          (vertices_of_block blocks block)
+          (G.add_vertex g rblock)
+          (vertices_of_block proc block)
       )
       G.empty
       blocks
@@ -70,25 +84,34 @@ let mark_postorder g =
   let id = ref 0 in
   let process = ref [] in
   DFS_Traverse.postfix
-    (fun b ->
-      b.SSA.b_order <- !id; incr id;
-      process := b :: !process
+    (function
+      | (Util.Left _) as t ->
+        assert (!id = 0);
+        incr id;
+        process := t :: !process
+      | (Util.Right b) as t ->
+        b.SSA.b_order <- !id;
+        incr id;
+        process := t :: !process
     )
     g;
   !process (* We return a list of blocks in the order they should be processed
               in the dominator fixpoint research. *)
 
+let order = function
+  | Util.Left _ -> 0
+  | Util.Right b -> b.SSA.b_order
 
 let intersect dom b1 b2 =
   (*dominators intersection: based on Cooper, Harvey, and Kennedy*)
   let rec aux b1 b2 =
-    if b1.SSA.b_order = b2.SSA.b_order then begin
+    if order b1 = order b2 then begin
       assert (b1 = b2);
       b1
-    end else if b1.SSA.b_order < b2.SSA.b_order then begin
-      aux (O.unopt dom.(b1.SSA.b_order)) b2
-    end else if b1.SSA.b_order > b2.SSA.b_order then begin
-      aux b1 (O.unopt dom.(b2.SSA.b_order))
+    end else if order b1 < order b2 then begin
+      aux (O.unopt dom.(order b1)) b2
+    end else if order b1 > order b2 then begin
+      aux b1 (O.unopt dom.(order b2))
     end else begin
       assert false
     end
@@ -97,60 +120,60 @@ let intersect dom b1 b2 =
 
 (* with post-order and DAG-translation, we can translate any procedure. *)
 
-let dom_of_blocks = function
-  | [] -> assert false (* this is captured by [SSA.check_ssa]. *)
-  | entry::subs as blocks ->
+let dom_of_proc proc =
 
-    assert (entry.SSA.b_order = 0);
+  let blocks = proc.SSA.p_blocks in
 
-    let graph = graph_of_blocks blocks in
+  let lentry = Util.Left proc.SSA.p_entry_block in
 
-    (*init*)
-    let dom = Array.make (G.nb_vertex graph) None in
-    let process = mark_postorder graph in
-    assert (entry = List.hd process);
-    assert (List.for_all (G.mem_vertex graph) process);
-    dom.(entry.SSA.b_order) <- Some entry;
-    let changed = ref true in
+  let graph = graph_of_blocks proc blocks in
 
-    (*main loop with fixpoint detection*)
-    while !changed do
-      changed := false;
-      List.iter
-        (fun b ->
-          let (new_idom, others) =
-            L.pick_one_such_as
-              (fun b -> dom.(b.SSA.b_order) <> None)
-              (G.pred graph b)
-          in
-          let new_idom = ref new_idom in
-          List.iter
-            (fun p ->
-              begin
-                if dom.(b.SSA.b_order) <> None then
-                  new_idom := intersect dom p !new_idom
-              end
-            )
-            others;
-          begin
-            if dom.(b.SSA.b_order) <> Some !new_idom then begin
-              dom.(b.SSA.b_order) <- Some !new_idom;
-              changed := true
+  (*init*)
+  let dom = Array.make (G.nb_vertex graph) None in
+  let process = mark_postorder graph in
+  assert (lentry = List.hd process);
+  assert (List.for_all (G.mem_vertex graph) process);
+  dom.(order (lentry)) <- Some (lentry);
+  let changed = ref true in
+
+  (*main loop with fixpoint detection*)
+  while !changed do
+    changed := false;
+    List.iter
+      (fun b ->
+        let (new_idom, others) =
+          L.pick_one_such_as
+            (fun b -> dom.(order b) <> None)
+            (G.pred graph b)
+        in
+        let new_idom = ref new_idom in
+        List.iter
+          (fun p ->
+            begin
+              if dom.(order b) <> None then
+                new_idom := intersect dom p !new_idom
             end
+          )
+          others;
+        begin
+          if dom.(order b) <> Some !new_idom then begin
+            dom.(order b) <- Some !new_idom;
+            changed := true
           end
-        )
-        (List.tl process)
-    done;
+        end
+      )
+      (List.tl process)
+  done;
 
-    let dom_tree =
-      let domref = ref G.empty in
-      G.iter_vertex
-        (fun b ->
-          domref :=
-            G.add_edge_e !domref (G.E.create b () (O.unopt dom.(b.SSA.b_order)))
-        )
-        graph;
-      !domref
-    in
+  let dom_tree =
+    let domref = ref G.empty in
+    G.iter_vertex
+      (fun b ->
+        domref :=
+          G.add_edge_e !domref (G.E.create b () (O.unopt dom.(order b)))
+      )
+      graph;
+    !domref
+  in
 
-    dom_tree
+  dom_tree

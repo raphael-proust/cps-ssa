@@ -18,13 +18,10 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(** Translate blocks. There should be no need to use directly. *)
-val block : Dom.G.t -> Prim.var -> SSA.block list -> SSA.block -> CPS.m
-
 (** Translate procedures. There should be no need to use directly. *)
 val proc : SSA.proc -> CPS.lambda
 
 (** Translate programs. This is probably the function you need. The assumptions
     made by this functions are checked by [SSA.check_ssa] (or should be, if not,
     a bug fix is necessary). *)
-val prog : SSA.proc list -> CPS.m
+val prog : SSA.prog -> CPS.m

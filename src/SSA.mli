@@ -71,7 +71,10 @@ and jump =
 and phi = Prim.var * (Prim.label * Prim.expr) list
 
 (** find a block in a list by its label *)
-val block_of_label: block list -> Prim.label -> block
+val block_of_label_p: proc -> Prim.label -> (entry_block, block) Util.either
+
+(** find a block in a set *)
+val block_of_label_b: block list -> Prim.label -> block
 
 (** Label for program entry point. *)
 val label_entry : Prim.label

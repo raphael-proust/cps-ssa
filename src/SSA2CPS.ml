@@ -18,99 +18,98 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(*TODO: memoize or build map.*)
-let block_of_label bs l =
-  List.find (fun b -> b.SSA.b_label = l) bs
+let expr_of_var v = Prim.ONone (Prim.Vvar v)
 
-let rec block dom return bs ({SSA.b_label; b_phis; b_core_instrs; b_jump;} as b) =
-
-  let args_of_label l =
+let args_of_label proc label =
+  let right_block = SSA.block_of_label_p proc label in
+  match right_block with
+  | Util.Left _ -> assert false (* no jump to entry block *)
+  | Util.Right block ->
     List.map
-      (fun (_, p) -> List.assoc b_label p)
-      ((SSA.block_of_label bs l).SSA.b_phis)
-  in
+      (fun (_, p) -> List.assoc label p)
+      block.SSA.b_phis
 
+let core_instrs_and_jump k proc cis j =
+  let open CPS in
   let rec aux = function
-    | SSA.IAssignExpr (x, e)     :: l -> CPS.Mlet (x, e,  aux l)
-    | SSA.IAssigncall (x, f, es) :: l ->
-      let f = Prim.var_of_label f in
-      CPS.Mapp (f, es, CPS.C (x, aux l))
-    | SSA.IMemWrite (x, e)       :: l -> CPS.Mseq (x, e,  aux l)
-    | [] ->
-      (* instead of returning, we translate the last bit: the jump. *)
-      match b_jump with
-      | SSA.Jgoto l ->
-        CPS.Mcont ((Prim.var_of_label l), (args_of_label l))
-      | SSA.Jreturn e ->
-        CPS.Mcont (return, [e])
-      | SSA.Jreturnvoid ->
-        CPS.Mcont (return, [])
-      | SSA.Jtail (f, es, d) ->
-        let f = Prim.var_of_label f in
-        let d = Prim.var_of_label d in
-        CPS.Mapp (f, es, CPS.Cvar d)
-      | SSA.Jcond (c, l1, l2) ->
-        CPS.Mcond (c,
-                   (Prim.var_of_label l1, (args_of_label l1)),
-                   (Prim.var_of_label l2, (args_of_label l2))
-                  )
+  | SSA.IAssignExpr (v, e) :: cis -> Mlet (v, e, aux cis)
+  | SSA.IAssigncall (v, l, es) :: cis ->
+      Mapp (Prim.var_of_label l, es, C (v, aux cis))
+  | SSA.IMemWrite (v, w) :: cis -> Mseq (v, w, aux cis)
+  | [] -> match j with
+    | SSA.Jgoto l -> Mapp (Prim.var_of_label l, args_of_label proc l, Cvar k)
+    | SSA.Jreturn e   -> Mcont (k, [e])
+    | SSA.Jreturnvoid -> Mcont (k, [])
+    | SSA.Jtail (l, es, lc) ->
+        Mapp (Prim.var_of_label l, es, Cvar (Prim.var_of_label lc))
+    | SSA.Jcond (e, l1, l2) ->
+        Mcond (e,
+               (Prim.var_of_label l1, args_of_label proc l1),
+               (Prim.var_of_label l2, args_of_label proc l2))
   in
+  aux cis
 
-  (* We translate immediate dominatees as local lambdas *)
-  match Dom.G.pred dom b with
-  | [] -> aux b_core_instrs
-  | l  ->
+let rec tr_abstract_block dom k proc node core_instrs jump =
+  let m = core_instrs_and_jump k proc core_instrs jump in
+
+  match Dom.G.pred dom node with
+  | [] -> m
+  | domeds  ->
     let l =
       List.map
         (fun domed -> (*terminates bc dominator tree is a DAG*)
           let lbl = Prim.var_of_label domed.SSA.b_label in
           let vs = List.map fst domed.SSA.b_phis in
-          let lambda = CPS.Ljump (vs, block dom return bs domed) in
+          let lambda = CPS.Ljump (vs, tr_block dom k proc domed) in
           (lbl, lambda)
         )
-        l
+        (List.map
+          (function
+            | Util.Left _ -> assert false (* no jump to entry block *)
+            | Util.Right l -> l
+          )
+          domeds
+        )
     in
-    CPS.Mrec (l, aux b_core_instrs)
+    CPS.Mrec (l, m)
 
-(* translate a whole procedure. *)
-and proc {SSA.p_args; p_blocks;} =
-  match p_blocks with
-  | [] -> failwith "Can't translate empty ssa procedure into cps"
-  | entry::_ ->
-    let dom = Dom.dom_of_blocks p_blocks in
-    (* remove phony fixpoint-seed. *)
-    let dom = Dom.G.remove_edge dom entry entry in
-    let return = Prim.fresh_var () in
-    CPS.Lproc (p_args, return, block dom return p_blocks entry)
 
-(* translate a whole program *)
-and prog proclist =
-  if proclist = [] then
-    failwith "Can't translate empty ssa program into cps"
-  else
-    (* we need immediate dominatees for the translation *)
-    let lambdas =
-      List.map
-       (fun p ->
-         let lbl= Prim.var_of_label (List.hd p.SSA.p_blocks).SSA.b_label in
-         (lbl, proc p)
-       )
-       proclist
-    in
-    let args =
-      let main_proc =
-        List.find
-          SSA.(fun p -> (List.hd p.p_blocks).b_label = label_entry)
-          proclist
-      in
-      List.map
-        (fun v -> Prim.(ONone (Vvar v)))
-        main_proc.SSA.p_args
-    in
-    CPS.Mrec (lambdas,
-              (CPS.Mapp ((Prim.var_of_label SSA.label_entry),
-                         args,
-                         CPS.Cvar CPS.var_run
-                        )
-              )
-             )
+and tr_block dom k proc block =
+  tr_abstract_block dom k proc (Util.Right block)
+    block.SSA.b_core_instrs
+    block.SSA.b_jump
+
+let tr_entry_block dom k proc entry_block =
+  tr_abstract_block dom k proc (Util.Left entry_block)
+    entry_block.SSA.eb_core_instrs
+    entry_block.SSA.eb_jump
+
+let tr_proc proc =
+  let dom = Dom.dom_of_proc proc in
+  let k = Prim.fresh_var () in
+  let m = tr_entry_block dom k proc proc.SSA.p_entry_block in
+  CPS.Lproc (proc.SSA.p_args, k, m)
+
+let tr_prog prog =
+  let open CPS in
+  let (main, _) =
+    Util.L.pick_one_such_as
+      (fun proc -> proc.SSA.p_name = SSA.label_entry)
+      prog
+  in
+  let lambdas =
+    List.map
+      (fun proc -> (Prim.var_of_label proc.SSA.p_name, tr_proc proc))
+      prog
+  in
+  Mrec
+    (lambdas,
+     Mapp (Prim.var_of_label main.SSA.p_name,
+           List.map (fun v -> Prim.(ONone (Vvar v))) main.SSA.p_args,
+           Cvar var_run
+          )
+    )
+
+
+let proc   = tr_proc
+let prog   = tr_prog
