@@ -20,7 +20,7 @@
 
 (* SSA terms. We only enforce SSA property dynamically. *)
 
-let label_entry = Prim.label "entry"
+let label_entry = Prim.label "v:@entry"
 
 type prog = proc list
 
