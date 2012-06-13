@@ -174,4 +174,7 @@ let dom_of_proc proc =
     !domref
   in
 
+  (* remove dummy entry->entry edge *)
+  let dom_tree = G.remove_edge dom_tree lentry lentry in
+
   dom_tree
