@@ -51,11 +51,13 @@ let is_terminator i =
   |INSTR_InsertValue |INSTR_LandingPad |INSTR_Label _
   -> false
 
-let ident = function
-  | LLVM.ID_Global v -> Prim.var ("@" ^ v)
-  | LLVM.ID_Local  v -> Prim.var ("%" ^ v)
+let ident_string = function
+  | LLVM.ID_Global v -> "@" ^ v
+  | LLVM.ID_Local  v -> "%" ^ v
 
-let label l = Prim.label_of_var (ident l)
+let ident i = Prim.var (ident_string i)
+
+let label l = Prim.label (ident_string l)
 
 let var i = Prim.Vvar (ident i)
 
@@ -235,7 +237,7 @@ let block_of_instrs instrs =
       (label l, instrs)
     | _ ->
       let lbl = "%" ^ string_of_int (get_running_idx ()) in
-      (Prim.label_of_var (Prim.var lbl), instrs)
+      (Prim.label lbl, instrs)
 
   in
 
