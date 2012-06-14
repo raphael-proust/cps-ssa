@@ -1,11 +1,24 @@
 
-CS= return.c fibonacci.c if0.c for.c ifif.c
+CS= return.c fibonacci.c if0.c for.c ifif.c foo.c bar.c
 BCS=$(CS:.c=.bc)
 LLS=$(CS:.c=.ll)
 SSAS=$(CS:.c=.ssa)
 CPSS=$(CS:.c=.cps)
 
-all: cpss
+OPTS= \
+			argpromotion adce basiccg constmerge constprop \
+			dce die dse globaldce globalopt gvn indvars instcombine \
+			instsimplify iv-users licm loop-deletion loop-extract \
+			loop-extract-single loop-idiom loop-instsimplify loop-reduce \
+			loop-rotate loop-simplify loop-unroll loop-unswitch mem2reg \
+			mergereturn reg2mem sccp sink tailcallelim
+
+all: run
+
+run: lls
+	make -C ../src depend
+	make -C ../src native
+	../src/run.native $(LLS) -- $(OPTS)
 
 bcs: $(BCS)
 
@@ -16,10 +29,7 @@ ssas: $(SSAS)
 cpss: $(CPSS)
 
 clean:
-	rm -f $(BCS) $(LLS)
-
-purge: clean
-	rm -f $(SSAS) $(CPSS)
+	rm -f $(BCS) *.ssa *.cps *.ll
 
 %.bc: %.c
 	clang $< -O0 -emit-llvm -c -o $@
