@@ -303,5 +303,6 @@ let tpl = function
 
 let prog m =
   reset_running_idx ();
+  Prim.reset_idxs ();
   Util.L.map_option tpl m
 

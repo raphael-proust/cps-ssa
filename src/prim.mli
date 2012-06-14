@@ -85,3 +85,6 @@ val fresh_label : unit -> label
 
 val var_of_label : label -> var
 val label_of_var : var -> label
+
+(**/*)
+val reset_idxs: unit -> unit

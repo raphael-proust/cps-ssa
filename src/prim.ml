@@ -33,11 +33,12 @@ let var s = ("v:" ^ s : var)
 external string_of_var : var -> string = "%identity"
 
 (* whoohoo indexes! *)
+let var_counter = ref 0
+
 let fresh_var =
-  let c = ref 0 in
   fun () ->
-    let r = "v:_" ^ string_of_int !c in
-    incr c;
+    let r = "v:_" ^ string_of_int !var_counter in
+    incr var_counter;
     r
 
 (* things that are used in expressions. *)
@@ -76,13 +77,18 @@ type label = string
 let label s = ("l:" ^ s : label)
 external string_of_label : label -> string = "%identity"
 
+let label_counter = ref 0
+
 let fresh_label =
-  let c = ref 0 in
   fun () ->
-    let r = "l:_" ^ string_of_int !c in
-    incr c;
+    let r = "l:_" ^ string_of_int !label_counter in
+    incr label_counter;
     r
 
 (* Standard conversion for when one translates labels into closure variables. *)
 let var_of_label l = var l
 let label_of_var v = label v
+
+let reset_idxs () =
+  var_counter := 0;
+  label_counter := 0
