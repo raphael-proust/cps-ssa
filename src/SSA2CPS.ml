@@ -20,16 +20,27 @@
 
 let expr_of_var v = Prim.ONone (Prim.Vvar v)
 
-let args_of_label proc label =
-  let right_block = SSA.block_of_label proc label in
+let args_of_label proc orig dest =
+  let right_block = SSA.block_of_label proc dest in
   match right_block with
   | Util.Left _ -> assert false (* no jump to entry block *)
   | Util.Right block ->
     List.map
-      (fun (_, p) -> List.assoc label p)
+      (fun (_, p) ->
+        try
+          List.assoc orig p
+        with
+        | Not_found -> (* default value *)
+          Printf.eprintf "Label %s not found\nAvailable labels: %s\n"
+            (Prim.string_of_label orig)
+            (String.concat " "
+              (List.map (fun (l, _) -> Prim.string_of_label l) p)
+            );
+          raise Not_found
+      )
       block.SSA.b_phis
 
-let core_instrs_and_jump k proc cis j =
+let core_instrs_and_jump k proc current_l cis j =
   let open CPS in
   let rec aux = function
   | SSA.IAssignExpr (v, e) :: cis -> Mlet (v, e, aux cis)
@@ -37,20 +48,21 @@ let core_instrs_and_jump k proc cis j =
       Mapp (Prim.var_of_label l, es, C (v, aux cis))
   | SSA.IMemWrite (v, w) :: cis -> Mseq (v, w, aux cis)
   | [] -> match j with
-    | SSA.Jgoto l -> Mapp (Prim.var_of_label l, args_of_label proc l, Cvar k)
+    | SSA.Jgoto l ->
+        Mapp (Prim.var_of_label l, args_of_label proc current_l l, Cvar k)
     | SSA.Jreturn e   -> Mcont (k, [e])
     | SSA.Jreturnvoid -> Mcont (k, [])
     | SSA.Jtail (l, es, lc) ->
         Mapp (Prim.var_of_label l, es, Cvar (Prim.var_of_label lc))
     | SSA.Jcond (e, l1, l2) ->
         Mcond (e,
-               (Prim.var_of_label l1, args_of_label proc l1),
-               (Prim.var_of_label l2, args_of_label proc l2))
+               (Prim.var_of_label l1, args_of_label proc current_l l1),
+               (Prim.var_of_label l2, args_of_label proc current_l l2))
   in
   aux cis
 
-let rec tr_abstract_block dom k proc node core_instrs jump =
-  let m = core_instrs_and_jump k proc core_instrs jump in
+let rec tr_abstract_block dom k proc current_l node core_instrs jump =
+  let m = core_instrs_and_jump k proc current_l core_instrs jump in
 
   match Dom.G.pred dom node with
   | [] -> m
@@ -75,12 +87,12 @@ let rec tr_abstract_block dom k proc node core_instrs jump =
 
 
 and tr_block dom k proc block =
-  tr_abstract_block dom k proc (Util.Right block)
+  tr_abstract_block dom k proc block.SSA.b_label (Util.Right block)
     block.SSA.b_core_instrs
     block.SSA.b_jump
 
 let tr_entry_block dom k proc entry_block =
-  tr_abstract_block dom k proc (Util.Left entry_block)
+  tr_abstract_block dom k proc (Prim.label "%0") (Util.Left entry_block)
     entry_block.SSA.eb_core_instrs
     entry_block.SSA.eb_jump
 

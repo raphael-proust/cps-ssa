@@ -242,7 +242,7 @@ instr:
   | KW_FCMP           { INSTR_FCmp } (*TODO*)
 
   (* phi *)
-  | i = ident KW_PHI t = typ
+  | i = ident EQ KW_PHI t = typ
                      table = separated_nonempty_list(COMMA, phi_table_entry)
     { INSTR_PHI (i, t, table) }
 
@@ -322,7 +322,7 @@ comma_align:
   | COMMA align { }
 
 phi_table_entry:
-  | v = value COMMA l = ident { (v, l) }
+  | LSQUARE v = value COMMA l = ident RSQUARE { (v, l) }
 switch_table_entry:
   | t = typ o = value COMMA KW_LABEL l = ident { (t, o, l) }
 
