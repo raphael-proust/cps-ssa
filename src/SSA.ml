@@ -84,27 +84,29 @@ let check_ssa prog =
   (* one procedure is the "main" *)
   assert (Util.L.exists_one (fun p -> p.p_name = label_entry) prog);
 
-  let blocks = Util.L.concat_map (fun p -> p.p_blocks) prog in
+  let check_proc proc =
 
-  (* no two labels are identical *)
-  assert (Util.L.unique (fun b -> Some b.b_label) blocks);
+    (* no two labels are identical *)
+    assert (Util.L.unique (fun b -> Some b.b_label) proc.p_blocks);
 
-  (* no internal block has procedure name *)
-  assert (
-    List.for_all
-      (fun p -> List.for_all (fun b -> b.b_label <> p.p_name) p.p_blocks)
-      prog
-  );
+    (* no internal block has procedure name *)
+    assert (
+      List.for_all
+        (fun p -> List.for_all (fun b -> b.b_label <> p.p_name) p.p_blocks)
+        prog
+    );
 
-  (* no two assignments share their rhs variable *)
-  assert (Util.L.unique
-    (function
-      | IAssignExpr (v, _)
-      | IAssigncall (v, _, _) -> Some v
-      | ICall _ | IMemWrite _ -> None
+    (* no two assignments share their rhs variable *)
+    assert (Util.L.unique
+      (function
+        | IAssignExpr (v, _)
+        | IAssigncall (v, _, _) -> Some v
+        | ICall _ | IMemWrite _ -> None
+      )
+      (Util.L.concat_map (fun b -> b.b_core_instrs) proc.p_blocks)
     )
-    (Util.L.concat_map (fun b -> b.b_core_instrs) blocks)
-  )
+  in
+  List.iter check_proc prog
 
   (* TODO: check def dominates use (requires dominator info, not necessary) *)
   (* TODO? do one pass check? *)
