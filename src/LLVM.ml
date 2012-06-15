@@ -115,6 +115,7 @@ type value =
   | VALUE_Float of float
   | VALUE_Bool of bool
   | VALUE_Null
+  | VALUE_Undef
 
 type tvalue = typ * value
 

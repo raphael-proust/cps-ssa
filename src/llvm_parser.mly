@@ -37,6 +37,7 @@
 %token<float> FLOAT
 %token<bool> BOOL
 %token NULL
+%token KW_UNDEF
 
 %token<string> LABEL
 
@@ -336,6 +337,7 @@ value:
   | b = BOOL     { VALUE_Bool b }
   | i = ident    { VALUE_Ident i }
   |     NULL     { VALUE_Null }
+  |     KW_UNDEF { VALUE_Undef }
 
 ident:
   | l = global

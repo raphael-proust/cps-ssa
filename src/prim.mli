@@ -44,6 +44,7 @@ type value =
   | Vvar   of var
   | Vconst of const
   | Vnull
+  | Vundef
 
 (** Expressions are either values, arithmetical operations on values,
     comparisons, or IO primitives. *)

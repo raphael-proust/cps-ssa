@@ -33,6 +33,7 @@ let pp_value = function
   | Prim.Vvar v   -> pp_var v
   | Prim.Vconst c -> !^ (string_of_int c)
   | Prim.Vnull    -> !^ "null"
+  | Prim.Vundef   -> !^ "undef"
 
 let pp_expr e =
   match e with

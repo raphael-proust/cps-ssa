@@ -171,6 +171,7 @@
   | "true" -> BOOL true
   | "false" -> BOOL false
   | "null" -> NULL
+  | "undef" -> KW_UNDEF
 
   (*catch_all*)
   | s -> failwith ("Unknown or unsupported keyword: " ^ s)
