@@ -112,26 +112,37 @@ let get_assigns instrs =
 
     (* Those are what we are looking for *)
     | INSTR_Add (i, _, v0, v1) :: instrs ->
-      aux (SSA.IAssignExpr (ident_left i, Prim.OPlus (value v0, value v1)) :: accu) instrs
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.OPlus (value v0, value v1)) :: accu)
+        instrs
     | INSTR_FAdd :: instrs -> unsupported_feature "INSTR_FAdd"
     | INSTR_Sub (i, _, v0, v1) :: instrs ->
-      aux (SSA.IAssignExpr (ident_left i, Prim.OMinus (value v0, value v1)) :: accu) instrs
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.OMinus (value v0, value v1)) :: accu)
+        instrs
     | INSTR_FSub :: instrs -> unsupported_feature "INSTR_FSub"
     | INSTR_Mul (i, _, v0, v1) :: instrs ->
-      aux (SSA.IAssignExpr (ident_left i, Prim.OMult (value v0, value v1)) :: accu) instrs
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.OMult (value v0, value v1)) :: accu)
+        instrs
     | INSTR_FMul :: instrs -> unsupported_feature "INSTR_FMul"
     | INSTR_UDiv (i, _, v0, v1) :: instrs
     | INSTR_SDiv (i, _, v0, v1) :: instrs ->
-      aux (SSA.IAssignExpr (ident_left i, Prim.ODiv (value v0, value v1)) :: accu) instrs
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.ODiv (value v0, value v1)) :: accu)
+        instrs
     | INSTR_FDiv :: instrs -> unsupported_feature "INSTR_FDiv"
     | INSTR_URem (i, _, v0, v1) :: instrs
     | INSTR_SRem (i, _, v0, v1) :: instrs ->
-      aux (SSA.IAssignExpr (ident_left i, Prim.ORem (value v0, value v1)) :: accu) instrs
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.ORem (value v0, value v1)) :: accu)
+        instrs
     | INSTR_FRem :: instrs -> unsupported_feature "INSTR_FRem"
 
     | INSTR_Shl _ :: _  -> unsupported_feature "INSTR_Shl"
     | INSTR_LShr _ :: _ -> unsupported_feature "INSTR_LShr"
     | INSTR_AShr _ :: _ -> unsupported_feature "INSTR_AShr"
+
     | INSTR_And (i, _, v0, v1) :: instrs ->
       aux
         (SSA.IAssignExpr (ident_left i, Prim.OAnd (value v0, value v1)) :: accu)
