@@ -18,7 +18,12 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type ('a, 'b) either = Left of 'a | Right of 'b
+module E :
+  sig
+    type ('a, 'b) either = Left of 'a | Right of 'b
+    val left: 'a -> ('a, 'b) either
+    val right: 'a -> ('b, 'a) either
+  end
 module L :
   sig
     val concat_map : ('a -> 'b list) -> 'a list -> 'b list
@@ -51,7 +56,7 @@ module PP :
       ?empty:Pprint.document ->
       ?sep:Pprint.document ->
       ('a -> Pprint.document) -> 'a list -> Pprint.document
-    val either : ('a -> 'b) -> ('c -> 'b) -> ('a, 'c) either -> 'b
+    val either : ('a -> 'b) -> ('c -> 'b) -> ('a, 'c) E.either -> 'b
     val level : Pprint.document -> Pprint.document
     val unit : Pprint.document
     val op :

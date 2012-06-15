@@ -18,10 +18,11 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(** Translate procedures. There should be no need to use directly. *)
+ (** Translate procedures. There should be no need to use directly as [prog]
+	* does all the necessary steps. Could be used for debugging. *)
 val proc : SSA.proc -> CPS.lambda
 
 (** Translate programs. This is probably the function you need. The assumptions
-    made by this functions are checked by [SSA.check_ssa] (or should be, if not,
-    a bug fix is necessary). *)
+    made by this functions are those checked by [SSA.check_ssa] (or should be,
+    if not, a bug fix is necessary). *)
 val prog : SSA.prog -> CPS.m

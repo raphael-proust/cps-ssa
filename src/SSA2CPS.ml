@@ -18,13 +18,15 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+open Util
+
 let expr_of_var v = Prim.ONone (Prim.Vvar v)
 
 let args_of_label proc orig dest =
   let right_block = SSA.block_of_label proc dest in
   match right_block with
-  | Util.Left _ -> assert false (* no jump to entry block *)
-  | Util.Right block ->
+  | E.Left _ -> assert false (* no jump to entry block *)
+  | E.Right block ->
     List.map
       (fun (_, p) ->
         try
@@ -79,8 +81,8 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
         )
         (List.map
           (function
-            | Util.Left _ -> assert false (* no jump to entry block *)
-            | Util.Right l -> l
+            | E.Left _ -> assert false (* no jump to entry block *)
+            | E.Right l -> l
           )
           domeds
         )
@@ -89,12 +91,12 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
 
 
 and tr_block dom k proc block =
-  tr_abstract_block dom k proc block.SSA.b_label (Util.Right block)
+  tr_abstract_block dom k proc block.SSA.b_label (E.Right block)
     block.SSA.b_core_instrs
     block.SSA.b_jump
 
 let tr_entry_block dom k proc entry_block =
-  tr_abstract_block dom k proc entry_block.SSA.eb_label (Util.Left entry_block)
+  tr_abstract_block dom k proc entry_block.SSA.eb_label (E.Left entry_block)
     entry_block.SSA.eb_core_instrs
     entry_block.SSA.eb_jump
 
@@ -107,8 +109,8 @@ let tr_proc proc =
 let tr_prog prog =
   let open CPS in
   let (main, _) =
-    Util.L.pick_one_such_as
-      (fun proc -> proc.SSA.p_name = SSA.label_entry)
+    L.pick_one_such_as
+      (fun proc -> proc.SSA.p_name = SSA.label_main)
       prog
   in
   let lambdas =
@@ -125,5 +127,5 @@ let tr_prog prog =
     )
 
 
-let proc   = tr_proc
-let prog   = tr_prog
+let proc = tr_proc
+let prog = tr_prog

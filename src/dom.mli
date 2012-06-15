@@ -18,7 +18,7 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type node = (SSA.entry_block, SSA.block) Util.either
+type node = (SSA.entry_block, SSA.block) Util.E.either
 module G : Graph.Sig.P with type     V.t = node
                         and type V.label = node
                         and type     E.t = node * node

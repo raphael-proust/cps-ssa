@@ -18,66 +18,67 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(** A program is a set of procedures. Exactly one of those has to be labeled
-    with [label_main].
+open Util
+
+(** Instructions are assignements of direct expressions or function calls or
+    memory writes. *)
+type core_instr =
+  | IAssignExpr of (Prim.var * Prim.expr)
+  | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
+  | ICall       of (Prim.label * Prim.expr list)
+  | IMemWrite   of (Prim.var * Prim.mem_w)
+
+(** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
+    or conditional jumping.
   *)
-type prog = proc list
+type jump =
+  | Jgoto       of Prim.label
+  | Jreturn     of Prim.expr
+  | Jreturnvoid
+  | Jtail       of (Prim.label * Prim.expr list * Prim.label)
+  | Jcond       of (Prim.expr * Prim.label * Prim.label)
 
-(** A procedure has arguments and a body (constituted of blocks). *)
-and proc = {
-  p_name  : Prim.label;
-  p_args  : Prim.var list;
-  p_entry_block: entry_block;
-  p_blocks: block list; (* First block is entry block. Hence it dominates
-                           non-dead blocks *)
-}
+(** SSA-magic is made of phi-functions. *)
+type phi = Prim.var * (Prim.label * Prim.expr) list
 
-(** The entry block has no phi nodes. It's [order] is always 0. *)
-and entry_block = {
-  mutable eb_order : int;
-  (*   *) eb_label  : Prim.label;
+(** The entry block has no phi nodes. *)
+type entry_block = {
+  mutable eb_order      : int;
+  (*   *) eb_label      : Prim.label;
   (*   *) eb_core_instrs: core_instr list;
-  (*   *) eb_jump   : jump;
+  (*   *) eb_jump       : jump;
 }
 
 (** BLocks are not represented exactly as in Kesley's paper but the two forms
     are similar enough. A block has a label, some phi-functions, some assignement
     and one jump (conditional jumps allow for control flow).
   *)
-and block = {
-  mutable b_order : int;
-  (*   *) b_label  : Prim.label;
-  (*   *) b_phis   : phi list;
+type block = {
+  mutable b_order      : int;
+  (*   *) b_label      : Prim.label;
+  (*   *) b_phis       : phi list;
   (*   *) b_core_instrs: core_instr list;
-  (*   *) b_jump   : jump;
+  (*   *) b_jump       : jump;
 }
 
-(** Instructions are assignements of direct expressions or function calls or
-    memory writes. *)
-and core_instr =
-  | IAssignExpr of (Prim.var * Prim.expr)
-  | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
-  | ICall of (Prim.label * Prim.expr list)
-  | IMemWrite of (Prim.var * Prim.mem_w)
+(** A procedure has arguments and a body (constituted of blocks). *)
+type proc = {
+  p_name       : Prim.label;
+  p_args       : Prim.var list;
+  p_entry_block: entry_block;
+  p_blocks     : block list;
+}
 
-(** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
-    or conditional jumping.
+(** A program is a set of procedures. Exactly one of those has to be labeled
+    with [label_main].
   *)
-and jump =
-  | Jgoto of (Prim.label)
-  | Jreturn of Prim.expr
-  | Jreturnvoid
-  | Jtail of (Prim.label * Prim.expr list * Prim.label)
-  | Jcond of (Prim.expr * Prim.label * Prim.label)
-
-(** SSA-magic is made of phi-functions. *)
-and phi = Prim.var * (Prim.label * Prim.expr) list
+type prog = proc list
 
 (** find a block in a list by its label *)
-val block_of_label: proc -> Prim.label -> (entry_block, block) Util.either
+val block_of_label: proc -> Prim.label -> (entry_block, block) E.either
 
 (** Label for program entry point. *)
-val label_entry : Prim.label
+val label_main : Prim.label
 
 (** checks that the ssa program is indeed ssa. In particular, it checks that
     each variable is assigned to, only once, there is exactly one main procedure,

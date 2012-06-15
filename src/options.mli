@@ -18,5 +18,9 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(** [ll_files] is the list of files the program will use. *)
 val ll_files: string list
+
+(** [optimisations] is the set of optimisations the program will use on each of
+    the members of [ll_files]. *)
 val optimisations: string list

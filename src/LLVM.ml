@@ -18,6 +18,10 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(* This module contains variants for LLVM assembly language description. It is
+ * boring and tedious and is not recommended for direct editing. Prefer regexp!.
+ * *)
+
 type linkage =
   | LINKAGE_Private
   | LINKAGE_Linker_private
@@ -137,12 +141,14 @@ and binop_assign = ident * typ * value * value
 
 and conversion_assign = ident * typ * value * typ
 
+(* TODO: meta instructions *)
+
 and instr =
-  | INSTR_Add of binop_assign
+  | INSTR_Add  of binop_assign
   | INSTR_FAdd
-  | INSTR_Sub of binop_assign
+  | INSTR_Sub  of binop_assign
   | INSTR_FSub
-  | INSTR_Mul of binop_assign
+  | INSTR_Mul  of binop_assign
   | INSTR_FMul
   | INSTR_UDiv of binop_assign
   | INSTR_SDiv of binop_assign
@@ -150,29 +156,29 @@ and instr =
   | INSTR_URem of binop_assign
   | INSTR_SRem of binop_assign
   | INSTR_FRem
-  | INSTR_Shl of binop_assign
+  | INSTR_Shl  of binop_assign
   | INSTR_LShr of binop_assign
   | INSTR_AShr of binop_assign
-  | INSTR_And of binop_assign
-  | INSTR_Or of binop_assign
-  | INSTR_Xor of binop_assign
+  | INSTR_And  of binop_assign
+  | INSTR_Or   of binop_assign
+  | INSTR_Xor  of binop_assign
   | INSTR_ICmp of (ident * cmp * typ * value * value)
   | INSTR_FCmp
   | INSTR_PHI of (ident * typ * (value * ident) list)
   | INSTR_Call of (ident * typ * ident * (typ * value) list)
   | INSTR_Call_unit of (typ * ident * (typ * value) list)
-  | INSTR_Trunc of conversion_assign
-  | INSTR_ZExt of conversion_assign
-  | INSTR_SExt of conversion_assign
-  | INSTR_FPTrunc of conversion_assign
-  | INSTR_FPExt of conversion_assign
-  | INSTR_UIToFP of conversion_assign
-  | INSTR_SIToFP of conversion_assign
-  | INSTR_FPToUI of conversion_assign
-  | INSTR_FPToSI of conversion_assign
+  | INSTR_Trunc    of conversion_assign
+  | INSTR_ZExt     of conversion_assign
+  | INSTR_SExt     of conversion_assign
+  | INSTR_FPTrunc  of conversion_assign
+  | INSTR_FPExt    of conversion_assign
+  | INSTR_UIToFP   of conversion_assign
+  | INSTR_SIToFP   of conversion_assign
+  | INSTR_FPToUI   of conversion_assign
+  | INSTR_FPToSI   of conversion_assign
   | INSTR_IntToPtr of conversion_assign
   | INSTR_PtrToInt of conversion_assign
-  | INSTR_BitCast of conversion_assign
+  | INSTR_BitCast  of conversion_assign
   | INSTR_Select
   | INSTR_VAArg
   | INSTR_Ret of (typ * value)

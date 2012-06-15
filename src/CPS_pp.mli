@@ -20,7 +20,7 @@
 
  (** This module does CPS term pretty printing. It is intended to be used as a
      preparation for plain-text diff(1). Thus it introduces lots of linebreaks
-     (way too many for the printing to be considered 'pretty').
+     for ease of diff-ing
    *)
 
  (** [pp_α x] pretty-prints [x] into a [Pprint.document] (where [x] has type

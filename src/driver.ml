@@ -81,9 +81,7 @@ let generate_optimised ll_file optimisations =
   let optimised =
     List.fold_left
       (fun accu optim ->
-        let optimised_name =
-          Printf.sprintf "%s.%s.ll" base_file optim
-        in
+        let optimised_name = Printf.sprintf "%s.%s.ll" base_file optim in
         let command =
           (Printf.sprintf "opt -S -o %s.%s.ll -%s %s"
             base_file optim optim ll_file

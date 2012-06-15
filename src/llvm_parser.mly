@@ -27,7 +27,6 @@
 (*TODO: vectors and vector types *)
 (*TODO: floats *)
 (*TODO: don't throw things away *)
-(*TODO: what is it with labels? *)
 
 %token<string> GLOBAL LOCAL
 %token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE EQ COMMA EOF EOL STAR
@@ -71,9 +70,9 @@ toplevelentry_eol:
   | tle = toplevelentry EOL+ { tle }
 
 toplevelentry:
-  | d = definition { TLE_Definition d }
+  | d = definition                        { TLE_Definition d }
   | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s }
-  | KW_TARGET KW_TRIPLE EQ s = STRING { TLE_Target s }
+  | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s     }
 
 definition:
   | KW_DEFINE linkage? visibility? cconv?
@@ -86,63 +85,63 @@ definition:
     { {ret_typ; name; args; instrs;} }
 
 linkage:
-  | KW_PRIVATE                      { LINKAGE_Private }
-  | KW_LINKER_PRIVATE               { LINKAGE_Linker_private }
-  | KW_LINKER_PRIVATE_WEAK          { LINKAGE_Linker_private_weak }
+  | KW_PRIVATE                      { LINKAGE_Private                      }
+  | KW_LINKER_PRIVATE               { LINKAGE_Linker_private               }
+  | KW_LINKER_PRIVATE_WEAK          { LINKAGE_Linker_private_weak          }
   | KW_LINKER_PRIVATE_WEAK_DEF_AUTO { LINKAGE_Linker_private_weak_def_auto }
-  | KW_INTERNAL                     { LINKAGE_Internal }
-  | KW_AVAILABLE_EXTERNALLY         { LINKAGE_Available_externally }
-  | KW_LINKONCE                     { LINKAGE_Linkonce }
-  | KW_WEAK                         { LINKAGE_Weak }
-  | KW_COMMON                       { LINKAGE_Common }
-  | KW_APPENDING                    { LINKAGE_Appending }
-  | KW_EXTERN_WEAK                  { LINKAGE_Extern_weak }
-  | KW_LINKONCE_ODR                 { LINKAGE_Linkonce_odr }
-  | KW_WEAK_ODR                     { LINKAGE_Weak_odr }
-  | KW_EXTERNAL                     { LINKAGE_External }
-  | KW_DLLIMPORT                    { LINKAGE_Dllimport }
-  | KW_DLLEXPORT                    { LINKAGE_Dllexport }
+  | KW_INTERNAL                     { LINKAGE_Internal                     }
+  | KW_AVAILABLE_EXTERNALLY         { LINKAGE_Available_externally         }
+  | KW_LINKONCE                     { LINKAGE_Linkonce                     }
+  | KW_WEAK                         { LINKAGE_Weak                         }
+  | KW_COMMON                       { LINKAGE_Common                       }
+  | KW_APPENDING                    { LINKAGE_Appending                    }
+  | KW_EXTERN_WEAK                  { LINKAGE_Extern_weak                  }
+  | KW_LINKONCE_ODR                 { LINKAGE_Linkonce_odr                 }
+  | KW_WEAK_ODR                     { LINKAGE_Weak_odr                     }
+  | KW_EXTERNAL                     { LINKAGE_External                     }
+  | KW_DLLIMPORT                    { LINKAGE_Dllimport                    }
+  | KW_DLLEXPORT                    { LINKAGE_Dllexport                    }
 
 visibility:
-  | KW_DEFAULT   { VISIBILITY_Default }
-  | KW_HIDDEN    { VISIBILITY_Hidden }
+  | KW_DEFAULT   { VISIBILITY_Default   }
+  | KW_HIDDEN    { VISIBILITY_Hidden    }
   | KW_PROTECTED { VISIBILITY_Protected }
 
 cconv:
-  | KW_CCC          { CC_Ccc }
+  | KW_CCC          { CC_Ccc    }
   | KW_FASTCC       { CC_Fastcc }
   | KW_COLDCC       { CC_Coldcc }
-  | KW_CC n=INTEGER { CC_Cc n }
+  | KW_CC n=INTEGER { CC_Cc n   }
 
 ret_type:
   | list(typ_attr) t = typ { t }
 
 typ:
-  | n = I        { TYPE_I n }
-  | KW_VOID      { TYPE_Void }
-  | KW_HALF      { TYPE_Half }
-  | KW_FLOAT     { TYPE_Float }
-  | KW_DOUBLE    { TYPE_Double }
-  | KW_X86_FP80  { TYPE_X86_fp80 }
-  | KW_FP128     { TYPE_Fp128 }
+  | n = I        { TYPE_I n       }
+  | KW_VOID      { TYPE_Void      }
+  | KW_HALF      { TYPE_Half      }
+  | KW_FLOAT     { TYPE_Float     }
+  | KW_DOUBLE    { TYPE_Double    }
+  | KW_X86_FP80  { TYPE_X86_fp80  }
+  | KW_FP128     { TYPE_Fp128     }
   | KW_PPC_FP128 { TYPE_Ppc_fp128 }
-  | KW_LABEL     { TYPE_Label }
-  | KW_METADATA  { TYPE_Metadata }
-  | KW_X86_MMX   { TYPE_X86_mmx }
+  | KW_LABEL     { TYPE_Label     }
+  | KW_METADATA  { TYPE_Metadata  }
+  | KW_X86_MMX   { TYPE_X86_mmx   }
   | t = typ STAR { TYPE_Pointer t }
 
 typ_i:
   | n = I { n }
 
 typ_attr:
-  | KW_ZEROEXT   { TYPEATTR_Zeroext }
-  | KW_SIGNEXT   { TYPEATTR_Signext }
-  | KW_INREG     { TYPEATTR_Inreg }
-  | KW_BYVAL     { TYPEATTR_Byval }
-  | KW_SRET      { TYPEATTR_Sret }
-  | KW_NOALIAS   { TYPEATTR_Noalias }
+  | KW_ZEROEXT   { TYPEATTR_Zeroext   }
+  | KW_SIGNEXT   { TYPEATTR_Signext   }
+  | KW_INREG     { TYPEATTR_Inreg     }
+  | KW_BYVAL     { TYPEATTR_Byval     }
+  | KW_SRET      { TYPEATTR_Sret      }
+  | KW_NOALIAS   { TYPEATTR_Noalias   }
   | KW_NOCAPTURE { TYPEATTR_Nocapture }
-  | KW_NEST      { TYPEATTR_Nest }
+  | KW_NEST      { TYPEATTR_Nest      }
 
 decl_arg:
   | t = typ list(typ_attr) i = ident { (t, i) }
@@ -151,24 +150,24 @@ call_arg:
   | t = typ list(typ_attr) i = value { (t, i) }
 
 fn_attr:
-  | KW_ADDRESS_SAFETY                      { FNATTR_Address_safety }
-  | KW_ALIGNSTACK LPAREN p = power2 RPAREN { FNATTR_Alignstack p }
-  | KW_ALWAYSINLINE                        { FNATTR_Alwaysinline }
-  | KW_NONLAZYBIND                         { FNATTR_Nonlazybind }
-  | KW_INLINEHINT                          { FNATTR_Inlinehint }
-  | KW_NAKED                               { FNATTR_Naked }
+  | KW_ADDRESS_SAFETY                      { FNATTR_Address_safety  }
+  | KW_ALIGNSTACK LPAREN p = power2 RPAREN { FNATTR_Alignstack p    }
+  | KW_ALWAYSINLINE                        { FNATTR_Alwaysinline    }
+  | KW_NONLAZYBIND                         { FNATTR_Nonlazybind     }
+  | KW_INLINEHINT                          { FNATTR_Inlinehint      }
+  | KW_NAKED                               { FNATTR_Naked           }
   | KW_NOIMPLICITFLOAT                     { FNATTR_Noimplicitfloat }
-  | KW_NOINLINE                            { FNATTR_Noinline }
-  | KW_NOREDZONE                           { FNATTR_Noredzone }
-  | KW_NORETURN                            { FNATTR_Noreturn }
-  | KW_NOUNWIND                            { FNATTR_Nounwind }
-  | KW_OPTSIZE                             { FNATTR_Optsize }
-  | KW_READNONE                            { FNATTR_Readnone }
-  | KW_READONLY                            { FNATTR_Readonly }
-  | KW_RETURNS_TWICE                       { FNATTR_Returns_twice }
-  | KW_SSP                                 { FNATTR_Ssp }
-  | KW_SSPREQ                              { FNATTR_Sspreq }
-  | KW_UWTABLE                             { FNATTR_Uwtable }
+  | KW_NOINLINE                            { FNATTR_Noinline        }
+  | KW_NOREDZONE                           { FNATTR_Noredzone       }
+  | KW_NORETURN                            { FNATTR_Noreturn        }
+  | KW_NOUNWIND                            { FNATTR_Nounwind        }
+  | KW_OPTSIZE                             { FNATTR_Optsize         }
+  | KW_READNONE                            { FNATTR_Readnone        }
+  | KW_READONLY                            { FNATTR_Readonly        }
+  | KW_RETURNS_TWICE                       { FNATTR_Returns_twice   }
+  | KW_SSP                                 { FNATTR_Ssp             }
+  | KW_SSPREQ                              { FNATTR_Sspreq          }
+  | KW_UWTABLE                             { FNATTR_Uwtable         }
 
 power2:
   | n = INTEGER { assert (List.mem n [0;1;2;4;8;16;32;64]); n }
@@ -229,6 +228,7 @@ instr:
   | b = binop(KW_XOR)  { INSTR_Xor  b }
 
   (* comparison *)
+  (*TODO: factorisation. How?*)
   | i = icmp(KW_EQ ) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Eq,  t, o1, o2) }
   | i = icmp(KW_NE ) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ne,  t, o1, o2) }
   | i = icmp(KW_UGT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ugt, t, o1, o2) }
@@ -258,22 +258,22 @@ instr:
     { INSTR_Call_unit (t, n, a) }
 
   (* conversions *)
-  | c = conversion(KW_TRUNC)    { INSTR_Trunc c }
-  | c = conversion(KW_ZEXT)     { INSTR_ZExt c }
-  | c = conversion(KW_SEXT)     { INSTR_SExt c }
-  | c = conversion(KW_FPTRUNC)  { INSTR_FPTrunc c }
-  | c = conversion(KW_FPEXT)    { INSTR_FPExt c }
-  | c = conversion(KW_UITOFP)   { INSTR_UIToFP c }
-  | c = conversion(KW_SITOFP)   { INSTR_SIToFP c }
-  | c = conversion(KW_FPTOUI)   { INSTR_FPToUI c }
-  | c = conversion(KW_FPTOSI)   { INSTR_FPToSI c }
+  | c = conversion(KW_TRUNC)    { INSTR_Trunc c    }
+  | c = conversion(KW_ZEXT)     { INSTR_ZExt c     }
+  | c = conversion(KW_SEXT)     { INSTR_SExt c     }
+  | c = conversion(KW_FPTRUNC)  { INSTR_FPTrunc c  }
+  | c = conversion(KW_FPEXT)    { INSTR_FPExt c    }
+  | c = conversion(KW_UITOFP)   { INSTR_UIToFP c   }
+  | c = conversion(KW_SITOFP)   { INSTR_SIToFP c   }
+  | c = conversion(KW_FPTOUI)   { INSTR_FPToUI c   }
+  | c = conversion(KW_FPTOSI)   { INSTR_FPToSI c   }
   | c = conversion(KW_INTTOPTR) { INSTR_IntToPtr c }
   | c = conversion(KW_PTRTOINT) { INSTR_PtrToInt c }
-  | c = conversion(KW_BITCAST)  { INSTR_BitCast c }
+  | c = conversion(KW_BITCAST)  { INSTR_BitCast c  }
 
   (* other *)
-  | KW_SELECT         { INSTR_Select }
-  | KW_VAARG          { INSTR_VAArg }
+  | KW_SELECT { INSTR_Select }
+  | KW_VAARG  { INSTR_VAArg  }
 
   (* terminator *)
   | KW_RET t = typ o = value { INSTR_Ret (t, o) }
@@ -305,20 +305,20 @@ instr:
                           comma_align? (*TODO: support atomic and non-temporal*)
     { assert (match ti with | TYPE_Pointer _ -> true | _ -> false);
       INSTR_Store (tv, v, ti, i) }
-  | KW_ATOMICCMPXCHG  { INSTR_AtomicCmpXchg }
-  | KW_ATOMICRMW      { INSTR_AtomicRMW }
-  | KW_FENCE          { INSTR_Fence }
-  | KW_GETELEMENTPTR  { INSTR_GetElementPtr }
+  | KW_ATOMICCMPXCHG { INSTR_AtomicCmpXchg }
+  | KW_ATOMICRMW     { INSTR_AtomicRMW     }
+  | KW_FENCE         { INSTR_Fence         }
+  | KW_GETELEMENTPTR { INSTR_GetElementPtr }
 
   (* vector ops, not supported *)
   | KW_EXTRACTELEMENT { INSTR_ExtractElement }
-  | KW_INSERTELEMENT  { INSTR_InsertElement }
-  | KW_SHUFFLEVECTOR  { INSTR_ShuffleVector }
+  | KW_INSERTELEMENT  { INSTR_InsertElement  }
+  | KW_SHUFFLEVECTOR  { INSTR_ShuffleVector  }
 
   (* aggregate ops, not supported *)
-  | KW_EXTRACTVALUE   { INSTR_ExtractValue }
-  | KW_INSERTVALUE    { INSTR_InsertValue }
-  | KW_LANDINGPAD     { INSTR_LandingPad }
+  | KW_EXTRACTVALUE { INSTR_ExtractValue }
+  | KW_INSERTVALUE  { INSTR_InsertValue  }
+  | KW_LANDINGPAD   { INSTR_LandingPad   }
 
   (* explicit labels *)
   | l = LABEL { INSTR_Label (ID_Local l) }
@@ -333,11 +333,11 @@ switch_table_entry:
 
 value:
   | i = INTEGER  { VALUE_Integer i }
-  | f = FLOAT    { VALUE_Float f }
-  | b = BOOL     { VALUE_Bool b }
-  | i = ident    { VALUE_Ident i }
-  |     NULL     { VALUE_Null }
-  |     KW_UNDEF { VALUE_Undef }
+  | f = FLOAT    { VALUE_Float f   }
+  | b = BOOL     { VALUE_Bool b    }
+  | i = ident    { VALUE_Ident i   }
+  |     NULL     { VALUE_Null      }
+  |     KW_UNDEF { VALUE_Undef     }
 
 ident:
   | l = global

@@ -22,6 +22,8 @@
  * (with appropriate newline characters and what not), so that diff(1) can take
  * care of it. *)
 
+open Util
+
 (* Pprint Operators and other facilities *)
 module PP = struct
   include Pprint
@@ -38,7 +40,7 @@ let rec pp_m = function
       PP.list (* This list is never empty *)
         ~sep:PP.space
         (PP.either Prim_pp.pp_expr pp_cont)
-        (List.map (fun e -> Util.Left e) es @ [Util.Right k])
+        (List.map (fun e -> E.Left e) es @ [E.Right k])
 
   | CPS.Mcont (v, es) ->
     Prim_pp.pp_var v ^^ PP.space ^^
@@ -63,7 +65,8 @@ let rec pp_m = function
 
   | CPS.Mrec  (vls, m) ->
     let vl (v, l) =
-      Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^ (pp_lambda l) ^^ PP.break1
+      Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
+      (pp_lambda l) ^^ PP.break1
     in
     !^ "letrec " ^^ PP.with_paren (PP.level (
       PP.sepmap PP.hardline vl vls

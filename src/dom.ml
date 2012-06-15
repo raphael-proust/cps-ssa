@@ -18,26 +18,26 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-open Util (* provides L and O *)
+open Util (* provides L, O, and E *)
 
-type node = (SSA.entry_block, SSA.block) Util.either
+type node = (SSA.entry_block, SSA.block) E.either
 (*Let's have a persistent graph. We only use labels in the functor argument
   because SSA's hypotheses lets us do it. *)
 module BlockVertex = struct
-  type t = (SSA.entry_block, SSA.block) Util.either
+  type t = (SSA.entry_block, SSA.block) E.either
   let compare b1 b2 = match (b1, b2) with
-   | Left _, Right _ -> -1
-   | Left e1, Left e2 -> assert (e1 = e2); 0
-   | Right _, Left _ -> 1
-   | Right b1, Right b2 -> Pervasives.compare b1.SSA.b_label b2.SSA.b_label
+   | E.Left _  , E.Right _  -> -1
+   | E.Left e1 , E.Left e2  -> assert (e1 = e2); 0
+   | E.Right _ , E.Left _   -> 1
+   | E.Right b1, E.Right b2 -> Pervasives.compare b1.SSA.b_label b2.SSA.b_label
   let hash b = match b with
-   | Left e -> Hashtbl.hash "entryblock"
-   | Right b -> Hashtbl.hash b.SSA.b_label
+   | E.Left e  -> Hashtbl.hash "entryblock"
+   | E.Right b -> Hashtbl.hash b.SSA.b_label
   let equal b1 b2 = match (b1, b2) with
-   | Left _, Right _ -> false
-   | Left e1, Left e2 -> assert (e1 = e2); true
-   | Right _, Left _ -> false
-   | Right b1, Right b2 -> b1.SSA.b_label = b2.SSA.b_label
+   | E.Left _  , E.Right _  -> false
+   | E.Left e1 , E.Left e2  -> assert (e1 = e2); true
+   | E.Right _ , E.Left _   -> false
+   | E.Right b1, E.Right b2 -> b1.SSA.b_label = b2.SSA.b_label
 end
 
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
@@ -56,28 +56,25 @@ let vertices_of_jump proc v0 j =
     ]
 
 let vertices_of_block proc b =
-  vertices_of_jump proc (Util.Right b) b.SSA.b_jump
+  vertices_of_jump proc (E.Right b) b.SSA.b_jump
 
 let vertices_of_entry_block proc eb =
-  vertices_of_jump proc (Util.Left eb) eb.SSA.eb_jump
+  vertices_of_jump proc (E.Left eb) eb.SSA.eb_jump
 
 let graph_of_proc proc =
+  let add_edges graph edges = List.fold_left G.add_edge_e graph edges in
   (* straight-forward translation: we iterate over the blocks adding vertices
      and edges. *)
   let initial_graph = (*TODO: factorisation*)
-    List.fold_left
-      G.add_edge_e
-      (G.add_vertex G.empty (Util.Left proc.SSA.p_entry_block))
+    add_edges
+      (G.add_vertex G.empty (E.Left proc.SSA.p_entry_block))
       (vertices_of_entry_block proc proc.SSA.p_entry_block)
   in
   let graph =
     List.fold_left (* list of (list of jumps | blocks) *)
       (fun g block ->
-        let rblock = Util.Right block in
-        List.fold_left (* (list of jumps | block) *)
-          G.add_edge_e
-          (G.add_vertex g rblock)
-          (vertices_of_block proc block)
+        let rblock = E.Right block in
+        add_edges (G.add_vertex g rblock) (vertices_of_block proc block)
       )
       initial_graph
       proc.SSA.p_blocks
@@ -94,23 +91,20 @@ let mark_postorder g =
   let id = ref 0 in
   let process = ref [] in
   DFS_Traverse.postfix
-    (function
-      | (Util.Left eb) as t ->
-        eb.SSA.eb_order <- !id;
-        incr id;
-        process := t :: !process
-      | (Util.Right b) as t ->
-        b.SSA.b_order <- !id;
-        incr id;
-        process := t :: !process
+    (fun t ->
+      begin match t with
+      | E.Left eb -> eb.SSA.eb_order <- !id
+      | E.Right b ->  b.SSA.b_order  <- !id
+      end ;
+      incr id; process := t :: !process;
     )
     g;
   !process (* We return a list of blocks in the order they should be processed
               in the dominator fixpoint research. *)
 
 let order = function
-  | Util.Left eb -> eb.SSA.eb_order
-  | Util.Right b -> b.SSA.b_order
+  | E.Left eb -> eb.SSA.eb_order
+  | E.Right b -> b.SSA.b_order
 
 let intersect dom b1 b2 =
   (*dominators intersection: based on Cooper, Harvey, and Kennedy*)
@@ -132,7 +126,7 @@ let intersect dom b1 b2 =
 
 let dom_of_proc proc =
 
-  let lentry = Util.Left proc.SSA.p_entry_block in
+  let lentry = E.Left proc.SSA.p_entry_block in
 
   let graph = graph_of_proc proc in
 

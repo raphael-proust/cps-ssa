@@ -40,6 +40,7 @@ type m =
   | Mlet  of (Prim.var * Prim.expr * m)
   (** Recursive let binding. It binds lambdas. *)
   | Mrec  of ((Prim.var * lambda) list * m)
+  (** Sequences are for memory side-effect operation. *)
   | Mseq  of (Prim.var * Prim.mem_w * m)
 
 (* [cont] are continuations. *)
@@ -62,4 +63,5 @@ and lambda =
     as to [SSA.label_main] somehow. *)
 val var_run: Prim.var
 
+(** [var_unit] is for assignements of calls that do not return. *)
 val var_unit: Prim.var

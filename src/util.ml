@@ -18,7 +18,13 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type ('a, 'b) either = Left of 'a | Right of 'b
+module E = struct
+
+  type ('a, 'b) either = Left of 'a | Right of 'b
+  let left l = Left l
+  let right r = Right r
+
+end
 
 module L = struct
 
@@ -123,8 +129,8 @@ module PP = struct
     | [] -> empty
     | l  ->  Pprint.sepmap sep pp l
   let either pl pr = function
-    | Left l  -> pl l
-    | Right r -> pr r
+    | E.Left l  -> pl l
+    | E.Right r -> pr r
   let level d = Pprint.nest 2 (Pprint.break0 ^^ d)
   let unit = !^ "()"
   let op pp_v v1 op v2 = pp_v v1 ^^ op ^^ pp_v v2
