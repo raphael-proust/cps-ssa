@@ -168,9 +168,9 @@
   | "x86_mmx"   -> KW_X86_MMX
 
   (*constants*)
-  | "true"  -> BOOL true
-  | "false" -> BOOL false
-  | "null"  -> NULL
+  | "true"  -> KW_TRUE
+  | "false" -> KW_FALSE
+  | "null"  -> KW_NULL
   | "undef" -> KW_UNDEF
 
   (*catch_all*)

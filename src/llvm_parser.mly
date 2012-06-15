@@ -34,9 +34,7 @@
 %token<string> STRING
 %token<int> INTEGER
 %token<float> FLOAT
-%token<bool> BOOL
-%token NULL
-%token KW_UNDEF
+%token KW_NULL KW_UNDEF KW_TRUE KW_FALSE
 
 %token<string> LABEL
 
@@ -332,12 +330,13 @@ switch_table_entry:
   | t = typ o = value COMMA KW_LABEL l = ident { (t, o, l) }
 
 value:
-  | i = INTEGER  { VALUE_Integer i }
-  | f = FLOAT    { VALUE_Float f   }
-  | b = BOOL     { VALUE_Bool b    }
-  | i = ident    { VALUE_Ident i   }
-  |     NULL     { VALUE_Null      }
-  |     KW_UNDEF { VALUE_Undef     }
+  | i = INTEGER { VALUE_Integer i  }
+  | f = FLOAT   { VALUE_Float f    }
+  | KW_TRUE     { VALUE_Bool true  }
+  | KW_FALSE    { VALUE_Bool false }
+  | i = ident   { VALUE_Ident i    }
+  | KW_NULL     { VALUE_Null       }
+  | KW_UNDEF    { VALUE_Undef      }
 
 ident:
   | l = global
