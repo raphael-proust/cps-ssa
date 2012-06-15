@@ -22,6 +22,8 @@ let () = Printexc.record_backtrace true
 
 let run ll_file =
 
+  let () = Printf.printf "Translating %s\n" ll_file in
+
   let base_file = Filename.chop_suffix ll_file ".ll" in
 
   (* Phase 1: parse LLVM *)
@@ -87,7 +89,7 @@ let generate_optimised ll_file optimisations =
             base_file optim optim ll_file
           )
         in
-        Printf.eprintf "Executing: %s\n" command;
+        Printf.printf "Executing: %s\n" command;
         let rc = Sys.command command in
         flush_all ();
         let accu =
