@@ -38,6 +38,7 @@ module P :
     val pos_char : Lexing.position -> int
     val pos_line : Lexing.position -> int
     val print_pos : out_channel -> Lexing.position -> unit
+    exception Lex_error_unterminated_string of Lexing.position
   end
 module PP :
   sig

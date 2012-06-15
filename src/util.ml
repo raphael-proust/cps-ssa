@@ -99,6 +99,8 @@ module P = struct
   let print_pos ch pos =
     Printf.fprintf ch "line %d, character %d" (pos_line pos) (pos_char pos)
 
+  exception Lex_error_unterminated_string of Lexing.position
+
 end
 
 module PP = struct

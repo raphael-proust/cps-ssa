@@ -20,6 +20,7 @@
 
 {
 
+  open Util
   open Llvm_parser
 
   let kw = function
@@ -207,17 +208,18 @@ rule token = parse
   | (label_char)+ as l ':' { LABEL l }
 
   (* identifier *)
-  (*TODO: support @".." and %".." identifier styles*)
   | '@' ((ident_fst ident_nxt* ) as i) { GLOBAL i }
   | '@' (digit+ as i) { GLOBAL i }
-  | '%' ((ident_fst ident_nxt* ) as i) { LOCAL  i }
+  | '@' '"' { GLOBAL (string (Buffer.create 10) (Lexing.lexeme_start_p lexbuf) lexbuf) }
+  | '%' ((ident_fst ident_nxt* ) as i) { LOCAL i }
   | '%' (digit+ as i) { LOCAL i }
+  | '%' '"' { LOCAL (string (Buffer.create 10) (Lexing.lexeme_start_p lexbuf) lexbuf) }
 
   (* constants *)
   | ( '-'? digit+ ) as d { INTEGER (int_of_string d) }
   | ( '-'? digit* '.' digit+ ) as d { FLOAT (float_of_string d) }
   | ( '-'? digit ('.' digit+)? 'e' ('+'|'-') digit+ ) as d { FLOAT (float_of_string d) }
-  | '"' { STRING (string (Buffer.create 10) lexbuf) }
+  | '"' { STRING (string (Buffer.create 10) (Lexing.lexeme_start_p lexbuf) lexbuf) }
 
   (* types *)
   | 'i' (digit+ as i) { I (int_of_string i) }
@@ -227,9 +229,12 @@ rule token = parse
   | alphanum+ as a { kw a }
 
 and comment = parse
-  | eol { Lexing.new_line lexbuf; token lexbuf }
+  | eol { Lexing.new_line lexbuf; EOL }
+  | eof { EOF }
   | _ { comment lexbuf }
 
-and string b = parse
+and string b p = parse
   | '"' { Buffer.contents b }
-  | _ as c { Buffer.add_char b c; string b lexbuf }
+  | eol { raise (P.Lex_error_unterminated_string p) }
+  | eof { raise (P.Lex_error_unterminated_string p) }
+  | _ as c { Buffer.add_char b c; string b p lexbuf }

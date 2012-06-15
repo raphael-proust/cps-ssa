@@ -64,7 +64,7 @@
 %%
 
 module_:
-  | m = list(toplevelentry_eol) EOF { m }
+  | EOL* m = list(toplevelentry_eol) EOF { m }
 
 toplevelentry_eol:
   | tle = toplevelentry EOL+ { tle }
