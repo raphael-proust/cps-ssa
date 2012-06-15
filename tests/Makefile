@@ -1,5 +1,5 @@
 
-CS= return.c fibonacci.c if0.c for.c ifif.c foo.c bar.c
+CS= return.c fibonacci.c if0.c for.c ifif.c foo.c bar.c vars.c eg.c blah.c
 BCS=$(CS:.c=.bc)
 LLS=$(CS:.c=.ll)
 SSAS=$(CS:.c=.ssa)
