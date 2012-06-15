@@ -111,7 +111,7 @@ let get_assigns instrs =
     | ( INSTR_Ret _ | INSTR_Ret_void | INSTR_Br _ | INSTR_Br_1 _
       | INSTR_Switch _ | INSTR_IndirectBr | INSTR_Invoke _
       | INSTR_Resume _ | INSTR_Unreachable) :: _ :: _
-    | (INSTR_Label _) :: _
+      | (INSTR_Label _) :: _
     -> assert false
 
     | INSTR_Add (i, _, v0, v1) :: instrs ->
@@ -228,9 +228,16 @@ let get_terminator    terminator =
   |INSTR_ExtractValue |INSTR_InsertValue |INSTR_LandingPad |INSTR_Label _
   -> assert false
 
+let get_label   instrs = match instrs with
+  | LLVM.INSTR_Label l :: instrs ->
+    (label l, instrs)
+  | _ ->
+    let lbl = "%" ^ string_of_int (get_running_idx ()) in
+    (Prim.label lbl, instrs)
 
 let entry_block_of_instrs instrs =
 
+  let label , instrs     = get_label   instrs in
   let instrs, terminator = get_assigns instrs in
   let terminator         = get_terminator    terminator   in
 
@@ -239,14 +246,6 @@ let entry_block_of_instrs instrs =
 
 let block_of_instrs instrs =
 
-  let get_label   instrs = match instrs with
-    | LLVM.INSTR_Label l :: instrs ->
-      (label l, instrs)
-    | _ ->
-      let lbl = "%" ^ string_of_int (get_running_idx ()) in
-      (Prim.label lbl, instrs)
-
-  in
 
   let get_phis    instrs =
     let rec aux accu = function
@@ -294,6 +293,7 @@ let blocks_of_instrs instrs =
   (entry_block, mk_blocks [] [] instrs)
 
 let proc {LLVM.name; args; instrs} =
+  reset_running_idx ();
   let (p_entry_block, p_blocks) = blocks_of_instrs instrs in
   {SSA.
     p_name   = label name;
@@ -308,7 +308,6 @@ let tpl = function
   | LLVM.TLE_Definition d -> Some (proc d)
 
 let prog m =
-  reset_running_idx ();
   Prim.reset_idxs ();
   Util.L.map_option tpl m
 
