@@ -41,6 +41,10 @@ let pp_core_instr = function
     Prim_pp.pp_label l ^^ PP.with_paren (
       PP.list ~sep:PP.comma_space Prim_pp.pp_expr es
     )
+  | SSA.ICall (l, es) ->
+    Prim_pp.pp_label l ^^ PP.with_paren (
+      PP.list ~sep:PP.comma_space Prim_pp.pp_expr es
+    )
   | SSA.IMemWrite (v, m) -> !^ "store" ^^ PP.space ^^
     Prim_pp.pp_var v ^^ PP.space ^^ Prim_pp.pp_mem_w m
 

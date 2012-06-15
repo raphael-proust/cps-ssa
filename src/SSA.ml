@@ -48,6 +48,7 @@ and block = {
 and core_instr =
   | IAssignExpr of (Prim.var * Prim.expr)
   | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
+  | ICall of (Prim.label * Prim.expr list)
   | IMemWrite of (Prim.var * Prim.mem_w)
 
 and jump =
@@ -100,7 +101,7 @@ let check_ssa prog =
     (function
       | IAssignExpr (v, _)
       | IAssigncall (v, _, _) -> Some v
-      | IMemWrite _ -> None
+      | ICall _ | IMemWrite _ -> None
     )
     (Util.L.concat_map (fun b -> b.b_core_instrs) blocks)
   )

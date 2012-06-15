@@ -56,6 +56,7 @@ and block = {
 and core_instr =
   | IAssignExpr of (Prim.var * Prim.expr)
   | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
+  | ICall of (Prim.label * Prim.expr list)
   | IMemWrite of (Prim.var * Prim.mem_w)
 
 (** Jumps are for intra-procedure control-flow, returning to caller, tail-calls

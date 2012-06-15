@@ -46,6 +46,8 @@ let core_instrs_and_jump k proc current_l cis j =
   | SSA.IAssignExpr (v, e) :: cis -> Mlet (v, e, aux cis)
   | SSA.IAssigncall (v, l, es) :: cis ->
       Mapp (Prim.var_of_label l, es, C (v, aux cis))
+  | SSA.ICall (l, es) :: cis ->
+      Mapp (Prim.var_of_label l, es, C (var_unit, aux cis))
   | SSA.IMemWrite (v, w) :: cis -> Mseq (v, w, aux cis)
   | [] -> match j with
     | SSA.Jgoto l ->

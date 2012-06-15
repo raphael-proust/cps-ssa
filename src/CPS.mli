@@ -61,3 +61,5 @@ and lambda =
 (** [var_run] is for top-monad entry application. Fullfilling the same purpose
     as to [SSA.label_main] somehow. *)
 val var_run: Prim.var
+
+val var_unit: Prim.var

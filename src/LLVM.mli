@@ -159,6 +159,7 @@ and instr =
   | INSTR_FCmp
   | INSTR_PHI of (ident * typ * (value * ident) list)
   | INSTR_Call of (ident * typ * ident * (typ * value) list)
+  | INSTR_Call_unit of (typ * ident * (typ * value) list)
   | INSTR_Trunc of conversion_assign
   | INSTR_ZExt of conversion_assign
   | INSTR_SExt of conversion_assign

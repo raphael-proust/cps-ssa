@@ -251,6 +251,10 @@ instr:
                  n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
                  list(fn_attr)
     { INSTR_Call (i, t, n, a) }
+  | KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
+                 n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
+                 list(fn_attr)
+    { INSTR_Call_unit (t, n, a) }
 
   (* conversions *)
   | c = conversion(KW_TRUNC)    { INSTR_Trunc c }

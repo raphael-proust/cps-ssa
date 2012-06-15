@@ -39,3 +39,5 @@ and lambda =
 
 (* This is for monad entry application. *)
 let var_run = Prim.var "run"
+
+let var_unit = Prim.var "()"

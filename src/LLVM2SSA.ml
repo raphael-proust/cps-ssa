@@ -42,6 +42,7 @@ let is_terminator i =
   |INSTR_UDiv _ |INSTR_SDiv _ |INSTR_FDiv |INSTR_URem _ |INSTR_SRem _
   |INSTR_FRem |INSTR_Shl _ |INSTR_LShr _ |INSTR_AShr _ |INSTR_And _ |INSTR_Or _
   |INSTR_Xor _ |INSTR_ICmp _ |INSTR_FCmp |INSTR_PHI _ |INSTR_Call _
+  |INSTR_Call_unit _
   |INSTR_Trunc _ |INSTR_ZExt _ |INSTR_SExt _ |INSTR_FPTrunc _ |INSTR_FPExt _
   |INSTR_UIToFP _ |INSTR_SIToFP _ |INSTR_FPToUI _ |INSTR_FPToSI _
   |INSTR_IntToPtr _ |INSTR_PtrToInt _ |INSTR_BitCast _ |INSTR_Select
@@ -153,6 +154,9 @@ let get_assigns instrs =
     | INSTR_Call (i, _, fn, args) :: instrs ->
       let args = List.map (fun (_, v) -> value_expr v) args in
       aux (SSA.IAssigncall (ident_left i, label fn, args) :: accu) instrs
+    | INSTR_Call_unit (_, fn, args) :: instrs ->
+      let args = List.map (fun (_, v) -> value_expr v) args in
+      aux (SSA.ICall (label fn, args) :: accu) instrs
     | ( INSTR_Trunc (i, _, v, _)
       | INSTR_ZExt (i, _, v, _)
       | INSTR_SExt (i, _, v, _)
@@ -213,6 +217,7 @@ let get_terminator    terminator =
   |INSTR_UDiv _ |INSTR_SDiv _ |INSTR_FDiv |INSTR_URem _ |INSTR_SRem _
   |INSTR_FRem |INSTR_Shl _ |INSTR_LShr _ |INSTR_AShr _ |INSTR_And _
   |INSTR_Or _ |INSTR_Xor _ |INSTR_ICmp _ |INSTR_FCmp |INSTR_PHI _
+  |INSTR_Call_unit _
   |INSTR_Call _ |INSTR_Trunc _ |INSTR_ZExt _ |INSTR_SExt _ |INSTR_FPTrunc _
   |INSTR_FPExt _ |INSTR_UIToFP _ |INSTR_SIToFP _ |INSTR_FPToUI _
   |INSTR_FPToSI _ |INSTR_IntToPtr _ |INSTR_PtrToInt _ |INSTR_BitCast _
