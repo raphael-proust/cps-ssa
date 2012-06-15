@@ -241,7 +241,7 @@ let entry_block_of_instrs instrs =
   let instrs, terminator = get_assigns instrs in
   let terminator         = get_terminator    terminator   in
 
-  SSA.Entry_blocks.entry_block ~instrs terminator
+  SSA.Entry_blocks.entry_block ~label ~instrs terminator
 
 
 let block_of_instrs instrs =

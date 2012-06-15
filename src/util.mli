@@ -31,7 +31,9 @@ module O :
   sig
     val opt : 'a -> 'a option
     val none : 'a option
-    val unopt : 'a option -> 'a
+    val unopt_soft : (unit -> 'a) -> 'a option -> 'a
+    val unopt : 'a -> 'a option -> 'a
+    val unopt_hard : 'a option -> 'a
   end
 module P :
   sig

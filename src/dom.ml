@@ -119,9 +119,9 @@ let intersect dom b1 b2 =
       assert (b1 = b2);
       b1
     end else if order b1 < order b2 then begin
-      aux (O.unopt dom.(order b1)) b2
+      aux (O.unopt_hard dom.(order b1)) b2
     end else if order b1 > order b2 then begin
-      aux b1 (O.unopt dom.(order b2))
+      aux b1 (O.unopt_hard dom.(order b2))
     end else begin
       assert false
     end
@@ -178,7 +178,7 @@ let dom_of_proc proc =
     G.iter_vertex
       (fun b ->
         domref :=
-          G.add_edge_e !domref (G.E.create b () (O.unopt dom.(order b)))
+          G.add_edge_e !domref (G.E.create b () (O.unopt_hard dom.(order b)))
       )
       graph;
     !domref

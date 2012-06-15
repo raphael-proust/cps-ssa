@@ -94,7 +94,7 @@ and tr_block dom k proc block =
     block.SSA.b_jump
 
 let tr_entry_block dom k proc entry_block =
-  tr_abstract_block dom k proc (Prim.label "%0") (Util.Left entry_block)
+  tr_abstract_block dom k proc entry_block.SSA.eb_label (Util.Left entry_block)
     entry_block.SSA.eb_core_instrs
     entry_block.SSA.eb_jump
 

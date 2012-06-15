@@ -85,9 +85,18 @@ module O = struct
 
   let none = None
 
-  let unopt = function
+  let unopt_soft f = function
+    | None -> f ()
+    | Some v -> v
+
+  let unopt d = function
+    | None -> d
+    | Some v -> v
+
+  let unopt_hard = function
     | None -> assert false
     | Some v -> v
+
 
 end
 

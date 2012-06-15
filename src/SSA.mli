@@ -32,9 +32,10 @@ and proc = {
                            non-dead blocks *)
 }
 
-(** The entry block has no label nor phi nodes. It's [order] is always 0. *)
+(** The entry block has no phi nodes. It's [order] is always 0. *)
 and entry_block = {
   mutable eb_order : int;
+  (*   *) eb_label  : Prim.label;
   (*   *) eb_core_instrs: core_instr list;
   (*   *) eb_jump   : jump;
 }
@@ -87,20 +88,26 @@ val check_ssa : prog -> unit
 
 module Entry_blocks :sig
 
-  val entry_block: ?instrs:core_instr list -> jump -> entry_block
+  val entry_block: ?label:Prim.label ->
+    ?instrs:core_instr list -> jump -> entry_block
 
-  val return: ?instrs:core_instr list -> Prim.expr -> entry_block
-  val return_const: ?instrs:core_instr list -> int -> entry_block
-  val return_0: ?instrs:core_instr list -> unit -> entry_block
-  val return_var: ?instrs:core_instr list -> Prim.var -> entry_block
+  val return: ?label:Prim.label ->
+    ?instrs:core_instr list -> Prim.expr -> entry_block
+  val return_const: ?label:Prim.label ->
+    ?instrs:core_instr list -> int -> entry_block
+  val return_0: ?label:Prim.label ->
+    ?instrs:core_instr list -> unit -> entry_block
+  val return_var: ?label:Prim.label ->
+    ?instrs:core_instr list -> Prim.var -> entry_block
 
-  val cond: ?instrs:core_instr list ->
+  val cond: ?label:Prim.label -> ?instrs:core_instr list ->
     Prim.expr -> Prim.label -> Prim.label -> entry_block
 
-  val tail: ?instrs:core_instr list ->
+  val tail: ?label:Prim.label -> ?instrs:core_instr list ->
     Prim.label -> Prim.expr list -> Prim.label -> entry_block
 
-  val goto: ?instrs:core_instr list -> Prim.label -> entry_block
+  val goto: ?label:Prim.label ->
+    ?instrs:core_instr list -> Prim.label -> entry_block
 
 end
 

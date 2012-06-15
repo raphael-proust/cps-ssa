@@ -18,6 +18,8 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+open Util
+
 (* SSA terms. We only enforce SSA property dynamically. *)
 
 let label_entry = Prim.label "@entry"
@@ -33,6 +35,7 @@ and proc = {
 
 and entry_block = {
   mutable eb_order  : int;
+  (*   *) eb_label  : Prim.label;
   (*   *) eb_core_instrs: core_instr list;
   (*   *) eb_jump   : jump;
 }
@@ -115,38 +118,43 @@ let check_ssa prog =
 (* For making entry blocks *)
 module Entry_blocks = struct
 
-  let entry_block ?(instrs = []) j = {
-          eb_order = 0;
-    eb_core_instrs = instrs;
-           eb_jump = j;
-  }
+  let entry_block ?label ?(instrs = []) j =
+    let eb_label = O.unopt_soft Prim.fresh_label label in
+    {
+            eb_order = 0;
+            eb_label;
+      eb_core_instrs = instrs;
+             eb_jump = j;
+    }
 
-  let return ?instrs e = entry_block ?instrs (Jreturn e)
+  let return ?label ?instrs e = entry_block ?label ?instrs (Jreturn e)
 
-  let return_const ?instrs c = return ?instrs Prim.(ONone (Vconst c))
+  let return_const ?label ?instrs c = return ?label ?instrs Prim.(ONone (Vconst c))
 
-  let return_0 ?instrs () = return_const ?instrs 0
+  let return_0 ?label ?instrs () = return_const ?label ?instrs 0
 
-  let return_var ?instrs v = return ?instrs Prim.(ONone (Vvar v))
+  let return_var ?label ?instrs v = return ?label ?instrs Prim.(ONone (Vvar v))
 
-  let cond ?instrs e l1 l2 = entry_block ?instrs (Jcond (e, l1, l2))
+  let cond ?label ?instrs e l1 l2 = entry_block ?label ?instrs (Jcond (e, l1, l2))
 
-  let tail ?instrs l es d = entry_block ?instrs (Jtail (l, es, d))
+  let tail ?label ?instrs l es d = entry_block ?label ?instrs (Jtail (l, es, d))
 
-  let goto ?instrs l = entry_block ?instrs (Jgoto l)
+  let goto ?label ?instrs l = entry_block ?label ?instrs (Jgoto l)
 
 end
 
 (* For building trivial blocks *)
 module Blocks = struct
 
-  let block ?(label = Prim.fresh_label ()) ?(phis = []) ?(instrs = []) j = {
-          b_order = 0;
-          b_label = label;
-           b_phis = phis;
-    b_core_instrs = instrs;
-           b_jump = j;
-  }
+  let block ?label ?(phis = []) ?(instrs = []) j =
+    let b_label = O.unopt_soft Prim.fresh_label label in
+    {
+            b_order = 0;
+            b_label;
+             b_phis = phis;
+      b_core_instrs = instrs;
+             b_jump = j;
+    }
 
   let return ?label ?phis ?instrs e =
     block ?label ?phis ?instrs (Jreturn e)
