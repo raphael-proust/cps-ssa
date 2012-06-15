@@ -63,6 +63,9 @@ type expr =
   | OLe of (value * value)
   | OEq of (value * value)
   | ONe of (value * value)
+  | OAnd of (value * value)
+  | OOr  of (value * value)
+  | OXor of (value * value)
   | ORead of value
 
 type mem_w =

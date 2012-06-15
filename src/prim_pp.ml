@@ -55,6 +55,10 @@ let pp_expr e =
   | Prim.OLe (v1, v2) -> PP.op pp_value v1 (!^ "=<") v2
   | Prim.OEq (v1, v2) -> PP.op pp_value v1 (!^ "==") v2
   | Prim.ONe (v1, v2) -> PP.op pp_value v1 (!^ "<>") v2
+  (* Boolean ops *)
+  | Prim.OAnd (v1, v2) -> PP.op pp_value v1 (!^ "&&" ) v2
+  | Prim.OOr  (v1, v2) -> PP.op pp_value v1 (!^ "||" ) v2
+  | Prim.OXor (v1, v2) -> PP.op pp_value v1 (!^ "^^" ) v2
   (* IO *)
   | Prim.ORead v -> PP.fn1 pp_value (!^ "read") v
 

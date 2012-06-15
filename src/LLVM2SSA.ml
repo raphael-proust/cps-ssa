@@ -132,9 +132,18 @@ let get_assigns instrs =
     | INSTR_Shl _ :: _  -> unsupported_feature "INSTR_Shl"
     | INSTR_LShr _ :: _ -> unsupported_feature "INSTR_LShr"
     | INSTR_AShr _ :: _ -> unsupported_feature "INSTR_AShr"
-    | INSTR_And _ :: _  -> unsupported_feature "INSTR_And"
-    | INSTR_Or _ :: _   -> unsupported_feature "INSTR_Or"
-    | INSTR_Xor _ :: _  -> unsupported_feature "INSTR_Xor"
+    | INSTR_And (i, _, v0, v1) :: instrs ->
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.OAnd (value v0, value v1)) :: accu)
+        instrs
+    | INSTR_Or (i, _, v0, v1) :: instrs ->
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.OOr (value v0, value v1)) :: accu)
+        instrs
+    | INSTR_Xor (i, _, v0, v1) :: instrs ->
+      aux
+        (SSA.IAssignExpr (ident_left i, Prim.OXor (value v0, value v1)) :: accu)
+        instrs
 
     | INSTR_ICmp (i, icmp, _, v1, v2) :: instrs ->
       let expr = match icmp with
