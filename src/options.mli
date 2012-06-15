@@ -24,3 +24,5 @@ val ll_files: string list
 (** [optimisations] is the set of optimisations the program will use on each of
     the members of [ll_files]. *)
 val optimisations: string list
+
+val verbose: bool

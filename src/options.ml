@@ -24,6 +24,7 @@ let ll_files = ref []
 
 let optimisations = ref []
 
+let verbose = ref false
 
 (*Parsing *)
 
@@ -36,7 +37,9 @@ let witness_dashdash () =
     dashdash := true
 
 let add_ll_file s =
-  if Filename.check_suffix s ".ll" then
+  if s = "-v" then
+    verbose := true
+  else if Filename.check_suffix s ".ll" then
     ll_files := s :: !ll_files
   else
     raise (Arg.Bad (s ^ " is not an .ll file"))
@@ -60,7 +63,5 @@ let () = Array.iter parse_fn args
 (* Exporting dereferenced values *)
 
 let ll_files = !ll_files
-
 let optimisations = !optimisations
-
-
+let verbose = !verbose
