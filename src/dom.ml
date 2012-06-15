@@ -65,7 +65,7 @@ let graph_of_proc proc =
   let add_edges graph edges = List.fold_left G.add_edge_e graph edges in
   (* straight-forward translation: we iterate over the blocks adding vertices
      and edges. *)
-  let initial_graph = (*TODO: factorisation*)
+  let initial_graph =
     add_edges
       (G.add_vertex G.empty (E.Left proc.SSA.p_entry_block))
       (vertices_of_entry_block proc proc.SSA.p_entry_block)

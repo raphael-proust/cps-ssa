@@ -18,9 +18,6 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-
-(*TODO: major cosmetics *)
-
 let unsupported_feature s =
   failwith ("Unsupported feature: " ^ s)
 
