@@ -47,7 +47,7 @@ let rec pp_m = function
     PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_expr es
 
   | CPS.Mcond (e, (v1, es1), (v2, es2)) ->
-    !^ "if0" ^^ PP.with_paren (Prim_pp.pp_expr e) ^^
+    !^ "if" ^^ PP.with_paren (Prim_pp.pp_expr e) ^^
     PP.level (
       PP.with_paren (Prim_pp.pp_var v1 ^^ PP.space ^^
           PP.list ~empty:PP.unit Prim_pp.pp_expr es1
