@@ -324,7 +324,8 @@ let tpl = function
   | LLVM.TLE_Target _
   | LLVM.TLE_Datalayout _
   | LLVM.TLE_Declaration _
-  | LLVM.TLE_Type_decl _ -> None
+  | LLVM.TLE_Type_decl _
+  | LLVM.TLE_Global _ -> None
   | LLVM.TLE_Definition d -> Some (proc d)
 
 let prog m =

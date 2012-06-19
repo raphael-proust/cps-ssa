@@ -44,6 +44,7 @@
 %token KW_CCC KW_FASTCC KW_COLDCC KW_CC
 %token KW_UNNAMED_ADDR
 %token KW_TYPE KW_X KW_OPAQUE
+%token KW_GLOBAL KW_ADDRSPACE KW_CONSTANT KW_SECTION KW_THREAD_LOCAL
 %token KW_ZEROEXT KW_SIGNEXT KW_INREG KW_BYVAL KW_SRET KW_NOALIAS KW_NOCAPTURE KW_NEST
 %token KW_ADDRESS_SAFETY KW_ALIGNSTACK KW_ALWAYSINLINE KW_NONLAZYBIND KW_INLINEHINT KW_NAKED KW_NOIMPLICITFLOAT KW_NOINLINE KW_NOREDZONE KW_NORETURN KW_NOUNWIND KW_OPTSIZE KW_READNONE KW_READONLY KW_RETURNS_TWICE KW_SSP KW_SSPREQ KW_UWTABLE
 %token KW_ALIGN
@@ -75,6 +76,20 @@ toplevelentry:
   | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s     }
   | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s         }
   | i = ident EQ KW_TYPE t = typ          { TLE_Type_decl (i, t) }
+  | g = global_decl                       { TLE_Global g         }
+
+global_decl:
+  | g_ident = ident EQ
+      linkage? visibility? KW_THREAD_LOCAL? addrspace? KW_UNNAMED_ADDR?
+      g_constant = global_is_constant g_typ = typ g_value = value comma_align?
+      { {g_ident; g_typ; g_constant = false; g_value;} }
+
+global_is_constant:
+  | KW_GLOBAL { false }
+  | KW_CONSTANT { true }
+
+addrspace:
+  | KW_ADDRSPACE LPAREN n = INTEGER RPAREN { n }
 
 definition:
   | KW_DEFINE linkage? visibility? cconv?

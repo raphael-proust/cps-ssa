@@ -134,6 +134,14 @@ and toplevelentry =
   | TLE_Declaration of declaration
   | TLE_Definition of definition
   | TLE_Type_decl of (ident * typ)
+  | TLE_Global of global
+
+and global = {
+     g_ident: ident;
+       g_typ: typ;
+  g_constant: bool;
+     g_value: value;
+}
 
 and declaration = {
   dc_ret_typ: typ;

@@ -55,6 +55,11 @@
   | "unnamed_addr"                 -> KW_UNNAMED_ADDR
   | "type"                         -> KW_TYPE
   | "opaque"                       -> KW_OPAQUE
+  | "global"                       -> KW_GLOBAL
+  | "addrspace"                    -> KW_ADDRSPACE
+  | "constant"                     -> KW_CONSTANT
+  | "section"                      -> KW_SECTION
+  | "thread_local"                 -> KW_THREAD_LOCAL
   | "zeroext"                      -> KW_ZEROEXT
   | "signext"                      -> KW_SIGNEXT
   | "inreg"                        -> KW_INREG
