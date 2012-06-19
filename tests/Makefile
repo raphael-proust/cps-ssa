@@ -23,7 +23,6 @@ CS= \
 		vals.c \
 		vars.c
 
-BCS=$(CS:.c=.bc)
 LLS=$(CS:.c=.ll)
 SSAS=$(CS:.c=.ssa)
 CPSS=$(CS:.c=.cps)
@@ -38,10 +37,12 @@ OPTS= \
 
 all: run
 
-run: lls
+run: lls runner
+	../src/run.native $(LLS) -- $(OPTS)
+
+runner:
 	make -C ../src depend
 	make -C ../src native
-	../src/run.native $(LLS) -- $(OPTS)
 
 bcs: $(BCS)
 
@@ -53,9 +54,6 @@ cpss: $(CPSS)
 
 clean:
 	rm -f $(BCS) *.ssa *.cps *.ll
-
-%.bc: %.c
-	clang $< -O0 -emit-llvm -c -o $@
 
 %.ll: %.c
 	clang $< -O0 -emit-llvm -S -o $@
