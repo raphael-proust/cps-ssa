@@ -53,6 +53,8 @@
   | "coldcc"                       -> KW_COLDCC
   | "cc"                           -> KW_CC
   | "unnamed_addr"                 -> KW_UNNAMED_ADDR
+  | "type"                         -> KW_TYPE
+  | "opaque"                       -> KW_OPAQUE
   | "zeroext"                      -> KW_ZEROEXT
   | "signext"                      -> KW_SIGNEXT
   | "inreg"                        -> KW_INREG
@@ -200,12 +202,16 @@ rule token = parse
   | ';' { comment lexbuf }
   | '=' { EQ }
   | ',' { COMMA }
-  | '(' { LPAREN }
-  | ')' { RPAREN }
-  | '{' { LCURLY }
-  | '}' { RCURLY }
-  | '[' { LSQUARE }
-  | ']' { RSQUARE }
+  | '('  { LPAREN }
+  | ')'  { RPAREN }
+  | '{'  { LCURLY }
+  | '}'  { RCURLY }
+  | "<{" { LTLCURLY }
+  | "}>" { RCURLYGT }
+  | '['  { LSQUARE }
+  | ']'  { RSQUARE }
+  | '<'  { LT }
+  | '>'  { GT }
 
   (* labels *)
   | (label_char)+ as l ':' { LABEL l }

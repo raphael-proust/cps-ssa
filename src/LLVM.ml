@@ -77,6 +77,10 @@ type fn_attr =
   | FNATTR_Sspreq
   | FNATTR_Uwtable
 
+type ident =
+  | ID_Global of string
+  | ID_Local  of string
+
 type typ =
   | TYPE_I of int
   | TYPE_Pointer of typ
@@ -90,6 +94,15 @@ type typ =
   | TYPE_Label
   | TYPE_Metadata
   | TYPE_X86_mmx
+  | TYPE_Ident of ident
+  | TYPE_Array of (int * typ)
+  | TYPE_Function of (typ * typ list)
+  | TYPE_Struct of typ list
+  | TYPE_Packed_struct of typ list
+  | TYPE_Opaque
+  | TYPE_Vector of (int * typ)
+
+type tident = typ * ident
 
 type cmp =
   | Cmp_Eq
@@ -102,12 +115,6 @@ type cmp =
   | Cmp_Sge
   | Cmp_Slt
   | Cmp_Sle
-
-type ident =
-  | ID_Global of string
-  | ID_Local  of string
-
-type tident = typ * ident
 
 type value =
   | VALUE_Ident of ident
@@ -126,6 +133,7 @@ and toplevelentry =
   | TLE_Datalayout of string
   | TLE_Declaration of declaration
   | TLE_Definition of definition
+  | TLE_Type_decl of (ident * typ)
 
 and declaration = {
   dc_ret_typ: typ;

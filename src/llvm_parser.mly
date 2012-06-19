@@ -29,7 +29,7 @@
 (*TODO: don't throw things away *)
 
 %token<string> GLOBAL LOCAL
-%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE EQ COMMA EOF EOL STAR
+%token LPAREN RPAREN LCURLY RCURLY LTLCURLY RCURLYGT LSQUARE RSQUARE LT GT EQ COMMA EOF EOL STAR
 
 %token<string> STRING
 %token<int> INTEGER
@@ -43,6 +43,7 @@
 %token KW_DEFAULT KW_HIDDEN KW_PROTECTED
 %token KW_CCC KW_FASTCC KW_COLDCC KW_CC
 %token KW_UNNAMED_ADDR
+%token KW_TYPE KW_X KW_OPAQUE
 %token KW_ZEROEXT KW_SIGNEXT KW_INREG KW_BYVAL KW_SRET KW_NOALIAS KW_NOCAPTURE KW_NEST
 %token KW_ADDRESS_SAFETY KW_ALIGNSTACK KW_ALWAYSINLINE KW_NONLAZYBIND KW_INLINEHINT KW_NAKED KW_NOIMPLICITFLOAT KW_NOINLINE KW_NOREDZONE KW_NORETURN KW_NOUNWIND KW_OPTSIZE KW_READNONE KW_READONLY KW_RETURNS_TWICE KW_SSP KW_SSPREQ KW_UWTABLE
 %token KW_ALIGN
@@ -69,10 +70,11 @@ toplevelentry_eol:
   | tle = toplevelentry EOL+ { tle }
 
 toplevelentry:
-  | d = definition                        { TLE_Definition d  }
-  | d = declaration                       { TLE_Declaration d }
-  | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s  }
-  | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s      }
+  | d = definition                        { TLE_Definition d     }
+  | d = declaration                       { TLE_Declaration d    }
+  | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s     }
+  | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s         }
+  | i = ident EQ KW_TYPE t = typ          { TLE_Type_decl (i, t) }
 
 definition:
   | KW_DEFINE linkage? visibility? cconv?
@@ -124,18 +126,28 @@ ret_type:
   | list(typ_attr) t = typ { t }
 
 typ:
-  | n = I        { TYPE_I n       }
-  | KW_VOID      { TYPE_Void      }
-  | KW_HALF      { TYPE_Half      }
-  | KW_FLOAT     { TYPE_Float     }
-  | KW_DOUBLE    { TYPE_Double    }
-  | KW_X86_FP80  { TYPE_X86_fp80  }
-  | KW_FP128     { TYPE_Fp128     }
-  | KW_PPC_FP128 { TYPE_Ppc_fp128 }
-  | KW_LABEL     { TYPE_Label     }
-  | KW_METADATA  { TYPE_Metadata  }
-  | KW_X86_MMX   { TYPE_X86_mmx   }
-  | t = typ STAR { TYPE_Pointer t }
+  | n = I                                    { TYPE_I n              }
+  | KW_VOID                                  { TYPE_Void             }
+  | KW_HALF                                  { TYPE_Half             }
+  | KW_FLOAT                                 { TYPE_Float            }
+  | KW_DOUBLE                                { TYPE_Double           }
+  | KW_X86_FP80                              { TYPE_X86_fp80         }
+  | KW_FP128                                 { TYPE_Fp128            }
+  | KW_PPC_FP128                             { TYPE_Ppc_fp128        }
+  | KW_LABEL                                 { TYPE_Label            }
+  | KW_METADATA                              { TYPE_Metadata         }
+  | KW_X86_MMX                               { TYPE_X86_mmx          }
+  | t = typ STAR                             { TYPE_Pointer t        }
+  | i = ident                                { TYPE_Ident i          }
+  | LSQUARE n = INTEGER KW_X t = typ RSQUARE { TYPE_Array (n, t)     }
+  | t = typ LPAREN ts = separated_list(COMMA, typ) RPAREN
+                                             { TYPE_Function (t, ts) }
+  | LCURLY ts = separated_list(COMMA, typ) RCURLY
+                                             { TYPE_Struct ts        }
+  | LTLCURLY ts = separated_list(COMMA, typ) RCURLYGT
+                                             { TYPE_Packed_struct ts }
+  | KW_OPAQUE                                { TYPE_Opaque           }
+  | LT n = INTEGER KW_X t = typ GT           { TYPE_Vector (n, t)    }
 
 typ_i:
   | n = I { n }

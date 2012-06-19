@@ -323,7 +323,8 @@ let tpl = function
   (* ignore llvm boring stuff, get to the meat *)
   | LLVM.TLE_Target _
   | LLVM.TLE_Datalayout _
-  | LLVM.TLE_Declaration _ -> None
+  | LLVM.TLE_Declaration _
+  | LLVM.TLE_Type_decl _ -> None
   | LLVM.TLE_Definition d -> Some (proc d)
 
 let prog m =
