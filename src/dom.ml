@@ -85,12 +85,12 @@ let graph_of_proc proc =
 
 module DFS_Traverse = Graph.Traverse.Dfs(G)
 
-let mark_postorder g =
+let mark_postorder g lentry =
   (* This modifies the b_order field of the blocks. *)
   (*FIXME: does not work if graph is not connex: entry node is not top node.*)
   let id = ref 0 in
   let process = ref [] in
-  DFS_Traverse.postfix
+  DFS_Traverse.postfix_component
     (fun t ->
       begin match t with
       | E.Left eb -> eb.SSA.eb_order <- !id
@@ -98,7 +98,9 @@ let mark_postorder g =
       end ;
       incr id; process := t :: !process;
     )
-    g;
+    g
+    lentry
+    ;
   !process (* We return a list of blocks in the order they should be processed
               in the dominator fixpoint research. *)
 
@@ -132,7 +134,7 @@ let dom_of_proc proc =
 
   (*init*)
   let dom = Array.make (G.nb_vertex graph) None in
-  let process = mark_postorder graph in
+  let process = mark_postorder graph lentry in
   assert (lentry = List.hd process);
   assert (List.for_all (G.mem_vertex graph) process);
   dom.(order (lentry)) <- Some (lentry);
