@@ -1,8 +1,28 @@
 
 CS= \
-		return.c fibonacci.c if0.c for.c ifif.c foo.c bar.c vars.c eg.c blah.c \
-		vals.c supervals.c const.c constflow.c smallish.c compressible.c dead.c \
-		dead2.c
+		bar.c \
+		blah.c \
+		compressible.c \
+		const.c \
+		constflow.c \
+		dead.c \
+		dead2.c \
+		eg.c \
+		fibonacci.c \
+		foo.c \
+		fooo.c \
+		foooo.c \
+		for.c \
+		if0.c \
+		ifif.c \
+		infinite.c \
+		infinite_and_dead.c \
+		return.c \
+		smallish.c \
+		supervals.c \
+		vals.c \
+		vars.c
+
 BCS=$(CS:.c=.bc)
 LLS=$(CS:.c=.ll)
 SSAS=$(CS:.c=.ssa)
