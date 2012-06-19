@@ -45,6 +45,8 @@ type value =
   | Vconst of const
   | Vnull
   | Vundef
+  | Vstruct of value list
+  | Vzero
 
 (** Expressions are either values, arithmetical operations on values,
     comparisons, or IO primitives. *)

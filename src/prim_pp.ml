@@ -29,11 +29,13 @@ let pp_var v = !^ (Prim.string_of_var v)
 
 let pp_label l = !^ (Prim.string_of_label l)
 
-let pp_value = function
-  | Prim.Vvar v   -> pp_var v
-  | Prim.Vconst c -> !^ (string_of_int c)
-  | Prim.Vnull    -> !^ "null"
-  | Prim.Vundef   -> !^ "undef"
+let rec pp_value = function
+  | Prim.Vvar v     -> pp_var v
+  | Prim.Vconst c   -> !^ (string_of_int c)
+  | Prim.Vnull      -> !^ "null"
+  | Prim.Vundef     -> !^ "undef"
+  | Prim.Vstruct vs -> PP.with_paren (PP.list ~sep:PP.comma pp_value vs)
+  | Prim.Vzero      -> !^ "!0" (*TODO: better printing *)
 
 let pp_expr e =
   match e with

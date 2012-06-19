@@ -46,6 +46,8 @@ type value =
   | Vconst of const
   | Vnull
   | Vundef
+  | Vstruct of value list
+  | Vzero
 
 (* expressions are operation (or not, see ONone) on values. Might be completed
  * later. It might also need to be lifted to a value lattice. *)

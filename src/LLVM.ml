@@ -123,6 +123,11 @@ type value =
   | VALUE_Bool of bool
   | VALUE_Null
   | VALUE_Undef
+  | VALUE_Struct of (typ * value) list
+  | VALUE_Packed_struct of (typ * value) list
+  | VALUE_Array of (typ * value) list
+  | VALUE_Vector of (typ * value) list
+  | VALUE_Zero_initializer
 
 type tvalue = typ * value
 

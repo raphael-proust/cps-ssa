@@ -64,13 +64,19 @@ let int_of_bool = function
   | true -> 1
   | false -> 0
 
-let value = function
-  | LLVM.VALUE_Ident i   -> var i
-  | LLVM.VALUE_Integer i -> Prim.Vconst i
-  | LLVM.VALUE_Float _   -> unsupported_feature "VALUE_Float" (*TODO*)
-  | LLVM.VALUE_Bool b    -> Prim.Vconst (int_of_bool b)
-  | LLVM.VALUE_Null      -> Prim.Vnull
-  | LLVM.VALUE_Undef     -> Prim.Vundef
+let rec value = function
+  | LLVM.VALUE_Ident i          -> var i
+  | LLVM.VALUE_Integer i        -> Prim.Vconst i
+  | LLVM.VALUE_Float _          -> unsupported_feature "VALUE_Float" (*TODO*)
+  | LLVM.VALUE_Bool b           -> Prim.Vconst (int_of_bool b)
+  | LLVM.VALUE_Null             -> Prim.Vnull
+  | LLVM.VALUE_Undef            -> Prim.Vundef
+  | LLVM.VALUE_Vector tvs
+  | LLVM.VALUE_Array tvs
+  | LLVM.VALUE_Packed_struct tvs
+  | LLVM.VALUE_Struct tvs       ->
+    Prim.Vstruct (List.map (fun (_, v) -> value v) tvs)
+  | LLVM.VALUE_Zero_initializer -> Prim.Vzero
 
 let value_expr v = Prim.ONone (value v)
 

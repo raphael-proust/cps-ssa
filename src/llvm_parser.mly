@@ -34,7 +34,7 @@
 %token<string> STRING
 %token<int> INTEGER
 %token<float> FLOAT
-%token KW_NULL KW_UNDEF KW_TRUE KW_FALSE
+%token KW_NULL KW_UNDEF KW_TRUE KW_FALSE KW_ZEROINITIALIZER
 
 %token<string> LABEL
 
@@ -369,13 +369,25 @@ switch_table_entry:
   | t = typ o = value COMMA KW_LABEL l = ident { (t, o, l) }
 
 value:
-  | i = INTEGER { VALUE_Integer i  }
-  | f = FLOAT   { VALUE_Float f    }
-  | KW_TRUE     { VALUE_Bool true  }
-  | KW_FALSE    { VALUE_Bool false }
-  | i = ident   { VALUE_Ident i    }
-  | KW_NULL     { VALUE_Null       }
-  | KW_UNDEF    { VALUE_Undef      }
+  | i = INTEGER        { VALUE_Integer i  }
+  | f = FLOAT          { VALUE_Float f    }
+  | KW_TRUE            { VALUE_Bool true  }
+  | KW_FALSE           { VALUE_Bool false }
+  | i = ident          { VALUE_Ident i    }
+  | KW_NULL            { VALUE_Null       }
+  | KW_UNDEF           { VALUE_Undef      }
+  | LCURLY l = separated_list(COMMA, typ_value) RCURLY
+                       { VALUE_Struct l }
+  | LTLCURLY l = separated_list(COMMA, typ_value) RCURLYGT
+                       { VALUE_Struct l }
+  | LSQUARE l = separated_list(COMMA, typ_value) RSQUARE
+                       { VALUE_Array l }
+  | LT l = separated_list(COMMA, typ_value) GT
+                       { VALUE_Vector l }
+  | KW_ZEROINITIALIZER { VALUE_Zero_initializer }
+
+typ_value:
+  | t = typ i = value { (t,i) }
 
 ident:
   | l = global
