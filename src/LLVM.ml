@@ -18,10 +18,6 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(* This module contains variants for LLVM assembly language description. It is
- * boring and tedious and is not recommended for direct editing. Prefer regexp!.
- * *)
-
 type linkage =
   | LINKAGE_Private
   | LINKAGE_Linker_private
@@ -128,20 +124,25 @@ type module_ = toplevelentry list
 and toplevelentry =
   | TLE_Target of string
   | TLE_Datalayout of string
+  | TLE_Declaration of declaration
   | TLE_Definition of definition
 
+and declaration = {
+  dc_ret_typ: typ;
+     dc_name: ident;
+     dc_args: typ list;
+}
+
 and definition = {
-  ret_typ: typ;
-  name: ident;
-  args: tident list;
-  instrs: instr list;
+  df_ret_typ: typ;
+     df_name: ident;
+     df_args: tident list;
+   df_instrs: instr list;
 }
 
 and binop_assign = ident * typ * value * value
 
 and conversion_assign = ident * typ * value * typ
-
-(* TODO: meta instructions *)
 
 and instr =
   | INSTR_Add  of binop_assign

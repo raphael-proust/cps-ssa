@@ -38,10 +38,11 @@
 
 %token<string> LABEL
 
-%token KW_DEFINE KW_TARGET KW_DATALAYOUT KW_TRIPLE
+%token KW_DEFINE KW_DECLARE KW_TARGET KW_DATALAYOUT KW_TRIPLE
 %token KW_PRIVATE KW_LINKER_PRIVATE KW_LINKER_PRIVATE_WEAK KW_LINKER_PRIVATE_WEAK_DEF_AUTO KW_INTERNAL KW_AVAILABLE_EXTERNALLY KW_LINKONCE KW_WEAK KW_COMMON KW_APPENDING KW_EXTERN_WEAK KW_LINKONCE_ODR KW_WEAK_ODR KW_EXTERNAL KW_DLLIMPORT KW_DLLEXPORT
 %token KW_DEFAULT KW_HIDDEN KW_PROTECTED
 %token KW_CCC KW_FASTCC KW_COLDCC KW_CC
+%token KW_UNNAMED_ADDR
 %token KW_ZEROEXT KW_SIGNEXT KW_INREG KW_BYVAL KW_SRET KW_NOALIAS KW_NOCAPTURE KW_NEST
 %token KW_ADDRESS_SAFETY KW_ALIGNSTACK KW_ALWAYSINLINE KW_NONLAZYBIND KW_INLINEHINT KW_NAKED KW_NOIMPLICITFLOAT KW_NOINLINE KW_NOREDZONE KW_NORETURN KW_NOUNWIND KW_OPTSIZE KW_READNONE KW_READONLY KW_RETURNS_TWICE KW_SSP KW_SSPREQ KW_UWTABLE
 %token KW_ALIGN
@@ -68,19 +69,27 @@ toplevelentry_eol:
   | tle = toplevelentry EOL+ { tle }
 
 toplevelentry:
-  | d = definition                        { TLE_Definition d }
-  | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s }
-  | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s     }
+  | d = definition                        { TLE_Definition d  }
+  | d = declaration                       { TLE_Declaration d }
+  | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s  }
+  | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s      }
 
 definition:
   | KW_DEFINE linkage? visibility? cconv?
-           ret_typ = ret_type name = global
-           LPAREN args = separated_list(COMMA, decl_arg) RPAREN
+           df_ret_typ = ret_type df_name = global
+           LPAREN df_args = separated_list(COMMA, df_arg) RPAREN
            list(fn_attr) align? gc?
            LCURLY EOL+
-           instrs = procedure_body
+           df_instrs = procedure_body
            RCURLY
-    { {ret_typ; name; args; instrs;} }
+    { {df_ret_typ; df_name; df_args; df_instrs;} }
+
+declaration:
+  | KW_DECLARE linkage? visibility? cconv? KW_UNNAMED_ADDR?
+           dc_ret_typ = ret_type dc_name = global
+           LPAREN dc_args = separated_list(COMMA, dc_arg) RPAREN
+           list(fn_attr) align? gc?
+    { {dc_ret_typ; dc_name; dc_args;} }
 
 linkage:
   | KW_PRIVATE                      { LINKAGE_Private                      }
@@ -141,8 +150,11 @@ typ_attr:
   | KW_NOCAPTURE { TYPEATTR_Nocapture }
   | KW_NEST      { TYPEATTR_Nest      }
 
-decl_arg:
+df_arg:
   | t = typ list(typ_attr) i = ident { (t, i) }
+
+dc_arg:
+  | t = typ list(typ_attr) { t }
 
 call_arg:
   | t = typ list(typ_attr) i = value { (t, i) }

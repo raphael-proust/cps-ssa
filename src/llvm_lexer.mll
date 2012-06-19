@@ -28,6 +28,7 @@
   | "datalayout"                   -> KW_DATALAYOUT
   | "triple"                       -> KW_TRIPLE
   | "define"                       -> KW_DEFINE
+  | "declare"                      -> KW_DECLARE
   | "private"                      -> KW_PRIVATE
   | "linker_private"               -> KW_LINKER_PRIVATE
   | "linker_private_weak"          -> KW_LINKER_PRIVATE_WEAK
@@ -51,6 +52,7 @@
   | "fastcc"                       -> KW_FASTCC
   | "coldcc"                       -> KW_COLDCC
   | "cc"                           -> KW_CC
+  | "unnamed_addr"                 -> KW_UNNAMED_ADDR
   | "zeroext"                      -> KW_ZEROEXT
   | "signext"                      -> KW_SIGNEXT
   | "inreg"                        -> KW_INREG

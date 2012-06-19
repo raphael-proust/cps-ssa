@@ -309,12 +309,12 @@ let blocks_of_instrs instrs =
   let (entry_block, instrs) = mk_entry_block [] instrs in
   (entry_block, mk_blocks [] [] instrs)
 
-let proc {LLVM.name; args; instrs} =
+let proc {LLVM.df_name; df_args; df_instrs} =
   reset_running_idx ();
-  let (p_entry_block, p_blocks) = blocks_of_instrs instrs in
+  let (p_entry_block, p_blocks) = blocks_of_instrs df_instrs in
   {SSA.
-    p_name = label name;
-    p_args = List.map (fun (_, a) -> ident a) args;
+    p_name = label df_name;
+    p_args = List.map (fun (_, a) -> ident a) df_args;
     p_entry_block;
     p_blocks;
   }
@@ -322,7 +322,8 @@ let proc {LLVM.name; args; instrs} =
 let tpl = function
   (* ignore llvm boring stuff, get to the meat *)
   | LLVM.TLE_Target _
-  | LLVM.TLE_Datalayout _ -> None
+  | LLVM.TLE_Datalayout _
+  | LLVM.TLE_Declaration _ -> None
   | LLVM.TLE_Definition d -> Some (proc d)
 
 let prog m =
