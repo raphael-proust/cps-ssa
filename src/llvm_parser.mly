@@ -81,7 +81,8 @@ toplevelentry:
 global_decl:
   | g_ident = ident EQ
       linkage? visibility? KW_THREAD_LOCAL? addrspace? KW_UNNAMED_ADDR?
-      g_constant = global_is_constant g_typ = typ g_value = value comma_align?
+      g_constant = global_is_constant g_typ = typ g_value = value
+      comma_section? comma_align?
       { {g_ident; g_typ; g_constant = false; g_value;} }
 
 global_is_constant:
@@ -90,6 +91,9 @@ global_is_constant:
 
 addrspace:
   | KW_ADDRSPACE LPAREN n = INTEGER RPAREN { n }
+
+comma_section:
+  | COMMA KW_SECTION s = STRING { s }
 
 definition:
   | KW_DEFINE linkage? visibility? cconv?
