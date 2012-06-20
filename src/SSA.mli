@@ -23,9 +23,9 @@ open Util
 (** Instructions are assignements of direct expressions or function calls or
     memory writes. *)
 type core_instr =
-  | IAssignExpr of (Prim.var * Prim.expr)
-  | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
-  | ICall       of (Prim.label * Prim.expr list)
+  | IAssignExpr of (Prim.var * Prim.value)
+  | IAssigncall of (Prim.var * Prim.label * Prim.value list)
+  | ICall       of (Prim.label * Prim.value list)
   | IMemWrite   of (Prim.var * Prim.mem_w)
 
 (** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
@@ -33,13 +33,13 @@ type core_instr =
   *)
 type jump =
   | Jgoto       of Prim.label
-  | Jreturn     of Prim.expr
+  | Jreturn     of Prim.value
   | Jreturnvoid
-  | Jtail       of (Prim.label * Prim.expr list * Prim.label)
-  | Jcond       of (Prim.expr * Prim.label * Prim.label)
+  | Jtail       of (Prim.label * Prim.value list * Prim.label)
+  | Jcond       of (Prim.value * Prim.label * Prim.label)
 
 (** SSA-magic is made of phi-functions. *)
-type phi = Prim.var * (Prim.label * Prim.expr) list
+type phi = Prim.var * (Prim.label * Prim.value) list
 
 (** The entry block has no phi nodes. *)
 type entry_block = {
@@ -93,7 +93,7 @@ module Entry_blocks :sig
     ?instrs:core_instr list -> jump -> entry_block
 
   val return: ?label:Prim.label ->
-    ?instrs:core_instr list -> Prim.expr -> entry_block
+    ?instrs:core_instr list -> Prim.value -> entry_block
   val return_const: ?label:Prim.label ->
     ?instrs:core_instr list -> int -> entry_block
   val return_0: ?label:Prim.label ->
@@ -102,10 +102,10 @@ module Entry_blocks :sig
     ?instrs:core_instr list -> Prim.var -> entry_block
 
   val cond: ?label:Prim.label -> ?instrs:core_instr list ->
-    Prim.expr -> Prim.label -> Prim.label -> entry_block
+    Prim.value -> Prim.label -> Prim.label -> entry_block
 
   val tail: ?label:Prim.label -> ?instrs:core_instr list ->
-    Prim.label -> Prim.expr list -> Prim.label -> entry_block
+    Prim.label -> Prim.value list -> Prim.label -> entry_block
 
   val goto: ?label:Prim.label ->
     ?instrs:core_instr list -> Prim.label -> entry_block
@@ -120,7 +120,7 @@ module Blocks :sig
 
   val return: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
-    Prim.expr -> block
+    Prim.value -> block
   val return_const: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     int -> block
@@ -133,11 +133,11 @@ module Blocks :sig
 
   val cond: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
-    Prim.expr -> Prim.label -> Prim.label -> block
+    Prim.value -> Prim.label -> Prim.label -> block
 
   val tail: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
-    Prim.label -> Prim.expr list -> Prim.label -> block
+    Prim.label -> Prim.value list -> Prim.label -> block
 
   val goto: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
@@ -155,13 +155,13 @@ module Procs : sig
   val cond:
        name:Prim.label
     -> ?args:Prim.var list
-    -> Prim.expr -> block -> block
+    -> Prim.value -> block -> block
     -> proc
 
   val cond_e:
        name:Prim.label
     -> ?args:Prim.var list
-    -> Prim.expr -> Prim.expr -> Prim.expr
+    -> Prim.value -> Prim.value -> Prim.value
     -> proc
 
 end

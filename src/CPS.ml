@@ -19,13 +19,13 @@
   * }}}                                                                      *)
 
 type m =
-  | Mapp  of (Prim.var * Prim.expr list * cont)
-  | Mcont of (Prim.var * Prim.expr list)
-  | Mcond of (  Prim.expr
-              * (Prim.var * Prim.expr list)
-              * (Prim.var * Prim.expr list)
+  | Mapp  of (Prim.var * Prim.value list * cont)
+  | Mcont of (Prim.var * Prim.value list)
+  | Mcond of (  Prim.value
+              * (Prim.var * Prim.value list)
+              * (Prim.var * Prim.value list)
              )
-  | Mlet  of (Prim.var * Prim.expr * m)
+  | Mlet  of (Prim.var * Prim.value * m)
   | Mrec  of ((Prim.var * lambda) list * m)
   | Mseq  of (Prim.var * Prim.mem_w * m)
 

@@ -26,19 +26,19 @@ let label_main = Prim.label "@entry"
 
 
 type core_instr =
-  | IAssignExpr of (Prim.var * Prim.expr)
-  | IAssigncall of (Prim.var * Prim.label * Prim.expr list)
-  | ICall       of (Prim.label * Prim.expr list)
+  | IAssignExpr of (Prim.var * Prim.value)
+  | IAssigncall of (Prim.var * Prim.label * Prim.value list)
+  | ICall       of (Prim.label * Prim.value list)
   | IMemWrite   of (Prim.var * Prim.mem_w)
 
 type jump =
   | Jgoto       of Prim.label
-  | Jreturn     of Prim.expr
+  | Jreturn     of Prim.value
   | Jreturnvoid
-  | Jtail       of (Prim.label * Prim.expr list * Prim.label)
-  | Jcond       of (Prim.expr * Prim.label * Prim.label)
+  | Jtail       of (Prim.label * Prim.value list * Prim.label)
+  | Jcond       of (Prim.value * Prim.label * Prim.label)
 
-type phi = Prim.var * (Prim.label * Prim.expr) list
+type phi = Prim.var * (Prim.label * Prim.value) list
 
 type entry_block = {
   mutable eb_order      : int;
@@ -132,11 +132,11 @@ module Entry_blocks = struct
   let return ?label ?instrs e =
     entry_block ?label ?instrs (Jreturn e)
   let return_const ?label ?instrs c =
-    return ?label ?instrs Prim.(ONone (Vconst c))
+    return ?label ?instrs (Prim.Vconst c)
   let return_0 ?label ?instrs () =
     return_const ?label ?instrs 0
   let return_var ?label ?instrs v =
-    return ?label ?instrs Prim.(ONone (Vvar v))
+    return ?label ?instrs (Prim.Vvar v)
 
   let cond ?label ?instrs e l1 l2 =
     entry_block ?label ?instrs (Jcond (e, l1, l2))
@@ -165,10 +165,10 @@ module Blocks = struct
   let return ?label ?phis ?instrs e =
     block ?label ?phis ?instrs (Jreturn e)
   let return_const ?label ?phis ?instrs c =
-    return ?label ?phis ?instrs Prim.(ONone (Vconst c))
+    return ?label ?phis ?instrs (Prim.Vconst c)
   let return_0 ?label ?phis ?instrs () = return_const ?label ?phis ?instrs 0
   let return_var ?label ?phis ?instrs v =
-    return ?label ?phis ?instrs Prim.(ONone (Vvar v))
+    return ?label ?phis ?instrs (Prim.Vvar v)
 
   let cond ?label ?phis ?instrs e l1 l2 =
     block ?label ?phis ?instrs (Jcond (e, l1, l2))

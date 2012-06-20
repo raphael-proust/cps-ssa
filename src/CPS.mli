@@ -29,15 +29,15 @@ type m =
   (** Application. The [var]iable can only be a procedure/function call. An
       extra continuation argument is needed.
     *)
-  | Mapp  of (Prim.var * Prim.expr list * cont)
+  | Mapp  of (Prim.var * Prim.value list * cont)
   (** Continuation call. The [var]iable must be a continuation. *)
-  | Mcont of (Prim.var * Prim.expr list)
+  | Mcont of (Prim.var * Prim.value list)
   (** Conditional Branching. Both branches must use continuation [var]iables. *)
-  | Mcond of ( Prim.expr
-             * (Prim.var * Prim.expr list)
-             * (Prim.var * Prim.expr list))
-  (** Let-binding. Note that it only bounds [expressions]. *)
-  | Mlet  of (Prim.var * Prim.expr * m)
+  | Mcond of ( Prim.value
+             * (Prim.var * Prim.value list)
+             * (Prim.var * Prim.value list))
+  (** Let-binding. Note that it only bounds values. *)
+  | Mlet  of (Prim.var * Prim.value * m)
   (** Recursive let binding. It binds lambdas. *)
   | Mrec  of ((Prim.var * lambda) list * m)
   (** Sequences are for memory side-effect operation. *)

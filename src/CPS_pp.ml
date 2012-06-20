@@ -39,27 +39,27 @@ let rec pp_m = function
     Prim_pp.pp_var v ^^ PP.space ^^
       PP.list (* This list is never empty *)
         ~sep:PP.space
-        (PP.either Prim_pp.pp_expr pp_cont)
+        (PP.either Prim_pp.pp_value pp_cont)
         (List.map (fun e -> E.Left e) es @ [E.Right k])
 
   | CPS.Mcont (v, es) ->
     Prim_pp.pp_var v ^^ PP.space ^^
-    PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_expr es
+    PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_value es
 
   | CPS.Mcond (e, (v1, es1), (v2, es2)) ->
-    !^ "if" ^^ PP.with_paren (Prim_pp.pp_expr e) ^^
+    !^ "if" ^^ PP.with_paren (Prim_pp.pp_value e) ^^
     PP.level (
       PP.with_paren (Prim_pp.pp_var v1 ^^ PP.space ^^
-          PP.list ~empty:PP.unit Prim_pp.pp_expr es1
+          PP.list ~empty:PP.unit Prim_pp.pp_value es1
       ) ^^ PP.break1 ^^
       PP.with_paren (Prim_pp.pp_var v2 ^^ PP.space ^^
-        PP.list ~empty:PP.unit Prim_pp.pp_expr es2
+        PP.list ~empty:PP.unit Prim_pp.pp_value es2
       )
     )
 
   | CPS.Mlet  (v, e, m) ->
     !^ "let " ^^ Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
-      Prim_pp.pp_expr e ^^
+      Prim_pp.pp_value e ^^
     !^ " in" ^^ PP.break1 ^^
       pp_m m
 

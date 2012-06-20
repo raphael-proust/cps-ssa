@@ -50,8 +50,6 @@ let label l = Prim.label (ident_string l)
 
 let var i = Prim.Vvar (ident i)
 
-let var_expr i = Prim.ONone (var i)
-
 let int_of_bool = function
   | true -> 1
   | false -> 0
@@ -59,38 +57,38 @@ let int_of_bool = function
 let rec expr e =
   let open LLVM in
   match e with
-  | EXPR_Add (_, v0, v1) -> Prim.OPlus (value v0, value v1)
+  | EXPR_Add (_, v0, v1) -> Prim.(Vexpr (OPlus (value v0, value v1)))
   | EXPR_FAdd -> unsupported_feature "EXPR_FAdd"
-  | EXPR_Sub (_, v0, v1) -> Prim.OMinus (value v0, value v1)
+  | EXPR_Sub (_, v0, v1) -> Prim.(Vexpr (OMinus (value v0, value v1)))
   | EXPR_FSub -> unsupported_feature "EXPR_FSub"
-  | EXPR_Mul (_, v0, v1) -> Prim.OMult (value v0, value v1)
+  | EXPR_Mul (_, v0, v1) -> Prim.(Vexpr (OMult (value v0, value v1)))
   | EXPR_FMul -> unsupported_feature "EXPR_FMul"
   | EXPR_UDiv (_, v0, v1)
-  | EXPR_SDiv (_, v0, v1) -> Prim.ODiv (value v0, value v1)
+  | EXPR_SDiv (_, v0, v1) -> Prim.(Vexpr (ODiv (value v0, value v1)))
   | EXPR_FDiv -> unsupported_feature "EXPR_FDiv"
   | EXPR_URem (_, v0, v1)
-  | EXPR_SRem (_, v0, v1) -> Prim.ORem (value v0, value v1)
+  | EXPR_SRem (_, v0, v1) -> Prim.(Vexpr (ORem (value v0, value v1)))
   | EXPR_FRem -> unsupported_feature "EXPR_FRem"
 
   | EXPR_Shl _ -> unsupported_feature "EXPR_Shl"
   | EXPR_LShr _ -> unsupported_feature "EXPR_LShr"
   | EXPR_AShr _ -> unsupported_feature "EXPR_AShr"
 
-  | EXPR_And (_, v0, v1) -> Prim.OAnd (value v0, value v1)
-  | EXPR_Or (_, v0, v1) -> Prim.OOr (value v0, value v1)
-  | EXPR_Xor (_, v0, v1) -> Prim.OXor (value v0, value v1)
+  | EXPR_And (_, v0, v1) -> Prim.(Vexpr (OAnd (value v0, value v1)))
+  | EXPR_Or (_, v0, v1) -> Prim.(Vexpr (OOr (value v0, value v1)))
+  | EXPR_Xor (_, v0, v1) -> Prim.(Vexpr (OXor (value v0, value v1)))
 
   | EXPR_ICmp (icmp, _, v1, v2) -> begin match icmp with
-    | Cmp_Eq  -> Prim.OEq (value v1, value v2)
-    | Cmp_Ne  -> Prim.ONe (value v1, value v2)
+    | Cmp_Eq  -> Prim.(Vexpr (OEq (value v1, value v2)))
+    | Cmp_Ne  -> Prim.(Vexpr (ONe (value v1, value v2)))
     | Cmp_Ugt
-    | Cmp_Sgt -> Prim.OGt (value v1, value v2)
+    | Cmp_Sgt -> Prim.(Vexpr (OGt (value v1, value v2)))
     | Cmp_Uge
-    | Cmp_Sge -> Prim.OGe (value v1, value v2)
+    | Cmp_Sge -> Prim.(Vexpr (OGe (value v1, value v2)))
     | Cmp_Ult
-    | Cmp_Slt -> Prim.OLt (value v1, value v2)
+    | Cmp_Slt -> Prim.(Vexpr (OLt (value v1, value v2)))
     | Cmp_Ule
-    | Cmp_Sle -> Prim.OLe (value v1, value v2)
+    | Cmp_Sle -> Prim.(Vexpr (OLe (value v1, value v2)))
   end
   | EXPR_FCmp -> unsupported_feature "EXPR_FCmp"
 
@@ -106,7 +104,7 @@ let rec expr e =
   | EXPR_IntToPtr (_, v, _)
   | EXPR_PtrToInt (_, v, _)
   | EXPR_BitCast  (_, v, _) ->
-   value_expr v
+    value v
 
   | EXPR_GetElementPtr   -> unsupported_feature "EXPR_GetElementPtr"
   | EXPR_ExtractElement  -> unsupported_feature "EXPR_ExtractElement"
@@ -129,9 +127,7 @@ and value = function
   | LLVM.VALUE_Struct tvs       ->
     Prim.Vstruct (List.map (fun (_, v) -> value v) tvs)
   | LLVM.VALUE_Zero_initializer -> Prim.Vzero
-  | LLVM.VALUE_Expr e           -> Prim.Vexpr (expr e)
-
-let value_expr v = Prim.ONone (value v)
+  | LLVM.VALUE_Expr e           -> expr e
 
 
 let running_idx = ref (-1)
@@ -174,11 +170,11 @@ let get_assigns instrs =
       aux (SSA.IAssignExpr (ident_left i, expr e) :: accu) instrs
     (*TODO: factor Calls *)
     | INSTR_Call (i, (_, fn, args)) :: instrs ->
-      let args = List.map (fun (_, v) -> value_expr v) args in
+      let args = List.map (fun (_, v) -> value v) args in
       aux (SSA.IAssigncall (ident_left i, label fn, args) :: accu) instrs
 
     | INSTR_Call_unit (_, fn, args) :: instrs ->
-      let args = List.map (fun (_, v) -> value_expr v) args in
+      let args = List.map (fun (_, v) -> value v) args in
       aux (SSA.ICall (label fn, args) :: accu) instrs
 
     | INSTR_Select :: _ -> unsupported_feature "INSTR_Select"
@@ -187,7 +183,9 @@ let get_assigns instrs =
     | INSTR_Alloca (i, _) :: instrs ->
       aux (SSA.IMemWrite (ident_left i, Prim.MAlloc) :: accu) instrs
     | INSTR_Load (i1, _, i2) :: instrs ->
-      aux (SSA.IAssignExpr (ident_left i1, Prim.ORead (var i2)) :: accu) instrs
+      aux
+        (SSA.IAssignExpr (ident_left i1, Prim.Vexpr (Prim.ORead (var i2))) :: accu)
+        instrs
     | INSTR_Store (_, v, _, i) :: instrs ->
       aux (SSA.IMemWrite (ident i, Prim.MWrite (value v)) :: accu) instrs
 
@@ -207,15 +205,15 @@ let get_assigns instrs =
 let get_terminator terminator =
   let open LLVM in
   match terminator with
-  | INSTR_Ret (_, i) -> SSA.Jreturn (value_expr i)
+  | INSTR_Ret (_, i) -> SSA.Jreturn (value i)
   | INSTR_Ret_void -> SSA.Jreturnvoid
   | INSTR_Br (i, l1, l2) ->
-    SSA.Jcond (value_expr i, label l1, label l2)
+    SSA.Jcond (value i, label l1, label l2)
   | INSTR_Br_1 i -> SSA.Jgoto (label i)
   | INSTR_Switch _ -> unsupported_feature "INSTR_Switch"
   | INSTR_IndirectBr _ -> unsupported_feature "INSTR_IndirectBr"
   | INSTR_Invoke (_, fn, args, i, _) ->
-    let args = List.map (fun (_, v) -> value_expr v) args in
+    let args = List.map (fun (_, v) -> value v) args in
     SSA.Jtail (label fn, args, label i)
   | INSTR_Resume _ -> unsupported_feature "INSTR_Resume"
   | INSTR_Unreachable -> unsupported_feature "INSTR_Unreachable"
@@ -234,7 +232,7 @@ let get_phis instrs =
   let rec aux accu = function
     | [] -> assert false
     | LLVM.INSTR_PHI (res, _, assocs) :: instrs ->
-      let flip_val (x,y) = (label y, value_expr x) in
+      let flip_val (x,y) = (label y, value x) in
       aux ((ident_left res, List.map flip_val assocs) :: accu) instrs
     | instrs -> (List.rev accu, instrs)
   in

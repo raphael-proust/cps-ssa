@@ -69,10 +69,9 @@ type value =
   | Vzero
   | Vexpr of expr
 
-(** Expressions are either values, arithmetical operations on values,
-    comparisons, or IO primitives. *)
+(* expressions are operation on values. Might be completed
+ * later. It might also need to be lifted to a value lattice. *)
 and expr =
-  | ONone of value
   | OPlus  of (value * value)
   | OMult  of (value * value)
   | OMinus of (value * value)

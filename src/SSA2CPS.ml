@@ -20,8 +20,6 @@
 
 open Util
 
-let expr_of_var v = Prim.ONone (Prim.Vvar v)
-
 let args_of_label proc orig dest =
   let right_block = SSA.block_of_label proc dest in
   match right_block with
@@ -121,7 +119,7 @@ let tr_prog prog =
   Mrec
     (lambdas,
      Mapp (Prim.var_of_label main.SSA.p_name,
-           List.map (fun v -> Prim.(ONone (Vvar v))) main.SSA.p_args,
+           List.map (fun v -> Prim.Vvar v) main.SSA.p_args,
            Cvar var_run
           )
     )

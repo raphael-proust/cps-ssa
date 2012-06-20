@@ -29,16 +29,7 @@ let pp_var v = !^ (Prim.string_of_var v)
 
 let pp_label l = !^ (Prim.string_of_label l)
 
-let rec pp_value = function
-  | Prim.Vvar v     -> pp_var v
-  | Prim.Vconst c   -> !^ (string_of_int c)
-  | Prim.Vnull      -> !^ "null"
-  | Prim.Vundef     -> !^ "undef"
-  | Prim.Vstruct vs -> PP.with_paren (PP.list ~sep:PP.comma pp_value vs)
-  | Prim.Vzero      -> !^ "!0" (*TODO: better printing *)
-  | Prim.Vexpr e    -> pp_expr e
-
-and pp_expr = function
+let rec pp_expr = function
   (* Arithmetic ops *)
   | Prim.OPlus  (v1, v2) -> PP.op pp_value v1 Pprint.plus    v2
   | Prim.OMult  (v1, v2) -> PP.op pp_value v1 Pprint.star    v2
@@ -58,6 +49,15 @@ and pp_expr = function
   | Prim.OXor (v1, v2) -> PP.op pp_value v1 (!^ "^^" ) v2
   (* IO *)
   | Prim.ORead v -> PP.fn pp_value (!^ "read") [v]
+
+and pp_value = function
+  | Prim.Vvar v     -> pp_var v
+  | Prim.Vconst c   -> !^ (string_of_int c)
+  | Prim.Vnull      -> !^ "null"
+  | Prim.Vundef     -> !^ "undef"
+  | Prim.Vstruct vs -> PP.with_paren (PP.list ~sep:PP.comma pp_value vs)
+  | Prim.Vzero      -> !^ "!0" (*TODO: better printing *)
+  | Prim.Vexpr e    -> pp_expr e
 
 let pp_mem_w = function
   | Prim.MWrite v -> (!^ "<-") ^^ PP.space ^^ pp_value v

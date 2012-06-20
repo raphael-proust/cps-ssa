@@ -25,7 +25,7 @@ module PP = struct
 end
 open PP.Operators
 
-let pp_phi_entry (l, e) = Prim_pp.pp_label l ^^ PP.colon ^^ Prim_pp.pp_expr e
+let pp_phi_entry (l, e) = Prim_pp.pp_label l ^^ PP.colon ^^ Prim_pp.pp_value e
 
 let pp_phi (v, les) =
   Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
@@ -35,29 +35,29 @@ let pp_phi (v, les) =
 
 let pp_core_instr = function
   | SSA.IAssignExpr (v, e) ->
-    Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^ Prim_pp.pp_expr e
+    Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^ Prim_pp.pp_value e
   | SSA.IAssigncall (v, l, es) ->
     Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
     Prim_pp.pp_label l ^^ PP.with_paren (
-      PP.list ~sep:PP.comma_space Prim_pp.pp_expr es
+      PP.list ~sep:PP.comma_space Prim_pp.pp_value es
     )
   | SSA.ICall (l, es) ->
     Prim_pp.pp_label l ^^ PP.with_paren (
-      PP.list ~sep:PP.comma_space Prim_pp.pp_expr es
+      PP.list ~sep:PP.comma_space Prim_pp.pp_value es
     )
   | SSA.IMemWrite (v, m) -> !^ "store" ^^ PP.space ^^
     Prim_pp.pp_var v ^^ PP.space ^^ Prim_pp.pp_mem_w m
 
 let pp_jump = function
   | SSA.Jgoto l -> !^ "goto" ^^ PP.space ^^ Prim_pp.pp_label l
-  | SSA.Jreturn e -> !^ "return" ^^ PP.space ^^ Prim_pp.pp_expr e
+  | SSA.Jreturn e -> !^ "return" ^^ PP.space ^^ Prim_pp.pp_value e
   | SSA.Jreturnvoid -> !^ "return"
   | SSA.Jtail (l, es, d) ->
     !^ "tailcall" ^^ PP.space ^^ Prim_pp.pp_label l ^^ PP.with_paren (
-      PP.list ~sep:PP.comma_space Prim_pp.pp_expr es
+      PP.list ~sep:PP.comma_space Prim_pp.pp_value es
     ) ^^ PP.space ^^ (!^ "to") ^^ PP.space ^^ Prim_pp.pp_label d
   | SSA.Jcond (e, l1, l2) ->
-    !^ "branch" ^^ PP.space ^^ PP.with_paren (Prim_pp.pp_expr e) ^^ PP.space ^^
+    !^ "branch" ^^ PP.space ^^ PP.with_paren (Prim_pp.pp_value e) ^^ PP.space ^^
     Prim_pp.pp_label l1 ^^ PP.space ^^
     Prim_pp.pp_label l2
 
