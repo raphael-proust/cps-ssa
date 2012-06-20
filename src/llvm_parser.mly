@@ -71,46 +71,46 @@ toplevelentry_eol:
   | tle = toplevelentry EOL+ { tle }
 
 toplevelentry:
-  | d = definition                        { TLE_Definition d     }
-  | d = declaration                       { TLE_Declaration d    }
-  | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s     }
-  | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s         }
-  | i = local EQ KW_TYPE t = typ          { TLE_Type_decl (i, t) }
-  | g = global_decl                       { TLE_Global g         }
+  | d = definition                        { TLE_Definition d              }
+  | d = declaration                       { TLE_Declaration d             }
+  | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s              }
+  | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s                  }
+  | i = LOCAL EQ KW_TYPE t = typ          { TLE_Type_decl (ID_Local i, t) }
+  | g = global_decl                       { TLE_Global g                  }
 
 global_decl:
-  | g_ident = global EQ
+  | ident = GLOBAL EQ
       linkage? visibility? KW_THREAD_LOCAL? addrspace? KW_UNNAMED_ADDR?
       g_constant = global_is_constant g_typ = typ g_value = value?
       comma_section? comma_align?
       { {g_ident = ID_Global ident; g_typ; g_constant; g_value;} }
 
-global_is_constant:
+%inline global_is_constant:
   | KW_GLOBAL { false }
   | KW_CONSTANT { true }
 
-addrspace:
+%inline addrspace:
   | KW_ADDRSPACE LPAREN n = INTEGER RPAREN { n }
 
-comma_section:
+%inline comma_section:
   | COMMA KW_SECTION s = STRING { s }
 
 definition:
   | KW_DEFINE linkage? visibility? cconv?
-           df_ret_typ = ret_type df_name = global
+           df_ret_typ = ret_type name = GLOBAL
            LPAREN df_args = separated_list(COMMA, df_arg) RPAREN
-           list(fn_attr) align? gc?
+           list(fn_attr_gen) EOL?
            LCURLY EOL+
            df_instrs = procedure_body
            RCURLY
-    { {df_ret_typ; df_name; df_args; df_instrs;} }
+    { {df_ret_typ; df_name = ID_Global name; df_args; df_instrs;} }
 
 declaration:
   | KW_DECLARE linkage? visibility? cconv? KW_UNNAMED_ADDR?
-           dc_ret_typ = ret_type dc_name = global
+           dc_ret_typ = ret_type name = GLOBAL
            LPAREN dc_args = separated_list(COMMA, dc_arg) RPAREN
-           list(fn_attr) align? gc?
-    { {dc_ret_typ; dc_name; dc_args;} }
+           list(fn_attr_gen)
+    { {dc_ret_typ; dc_name = ID_Global name; dc_args;} }
 
 linkage:
   | KW_PRIVATE                      { LINKAGE_Private                      }
@@ -130,7 +130,7 @@ linkage:
   | KW_DLLIMPORT                    { LINKAGE_Dllimport                    }
   | KW_DLLEXPORT                    { LINKAGE_Dllexport                    }
 
-visibility:
+%inline visibility:
   | KW_DEFAULT   { VISIBILITY_Default   }
   | KW_HIDDEN    { VISIBILITY_Hidden    }
   | KW_PROTECTED { VISIBILITY_Protected }
@@ -168,7 +168,7 @@ typ:
   | KW_OPAQUE                                { TYPE_Opaque           }
   | LT n = INTEGER KW_X t = typ GT           { TYPE_Vector (n, t)    }
 
-typ_i:
+%inline typ_i:
   | n = I { n }
 
 typ_attr:
@@ -191,114 +191,201 @@ call_arg:
   | t = typ list(typ_attr) i = value { (t, i) }
 
 fn_attr:
-  | KW_ADDRESS_SAFETY                      { FNATTR_Address_safety  }
-  | KW_ALIGNSTACK LPAREN p = power2 RPAREN { FNATTR_Alignstack p    }
-  | KW_ALWAYSINLINE                        { FNATTR_Alwaysinline    }
-  | KW_NONLAZYBIND                         { FNATTR_Nonlazybind     }
-  | KW_INLINEHINT                          { FNATTR_Inlinehint      }
-  | KW_NAKED                               { FNATTR_Naked           }
-  | KW_NOIMPLICITFLOAT                     { FNATTR_Noimplicitfloat }
-  | KW_NOINLINE                            { FNATTR_Noinline        }
-  | KW_NOREDZONE                           { FNATTR_Noredzone       }
-  | KW_NORETURN                            { FNATTR_Noreturn        }
-  | KW_NOUNWIND                            { FNATTR_Nounwind        }
-  | KW_OPTSIZE                             { FNATTR_Optsize         }
-  | KW_READNONE                            { FNATTR_Readnone        }
-  | KW_READONLY                            { FNATTR_Readonly        }
-  | KW_RETURNS_TWICE                       { FNATTR_Returns_twice   }
-  | KW_SSP                                 { FNATTR_Ssp             }
-  | KW_SSPREQ                              { FNATTR_Sspreq          }
-  | KW_UWTABLE                             { FNATTR_Uwtable         }
+  | KW_ADDRESS_SAFETY                      { Some FNATTR_Address_safety  }
+  | KW_ALIGNSTACK LPAREN p = power2 RPAREN { Some (FNATTR_Alignstack p)  }
+  | KW_ALWAYSINLINE                        { Some FNATTR_Alwaysinline    }
+  | KW_NONLAZYBIND                         { Some FNATTR_Nonlazybind     }
+  | KW_INLINEHINT                          { Some FNATTR_Inlinehint      }
+  | KW_NAKED                               { Some FNATTR_Naked           }
+  | KW_NOIMPLICITFLOAT                     { Some FNATTR_Noimplicitfloat }
+  | KW_NOINLINE                            { Some FNATTR_Noinline        }
+  | KW_NOREDZONE                           { Some FNATTR_Noredzone       }
+  | KW_NORETURN                            { Some FNATTR_Noreturn        }
+  | KW_NOUNWIND                            { Some FNATTR_Nounwind        }
+  | KW_OPTSIZE                             { Some FNATTR_Optsize         }
+  | KW_READNONE                            { Some FNATTR_Readnone        }
+  | KW_READONLY                            { Some FNATTR_Readonly        }
+  | KW_RETURNS_TWICE                       { Some FNATTR_Returns_twice   }
+  | KW_SSP                                 { Some FNATTR_Ssp             }
+  | KW_SSPREQ                              { Some FNATTR_Sspreq          }
+  | KW_UWTABLE                             { Some FNATTR_Uwtable         }
 
-power2:
+fn_attr_gen:
+  | f = fn_attr { Some f }
+  | KW_ALIGN power2   { None (*TODO: fix *) }
+  | KW_GC STRING      { None (*TODO: fix *) }
+  | KW_SECTION STRING { None (*TODO: fix *) }
+
+%inline power2:
   | n = INTEGER { assert (List.mem n [0;1;2;4;8;16;32;64]); n }
 
-align:
+%inline align:
   | KW_ALIGN power2 { }
 
-gc:
+%inline gc:
   | KW_GC STRING { }
 
-procedure_body: (*TODO*)
+%inline procedure_body:
   | il = list(instr_eol) { il }
 
-instr_eol:
+%inline instr_eol:
   | i = instr EOL+ { i }
 
-%public binop(KW):
-  | KW t = typ o1 = value COMMA o2 = value
-    { (t, o1, o2) }
+%public binop_expr(KW):
+  | KW LPAREN t = typ o1 = value COMMA t2 = typ o2 = value RPAREN
+    { assert (t = t2); (t, o1, o2) }
 
-%public binop1(KW,OPT1):
-  | KW OPT1? t = typ o1 = value COMMA o2 = value
-    { (t, o1, o2) }
+%public binop1_expr(KW,OPT1):
+  | KW OPT1? LPAREN t = typ o1 = value COMMA t2 = typ o2 = value RPAREN
+    { assert (t = t2); (t, o1, o2) }
 
-%public binop2(KW,OPT1,OPT2):
-  | KW OPT1? OPT2? t = typ o1 = value COMMA o2 = value
-    { (t, o1, o2) }
+%public binop2_expr(KW,OPT1,OPT2):
+  | KW OPT1? OPT2? LPAREN t = typ o1 = value COMMA t2 = typ o2 = value RPAREN
+    { assert (t = t2); (t, o1, o2) }
 
-%public conversion(KW):
-  (* parens are compulsory in constant expr and forbidden in instrs *)
+%public conversion_expr(KW):
   | KW LPAREN t = typ v = value KW_TO t2 = typ RPAREN
     { (t, v, t2) }
-  | KW t = typ v = value KW_TO t2 = typ
-    { (t, v, t2) }
 
-%public icmp(KW):
-  | KW_ICMP KW t = typ o1 = value COMMA o2 = value
-    { (t, o1, o2) }
+%public icmp_expr(KW):
+  | KW_ICMP KW LPAREN t = typ o1 = value COMMA t2 = typ o2 = value RPAREN
+    { assert (t = t2); (t, o1, o2) }
 
 expr:
   (* arith binop *)
-  | b = binop2(KW_ADD,KW_NUW,KW_NSW) { EXPR_Add  b }
+  | b = binop2_expr(KW_ADD,KW_NUW,KW_NSW) { EXPR_Add  b }
   | KW_FADD (*TODO*)                 { failwith "EXPR_FAdd"   }
-  | b = binop2(KW_SUB,KW_NUW,KW_NSW) { EXPR_Sub  b }
+  | b = binop2_expr(KW_SUB,KW_NUW,KW_NSW) { EXPR_Sub  b }
   | KW_FSUB (*TODO*)                 { failwith "EXPR_FSub"   }
-  | b = binop2(KW_MUL,KW_NUW,KW_NSW) { EXPR_Mul  b }
+  | b = binop2_expr(KW_MUL,KW_NUW,KW_NSW) { EXPR_Mul  b }
   | KW_FMUL (*TODO*)                 { failwith "EXPR_FMul"   }
-  | b = binop1(KW_UDIV,KW_EXACT)     { EXPR_UDiv b }
-  | b = binop1(KW_SDIV,KW_EXACT)     { EXPR_SDiv b }
+  | b = binop1_expr(KW_UDIV,KW_EXACT)     { EXPR_UDiv b }
+  | b = binop1_expr(KW_SDIV,KW_EXACT)     { EXPR_SDiv b }
   | KW_FDIV (*TODO*)                 { failwith "EXPR_FDiv"   }
-  | b = binop (KW_UREM)              { EXPR_URem b }
-  | b = binop (KW_SREM)              { EXPR_SRem b }
+  | b = binop_expr (KW_UREM)              { EXPR_URem b }
+  | b = binop_expr (KW_SREM)              { EXPR_SRem b }
   | KW_FREM  (*TODO*)                { failwith "EXPR_FRem"   }
 
   (* bitwise binop *)
-  | b = binop(KW_SHL)  { EXPR_Shl  b }
-  | b = binop(KW_LSHR) { EXPR_LShr b }
-  | b = binop(KW_ASHR) { EXPR_AShr b }
-  | b = binop(KW_AND)  { EXPR_And  b }
-  | b = binop(KW_OR)   { EXPR_Or   b }
-  | b = binop(KW_XOR)  { EXPR_Xor  b }
+  | b = binop_expr(KW_SHL)  { EXPR_Shl  b }
+  | b = binop_expr(KW_LSHR) { EXPR_LShr b }
+  | b = binop_expr(KW_ASHR) { EXPR_AShr b }
+  | b = binop_expr(KW_AND)  { EXPR_And  b }
+  | b = binop_expr(KW_OR)   { EXPR_Or   b }
+  | b = binop_expr(KW_XOR)  { EXPR_Xor  b }
 
   (* comparison *)
   (*TODO: factorisation. How?*)
-  | i = icmp(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }
-  | i = icmp(KW_NE ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ne,  t, o1, o2) }
-  | i = icmp(KW_UGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ugt, t, o1, o2) }
-  | i = icmp(KW_UGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Uge, t, o1, o2) }
-  | i = icmp(KW_ULT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ult, t, o1, o2) }
-  | i = icmp(KW_ULE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ule, t, o1, o2) }
-  | i = icmp(KW_SGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sgt, t, o1, o2) }
-  | i = icmp(KW_SGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sge, t, o1, o2) }
-  | i = icmp(KW_SLT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Slt, t, o1, o2) }
-  | i = icmp(KW_SLE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sle, t, o1, o2) }
+  | i = icmp_expr(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }
+  | i = icmp_expr(KW_NE ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ne,  t, o1, o2) }
+  | i = icmp_expr(KW_UGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ugt, t, o1, o2) }
+  | i = icmp_expr(KW_UGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Uge, t, o1, o2) }
+  | i = icmp_expr(KW_ULT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ult, t, o1, o2) }
+  | i = icmp_expr(KW_ULE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ule, t, o1, o2) }
+  | i = icmp_expr(KW_SGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sgt, t, o1, o2) }
+  | i = icmp_expr(KW_SGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sge, t, o1, o2) }
+  | i = icmp_expr(KW_SLT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Slt, t, o1, o2) }
+  | i = icmp_expr(KW_SLE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sle, t, o1, o2) }
 
   | KW_FCMP           { failwith "TODO: KW_FCMP" }
 
   (* conversions *)
-  | c = conversion(KW_TRUNC)    { EXPR_Trunc c    }
-  | c = conversion(KW_ZEXT)     { EXPR_ZExt c     }
-  | c = conversion(KW_SEXT)     { EXPR_SExt c     }
-  | c = conversion(KW_FPTRUNC)  { EXPR_FPTrunc c  }
-  | c = conversion(KW_FPEXT)    { EXPR_FPExt c    }
-  | c = conversion(KW_UITOFP)   { EXPR_UIToFP c   }
-  | c = conversion(KW_SITOFP)   { EXPR_SIToFP c   }
-  | c = conversion(KW_FPTOUI)   { EXPR_FPToUI c   }
-  | c = conversion(KW_FPTOSI)   { EXPR_FPToSI c   }
-  | c = conversion(KW_INTTOPTR) { EXPR_IntToPtr c }
-  | c = conversion(KW_PTRTOINT) { EXPR_PtrToInt c }
-  | c = conversion(KW_BITCAST)  { EXPR_BitCast c  }
+  | c = conversion_expr(KW_TRUNC)    { EXPR_Trunc c    }
+  | c = conversion_expr(KW_ZEXT)     { EXPR_ZExt c     }
+  | c = conversion_expr(KW_SEXT)     { EXPR_SExt c     }
+  | c = conversion_expr(KW_FPTRUNC)  { EXPR_FPTrunc c  }
+  | c = conversion_expr(KW_FPEXT)    { EXPR_FPExt c    }
+  | c = conversion_expr(KW_UITOFP)   { EXPR_UIToFP c   }
+  | c = conversion_expr(KW_SITOFP)   { EXPR_SIToFP c   }
+  | c = conversion_expr(KW_FPTOUI)   { EXPR_FPToUI c   }
+  | c = conversion_expr(KW_FPTOSI)   { EXPR_FPToSI c   }
+  | c = conversion_expr(KW_INTTOPTR) { EXPR_IntToPtr c }
+  | c = conversion_expr(KW_PTRTOINT) { EXPR_PtrToInt c }
+  | c = conversion_expr(KW_BITCAST)  { EXPR_BitCast c  }
+
+  | KW_GETELEMENTPTR { failwith "EXPR_GetElementPtr" }
+
+  (* vector ops, not supported *)
+  | KW_EXTRACTELEMENT { failwith "EXPR_ExtractElement" }
+  | KW_INSERTELEMENT  { failwith "EXPR_InsertElement"  }
+  | KW_SHUFFLEVECTOR  { failwith "EXPR_ShuffleVector"  }
+
+  (* aggregate ops, not supported *)
+  | KW_EXTRACTVALUE { failwith "EXPR_ExtractValue" }
+  | KW_INSERTVALUE  { failwith "EXPR_InsertValue"  }
+
+
+%public binop_assign(KW):
+  | KW t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
+
+%public binop1_assign(KW,OPT1):
+  | KW OPT1? t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
+
+%public binop2_assign(KW,OPT1,OPT2):
+  | KW OPT1? OPT2? t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
+
+%public conversion_assign(KW):
+  | KW t = typ v = value KW_TO t2 = typ
+    { (t, v, t2) }
+
+%public icmp_assign(KW):
+  | KW_ICMP KW t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
+
+expr_assign:
+  (* arith binop *)
+  | b = binop2_assign(KW_ADD,KW_NUW,KW_NSW) { EXPR_Add  b }
+  | KW_FADD (*TODO*)                 { failwith "EXPR_FAdd"   }
+  | b = binop2_assign(KW_SUB,KW_NUW,KW_NSW) { EXPR_Sub  b }
+  | KW_FSUB (*TODO*)                 { failwith "EXPR_FSub"   }
+  | b = binop2_assign(KW_MUL,KW_NUW,KW_NSW) { EXPR_Mul  b }
+  | KW_FMUL (*TODO*)                 { failwith "EXPR_FMul"   }
+  | b = binop1_assign(KW_UDIV,KW_EXACT)     { EXPR_UDiv b }
+  | b = binop1_assign(KW_SDIV,KW_EXACT)     { EXPR_SDiv b }
+  | KW_FDIV (*TODO*)                 { failwith "EXPR_FDiv"   }
+  | b = binop_assign (KW_UREM)              { EXPR_URem b }
+  | b = binop_assign (KW_SREM)              { EXPR_SRem b }
+  | KW_FREM  (*TODO*)                { failwith "EXPR_FRem"   }
+
+  (* bitwise binop *)
+  | b = binop_assign(KW_SHL)  { EXPR_Shl  b }
+  | b = binop_assign(KW_LSHR) { EXPR_LShr b }
+  | b = binop_assign(KW_ASHR) { EXPR_AShr b }
+  | b = binop_assign(KW_AND)  { EXPR_And  b }
+  | b = binop_assign(KW_OR)   { EXPR_Or   b }
+  | b = binop_assign(KW_XOR)  { EXPR_Xor  b }
+
+  (* comparison *)
+  (*TODO: factorisation. How?*)
+  | i = icmp_assign(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }
+  | i = icmp_assign(KW_NE ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ne,  t, o1, o2) }
+  | i = icmp_assign(KW_UGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ugt, t, o1, o2) }
+  | i = icmp_assign(KW_UGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Uge, t, o1, o2) }
+  | i = icmp_assign(KW_ULT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ult, t, o1, o2) }
+  | i = icmp_assign(KW_ULE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ule, t, o1, o2) }
+  | i = icmp_assign(KW_SGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sgt, t, o1, o2) }
+  | i = icmp_assign(KW_SGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sge, t, o1, o2) }
+  | i = icmp_assign(KW_SLT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Slt, t, o1, o2) }
+  | i = icmp_assign(KW_SLE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sle, t, o1, o2) }
+
+  | KW_FCMP           { failwith "TODO: KW_FCMP" }
+
+  (* conversions *)
+  | c = conversion_assign(KW_TRUNC)    { EXPR_Trunc c    }
+  | c = conversion_assign(KW_ZEXT)     { EXPR_ZExt c     }
+  | c = conversion_assign(KW_SEXT)     { EXPR_SExt c     }
+  | c = conversion_assign(KW_FPTRUNC)  { EXPR_FPTrunc c  }
+  | c = conversion_assign(KW_FPEXT)    { EXPR_FPExt c    }
+  | c = conversion_assign(KW_UITOFP)   { EXPR_UIToFP c   }
+  | c = conversion_assign(KW_SITOFP)   { EXPR_SIToFP c   }
+  | c = conversion_assign(KW_FPTOUI)   { EXPR_FPToUI c   }
+  | c = conversion_assign(KW_FPTOSI)   { EXPR_FPToSI c   }
+  | c = conversion_assign(KW_INTTOPTR) { EXPR_IntToPtr c }
+  | c = conversion_assign(KW_PTRTOINT) { EXPR_PtrToInt c }
+  | c = conversion_assign(KW_BITCAST)  { EXPR_BitCast c  }
 
   | KW_GETELEMENTPTR { failwith "EXPR_GetElementPtr" }
 
@@ -313,7 +400,7 @@ expr:
 
 
 instr:
-  | i = ident EQ e = expr { INSTR_Assign (i, e) }
+  | i = ident EQ e = expr_assign { INSTR_Assign (i, e) }
 
   (* call *)
   (* TODO: factorise calls *)
@@ -377,12 +464,13 @@ instr:
   (* explicit labels *)
   | l = LABEL { INSTR_Label (ID_Local l) }
 
-comma_align:
+%inline comma_align:
   | COMMA align { }
 
-phi_table_entry:
+%inline phi_table_entry:
   | LSQUARE v = value COMMA l = ident RSQUARE { (v, l) }
-switch_table_entry:
+
+%inline switch_table_entry:
   | t = typ o = value COMMA KW_LABEL l = ident { (t, o, l) }
 
 value:
@@ -404,16 +492,9 @@ value:
   | KW_ZEROINITIALIZER { VALUE_Zero_initializer }
   | e = expr           { VALUE_Expr e }
 
-typ_value:
+%inline typ_value:
   | t = typ i = value { (t,i) }
 
-ident:
-  | l = global
-  | l = local    { l }
-
-local:
-  | l = LOCAL { ID_Local l }
-
-global:
-  | g = GLOBAL { ID_Global g }
-
+%inline ident:
+  | l = GLOBAL { ID_Global l }
+  | l = LOCAL  { ID_Local l  }

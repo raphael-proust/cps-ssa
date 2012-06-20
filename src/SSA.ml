@@ -86,7 +86,8 @@ let block_of_label proc label =
 let check_ssa prog =
 
   (* one procedure is the "main" *)
-  assert (L.exists_one (fun p -> p.p_name = label_main) prog);
+  (* there is no way to preserve name with ghc so we can't rely on that. *)
+(*   assert (L.exists_one (fun p -> p.p_name = label_main) prog); *)
 
   let check_proc proc =
 

@@ -107,9 +107,12 @@ let tr_proc proc =
 let tr_prog prog =
   let open CPS in
   let (main, _) =
-    L.pick_one_such_as
-      (fun proc -> proc.SSA.p_name = SSA.label_main)
-      prog
+    try
+      L.pick_one_such_as
+        (fun proc -> proc.SSA.p_name = SSA.label_main)
+        prog
+    with
+    | Not_found -> match prog with hd::tl -> (hd, tl)
   in
   let lambdas =
     List.map
