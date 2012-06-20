@@ -100,7 +100,7 @@ let rec expr e =
   | EXPR_BitCast  (_, v, _) ->
     value v
 
-  | EXPR_GetElementPtr   -> unsupported_feature "EXPR_GetElementPtr"
+  | EXPR_GetElementPtr _ -> unsupported_feature "EXPR_GetElementPtr"
   | EXPR_ExtractElement  -> unsupported_feature "EXPR_ExtractElement"
   | EXPR_InsertElement   -> unsupported_feature "EXPR_InsertElement"
   | EXPR_ShuffleVector   -> unsupported_feature "EXPR_ShuffleVector"

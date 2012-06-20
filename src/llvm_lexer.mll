@@ -144,6 +144,7 @@
   | "atomicrmw"      -> KW_ATOMICRMW
   | "fence"          -> KW_FENCE
   | "getelementptr"  -> KW_GETELEMENTPTR
+  | "inbounds"       -> KW_INBOUNDS
   | "extractelement" -> KW_EXTRACTELEMENT
   | "insertelement"  -> KW_INSERTELEMENT
   | "shufflevector"  -> KW_SHUFFLEVECTOR

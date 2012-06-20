@@ -153,7 +153,7 @@ and expr =
   | EXPR_IntToPtr of conversion
   | EXPR_PtrToInt of conversion
   | EXPR_BitCast  of conversion
-  | EXPR_GetElementPtr
+  | EXPR_GetElementPtr of (typ * value * (typ * value) list)
   | EXPR_ExtractElement
   | EXPR_InsertElement
   | EXPR_ShuffleVector
