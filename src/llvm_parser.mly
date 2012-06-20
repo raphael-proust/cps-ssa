@@ -220,10 +220,7 @@ fn_attr_gen:
   | n = INTEGER { assert (List.mem n [0;1;2;4;8;16;32;64]); n }
 
 %inline align:
-  | KW_ALIGN power2 { }
-
-%inline gc:
-  | KW_GC STRING { }
+  | KW_ALIGN p = power2 { p }
 
 %inline procedure_body:
   | il = list(instr_eol) { il }
@@ -445,8 +442,8 @@ instr:
   | KW_UNREACHABLE    { INSTR_Terminator (TERM_Unreachable) }
 
   (* memory instrs, partial support *)
-  | i = ident EQ KW_ALLOCA t = typ comma_align? (*TODO: support more options *)
-    { INSTR_Mem (MEM_Alloca (i, t)) }
+  | i = ident EQ KW_ALLOCA t = typ n = alloc_attr?
+    { let n = Util.O.unopt 1 n in INSTR_Mem (MEM_Alloca (i, n, t)) }
   | i = ident EQ KW_LOAD KW_VOLATILE? tp = typ p = ident comma_align? (*TODO: support more options *)
     { INSTR_Mem (MEM_Load (i, tp, p)) }
   | KW_STORE KW_VOLATILE? tv = typ v = value COMMA
@@ -464,7 +461,15 @@ instr:
   (* explicit labels *)
   | l = LABEL { INSTR_Label (ID_Local l) }
 
-%inline comma_align:
+alloc_attr:
+  | COMMA n = num_elem { n }
+  | COMMA align { 1 }
+  | COMMA n = num_elem COMMA align { n }
+
+num_elem:
+  | typ_i n = INTEGER { n }
+
+comma_align:
   | COMMA align { }
 
 %inline phi_table_entry:

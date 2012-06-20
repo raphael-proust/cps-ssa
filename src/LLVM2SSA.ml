@@ -172,7 +172,7 @@ let get_assigns instrs =
     | INSTR_Select :: _ -> unsupported_feature "INSTR_Select"
     | INSTR_VAArg :: _ -> unsupported_feature "INSTR_VAArg"
 
-    | INSTR_Mem (MEM_Alloca (i, _)) :: instrs ->
+    | INSTR_Mem (MEM_Alloca (i, _, _)) :: instrs ->
       aux (SSA.IMemWrite (ident_left i, Prim.MAlloc) :: accu) instrs
     | INSTR_Mem (MEM_Load (i1, _, i2)) :: instrs ->
       aux

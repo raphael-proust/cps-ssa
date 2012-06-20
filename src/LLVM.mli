@@ -190,7 +190,7 @@ type terminator =
   | TERM_Unreachable
 
 type memop =
-  | MEM_Alloca of (ident * typ)
+  | MEM_Alloca of (ident * int * typ)
   | MEM_Load of (ident * typ * ident)
   | MEM_Store of (typ * value * typ * ident)
 
