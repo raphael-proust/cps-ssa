@@ -81,9 +81,9 @@ toplevelentry:
 global_decl:
   | g_ident = global EQ
       linkage? visibility? KW_THREAD_LOCAL? addrspace? KW_UNNAMED_ADDR?
-      g_constant = global_is_constant g_typ = typ g_value = value
+      g_constant = global_is_constant g_typ = typ g_value = value?
       comma_section? comma_align?
-      { {g_ident; g_typ; g_constant = false; g_value;} }
+      { {g_ident = ID_Global ident; g_typ; g_constant; g_value;} }
 
 global_is_constant:
   | KW_GLOBAL { false }

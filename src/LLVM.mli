@@ -208,7 +208,7 @@ and global = {
      g_ident: ident;
        g_typ: typ;
   g_constant: bool;
-     g_value: value;
+     g_value: value option;
 }
 
 and declaration = {
