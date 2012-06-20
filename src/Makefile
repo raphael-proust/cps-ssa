@@ -93,3 +93,5 @@ pprint.ml:
 pprint.mli:
 	ln -s ../pprint/pprint.mli .
 
+LLVM.ml:
+	ln -s LLVM.mli LLVM.ml
