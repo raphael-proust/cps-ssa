@@ -35,17 +35,9 @@ let is_terminator i =
   | INSTR_Unreachable -> true
 
   (* Those are not *)
-  |INSTR_Add _ |INSTR_FAdd |INSTR_Sub _ |INSTR_FSub |INSTR_Mul _ |INSTR_FMul
-  |INSTR_UDiv _ |INSTR_SDiv _ |INSTR_FDiv |INSTR_URem _ |INSTR_SRem _
-  |INSTR_FRem |INSTR_Shl _ |INSTR_LShr _ |INSTR_AShr _ |INSTR_And _ |INSTR_Or _
-  |INSTR_Xor _ |INSTR_ICmp _ |INSTR_FCmp |INSTR_PHI _ |INSTR_Call _
-  |INSTR_Call_unit _ |INSTR_Trunc _ |INSTR_ZExt _ |INSTR_SExt _ |INSTR_FPTrunc _
-  |INSTR_FPExt _ |INSTR_UIToFP _ |INSTR_SIToFP _ |INSTR_FPToUI _ |INSTR_FPToSI _
-  |INSTR_IntToPtr _ |INSTR_PtrToInt _ |INSTR_BitCast _ |INSTR_Select
+  |INSTR_Assign _ |INSTR_PHI _ |INSTR_Call _ |INSTR_Call_unit _ |INSTR_Select
   |INSTR_VAArg |INSTR_Alloca _ |INSTR_Load _ |INSTR_Store _ |INSTR_AtomicCmpXchg
-  |INSTR_AtomicRMW |INSTR_Fence |INSTR_GetElementPtr |INSTR_ExtractElement
-  |INSTR_InsertElement |INSTR_ShuffleVector |INSTR_ExtractValue
-  |INSTR_InsertValue |INSTR_LandingPad |INSTR_Label _
+  |INSTR_AtomicRMW |INSTR_Fence |INSTR_LandingPad |INSTR_Label _
   -> false
 
 let ident_string = function
@@ -64,7 +56,67 @@ let int_of_bool = function
   | true -> 1
   | false -> 0
 
-let rec value = function
+let rec expr e =
+  let open LLVM in
+  match e with
+  | EXPR_Add (_, v0, v1) -> Prim.OPlus (value v0, value v1)
+  | EXPR_FAdd -> unsupported_feature "EXPR_FAdd"
+  | EXPR_Sub (_, v0, v1) -> Prim.OMinus (value v0, value v1)
+  | EXPR_FSub -> unsupported_feature "EXPR_FSub"
+  | EXPR_Mul (_, v0, v1) -> Prim.OMult (value v0, value v1)
+  | EXPR_FMul -> unsupported_feature "EXPR_FMul"
+  | EXPR_UDiv (_, v0, v1)
+  | EXPR_SDiv (_, v0, v1) -> Prim.ODiv (value v0, value v1)
+  | EXPR_FDiv -> unsupported_feature "EXPR_FDiv"
+  | EXPR_URem (_, v0, v1)
+  | EXPR_SRem (_, v0, v1) -> Prim.ORem (value v0, value v1)
+  | EXPR_FRem -> unsupported_feature "EXPR_FRem"
+
+  | EXPR_Shl _ -> unsupported_feature "EXPR_Shl"
+  | EXPR_LShr _ -> unsupported_feature "EXPR_LShr"
+  | EXPR_AShr _ -> unsupported_feature "EXPR_AShr"
+
+  | EXPR_And (_, v0, v1) -> Prim.OAnd (value v0, value v1)
+  | EXPR_Or (_, v0, v1) -> Prim.OOr (value v0, value v1)
+  | EXPR_Xor (_, v0, v1) -> Prim.OXor (value v0, value v1)
+
+  | EXPR_ICmp (icmp, _, v1, v2) -> begin match icmp with
+    | Cmp_Eq  -> Prim.OEq (value v1, value v2)
+    | Cmp_Ne  -> Prim.ONe (value v1, value v2)
+    | Cmp_Ugt
+    | Cmp_Sgt -> Prim.OGt (value v1, value v2)
+    | Cmp_Uge
+    | Cmp_Sge -> Prim.OGe (value v1, value v2)
+    | Cmp_Ult
+    | Cmp_Slt -> Prim.OLt (value v1, value v2)
+    | Cmp_Ule
+    | Cmp_Sle -> Prim.OLe (value v1, value v2)
+  end
+  | EXPR_FCmp -> unsupported_feature "EXPR_FCmp"
+
+  | EXPR_Trunc    (_, v, _)
+  | EXPR_ZExt     (_, v, _)
+  | EXPR_SExt     (_, v, _)
+  | EXPR_FPTrunc  (_, v, _)
+  | EXPR_FPExt    (_, v, _)
+  | EXPR_UIToFP   (_, v, _)
+  | EXPR_SIToFP   (_, v, _)
+  | EXPR_FPToUI   (_, v, _)
+  | EXPR_FPToSI   (_, v, _)
+  | EXPR_IntToPtr (_, v, _)
+  | EXPR_PtrToInt (_, v, _)
+  | EXPR_BitCast  (_, v, _) ->
+   value_expr v
+
+  | EXPR_GetElementPtr   -> unsupported_feature "EXPR_GetElementPtr"
+  | EXPR_ExtractElement  -> unsupported_feature "EXPR_ExtractElement"
+  | EXPR_InsertElement   -> unsupported_feature "EXPR_InsertElement"
+  | EXPR_ShuffleVector   -> unsupported_feature "EXPR_ShuffleVector"
+  | EXPR_ExtractValue    -> unsupported_feature "EXPR_ExtractValue"
+  | EXPR_InsertValue     -> unsupported_feature "EXPR_InsertValue"
+
+
+and value = function
   | LLVM.VALUE_Ident i          -> var i
   | LLVM.VALUE_Integer i        -> Prim.Vconst i
   | LLVM.VALUE_Float _          -> unsupported_feature "VALUE_Float" (*TODO*)
@@ -77,6 +129,7 @@ let rec value = function
   | LLVM.VALUE_Struct tvs       ->
     Prim.Vstruct (List.map (fun (_, v) -> value v) tvs)
   | LLVM.VALUE_Zero_initializer -> Prim.Vzero
+  | LLVM.VALUE_Expr e           -> Prim.Vexpr (expr e)
 
 let value_expr v = Prim.ONone (value v)
 
@@ -117,88 +170,16 @@ let get_assigns instrs =
     -> assert false
 
     (* Those are what we are looking for *)
-    | INSTR_Add (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.OPlus (value v0, value v1)) :: accu)
-        instrs
-    | INSTR_FAdd :: instrs -> unsupported_feature "INSTR_FAdd"
-    | INSTR_Sub (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.OMinus (value v0, value v1)) :: accu)
-        instrs
-    | INSTR_FSub :: instrs -> unsupported_feature "INSTR_FSub"
-    | INSTR_Mul (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.OMult (value v0, value v1)) :: accu)
-        instrs
-    | INSTR_FMul :: instrs -> unsupported_feature "INSTR_FMul"
-    | INSTR_UDiv (i, _, v0, v1) :: instrs
-    | INSTR_SDiv (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.ODiv (value v0, value v1)) :: accu)
-        instrs
-    | INSTR_FDiv :: instrs -> unsupported_feature "INSTR_FDiv"
-    | INSTR_URem (i, _, v0, v1) :: instrs
-    | INSTR_SRem (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.ORem (value v0, value v1)) :: accu)
-        instrs
-    | INSTR_FRem :: instrs -> unsupported_feature "INSTR_FRem"
-
-    | INSTR_Shl _ :: _  -> unsupported_feature "INSTR_Shl"
-    | INSTR_LShr _ :: _ -> unsupported_feature "INSTR_LShr"
-    | INSTR_AShr _ :: _ -> unsupported_feature "INSTR_AShr"
-
-    | INSTR_And (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.OAnd (value v0, value v1)) :: accu)
-        instrs
-    | INSTR_Or (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.OOr (value v0, value v1)) :: accu)
-        instrs
-    | INSTR_Xor (i, _, v0, v1) :: instrs ->
-      aux
-        (SSA.IAssignExpr (ident_left i, Prim.OXor (value v0, value v1)) :: accu)
-        instrs
-
-    | INSTR_ICmp (i, icmp, _, v1, v2) :: instrs ->
-      let expr = match icmp with
-        | Cmp_Eq  -> Prim.OEq (value v1, value v2)
-        | Cmp_Ne  -> Prim.ONe (value v1, value v2)
-        | Cmp_Ugt
-        | Cmp_Sgt -> Prim.OGt (value v1, value v2)
-        | Cmp_Uge
-        | Cmp_Sge -> Prim.OGe (value v1, value v2)
-        | Cmp_Ult
-        | Cmp_Slt -> Prim.OLt (value v1, value v2)
-        | Cmp_Ule
-        | Cmp_Sle -> Prim.OLe (value v1, value v2)
-      in
-      aux (SSA.IAssignExpr (ident_left i, expr) :: accu) instrs
-    | INSTR_FCmp :: instrs -> unsupported_feature "INSTR_FCmp"
-
-    | INSTR_Call (i, _, fn, args) :: instrs ->
+    | INSTR_Assign (i, e) :: instrs ->
+      aux (SSA.IAssignExpr (ident_left i, expr e) :: accu) instrs
+    (*TODO: factor Calls *)
+    | INSTR_Call (i, (_, fn, args)) :: instrs ->
       let args = List.map (fun (_, v) -> value_expr v) args in
       aux (SSA.IAssigncall (ident_left i, label fn, args) :: accu) instrs
+
     | INSTR_Call_unit (_, fn, args) :: instrs ->
       let args = List.map (fun (_, v) -> value_expr v) args in
       aux (SSA.ICall (label fn, args) :: accu) instrs
-
-    | ( INSTR_Trunc (i, _, v, _)
-      | INSTR_ZExt (i, _, v, _)
-      | INSTR_SExt (i, _, v, _)
-      | INSTR_FPTrunc (i, _, v, _)
-      | INSTR_FPExt (i, _, v, _)
-      | INSTR_UIToFP (i, _, v, _)
-      | INSTR_SIToFP (i, _, v, _)
-      | INSTR_FPToUI (i, _, v, _)
-      | INSTR_FPToSI (i, _, v, _)
-      | INSTR_IntToPtr (i, _, v, _)
-      | INSTR_PtrToInt (i, _, v, _)
-      | INSTR_BitCast (i, _, v, _)
-      ) :: instrs ->
-      aux (SSA.IAssignExpr (ident_left i, value_expr v) :: accu) instrs
 
     | INSTR_Select :: _ -> unsupported_feature "INSTR_Select"
     | INSTR_VAArg :: _ -> unsupported_feature "INSTR_VAArg"
@@ -213,12 +194,6 @@ let get_assigns instrs =
     | INSTR_AtomicCmpXchg :: _  -> unsupported_feature "INSTR_AtomicCmpXchg"
     | INSTR_AtomicRMW :: _      -> unsupported_feature "INSTR_AtomicRMW"
     | INSTR_Fence :: _          -> unsupported_feature "INSTR_Fence"
-    | INSTR_GetElementPtr :: _  -> unsupported_feature "INSTR_GetElementPtr"
-    | INSTR_ExtractElement :: _ -> unsupported_feature "INSTR_ExtractElement"
-    | INSTR_InsertElement :: _  -> unsupported_feature "INSTR_InsertElement"
-    | INSTR_ShuffleVector :: _  -> unsupported_feature "INSTR_ShuffleVector"
-    | INSTR_ExtractValue :: _   -> unsupported_feature "INSTR_ExtractValue"
-    | INSTR_InsertValue :: _    -> unsupported_feature "INSTR_InsertValue"
     | INSTR_LandingPad :: _     -> unsupported_feature "INSTR_LandingPad"
 
     (* Those indicate the end of the instruction section and arrival of the terminator *)
@@ -246,18 +221,9 @@ let get_terminator terminator =
   | INSTR_Unreachable -> unsupported_feature "INSTR_Unreachable"
 
   (* These are illegals *)
-  |INSTR_Add _ |INSTR_FAdd |INSTR_Sub _ |INSTR_FSub |INSTR_Mul _ |INSTR_FMul
-  |INSTR_UDiv _ |INSTR_SDiv _ |INSTR_FDiv |INSTR_URem _ |INSTR_SRem _
-  |INSTR_FRem |INSTR_Shl _ |INSTR_LShr _ |INSTR_AShr _ |INSTR_And _
-  |INSTR_Or _ |INSTR_Xor _ |INSTR_ICmp _ |INSTR_FCmp |INSTR_PHI _
-  |INSTR_Call_unit _ |INSTR_Call _ |INSTR_Trunc _ |INSTR_ZExt _ |INSTR_SExt _
-  |INSTR_FPTrunc _ |INSTR_FPExt _ |INSTR_UIToFP _ |INSTR_SIToFP _
-  |INSTR_FPToUI _ |INSTR_FPToSI _ |INSTR_IntToPtr _ |INSTR_PtrToInt _
-  |INSTR_BitCast _ |INSTR_Select |INSTR_VAArg |INSTR_Alloca _ |INSTR_Load _
-  |INSTR_Store _ |INSTR_AtomicCmpXchg |INSTR_AtomicRMW |INSTR_Fence
-  |INSTR_GetElementPtr |INSTR_ExtractElement |INSTR_InsertElement
-  |INSTR_ShuffleVector |INSTR_ExtractValue |INSTR_InsertValue |INSTR_LandingPad
-  |INSTR_Label _
+  |INSTR_Assign _ |INSTR_PHI _ |INSTR_Call_unit _ |INSTR_Call _ |INSTR_Select
+  |INSTR_VAArg |INSTR_Alloca _ |INSTR_Load _ |INSTR_Store _ |INSTR_AtomicCmpXchg
+  |INSTR_AtomicRMW |INSTR_Fence |INSTR_LandingPad |INSTR_Label _
   -> assert false
 
 let get_label = function

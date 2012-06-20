@@ -183,6 +183,9 @@
   | "undef" -> KW_UNDEF
   | "zeroinitializer" -> KW_ZEROINITIALIZER
 
+  (* misc *)
+  | "x" -> KW_X
+
   (*catch_all*)
   | s -> failwith ("Unknown or unsupported keyword: " ^ s)
 

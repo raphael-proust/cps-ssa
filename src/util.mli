@@ -62,9 +62,7 @@ module PP :
     val op :
       ('a -> Pprint.document) ->
       'a -> Pprint.document -> 'a -> Pprint.document
-    val fn1 :
-      ('a -> Pprint.document) -> Pprint.document -> 'a -> Pprint.document
-    val fn2 :
+    val fn :
       ('a -> Pprint.document) ->
-      Pprint.document -> 'a -> 'a -> Pprint.document
+      Pprint.document -> 'a list -> Pprint.document
   end

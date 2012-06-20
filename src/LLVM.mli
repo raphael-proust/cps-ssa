@@ -116,7 +116,51 @@ type cmp =
   | Cmp_Slt
   | Cmp_Sle
 
-type value =
+type binop = typ * value * value
+
+and conversion = typ * value * typ
+
+and expr =
+  | EXPR_Add  of binop
+  | EXPR_FAdd
+  | EXPR_Sub  of binop
+  | EXPR_FSub
+  | EXPR_Mul  of binop
+  | EXPR_FMul
+  | EXPR_UDiv of binop
+  | EXPR_SDiv of binop
+  | EXPR_FDiv
+  | EXPR_URem of binop
+  | EXPR_SRem of binop
+  | EXPR_FRem
+  | EXPR_Shl  of binop
+  | EXPR_LShr of binop
+  | EXPR_AShr of binop
+  | EXPR_And  of binop
+  | EXPR_Or   of binop
+  | EXPR_Xor  of binop
+  | EXPR_ICmp of (cmp * typ * value * value)
+  | EXPR_FCmp
+  | EXPR_Trunc    of conversion
+  | EXPR_ZExt     of conversion
+  | EXPR_SExt     of conversion
+  | EXPR_FPTrunc  of conversion
+  | EXPR_FPExt    of conversion
+  | EXPR_UIToFP   of conversion
+  | EXPR_SIToFP   of conversion
+  | EXPR_FPToUI   of conversion
+  | EXPR_FPToSI   of conversion
+  | EXPR_IntToPtr of conversion
+  | EXPR_PtrToInt of conversion
+  | EXPR_BitCast  of conversion
+  | EXPR_GetElementPtr
+  | EXPR_ExtractElement
+  | EXPR_InsertElement
+  | EXPR_ShuffleVector
+  | EXPR_ExtractValue
+  | EXPR_InsertValue
+
+and value =
   | VALUE_Ident of ident
   | VALUE_Integer of int
   | VALUE_Float of float
@@ -128,8 +172,11 @@ type value =
   | VALUE_Array of (typ * value) list
   | VALUE_Vector of (typ * value) list
   | VALUE_Zero_initializer
+  | VALUE_Expr of expr
 
 type tvalue = typ * value
+
+type call = typ * ident * (typ * value) list
 
 type module_ = toplevelentry list
 
@@ -161,46 +208,11 @@ and definition = {
    df_instrs: instr list;
 }
 
-and binop_assign = ident * typ * value * value
-
-and conversion_assign = ident * typ * value * typ
-
 and instr =
-  | INSTR_Add  of binop_assign
-  | INSTR_FAdd
-  | INSTR_Sub  of binop_assign
-  | INSTR_FSub
-  | INSTR_Mul  of binop_assign
-  | INSTR_FMul
-  | INSTR_UDiv of binop_assign
-  | INSTR_SDiv of binop_assign
-  | INSTR_FDiv
-  | INSTR_URem of binop_assign
-  | INSTR_SRem of binop_assign
-  | INSTR_FRem
-  | INSTR_Shl  of binop_assign
-  | INSTR_LShr of binop_assign
-  | INSTR_AShr of binop_assign
-  | INSTR_And  of binop_assign
-  | INSTR_Or   of binop_assign
-  | INSTR_Xor  of binop_assign
-  | INSTR_ICmp of (ident * cmp * typ * value * value)
-  | INSTR_FCmp
+  | INSTR_Assign of (ident * expr)
+  | INSTR_Call of (ident * call)
+  | INSTR_Call_unit of call
   | INSTR_PHI of (ident * typ * (value * ident) list)
-  | INSTR_Call of (ident * typ * ident * (typ * value) list)
-  | INSTR_Call_unit of (typ * ident * (typ * value) list)
-  | INSTR_Trunc    of conversion_assign
-  | INSTR_ZExt     of conversion_assign
-  | INSTR_SExt     of conversion_assign
-  | INSTR_FPTrunc  of conversion_assign
-  | INSTR_FPExt    of conversion_assign
-  | INSTR_UIToFP   of conversion_assign
-  | INSTR_SIToFP   of conversion_assign
-  | INSTR_FPToUI   of conversion_assign
-  | INSTR_FPToSI   of conversion_assign
-  | INSTR_IntToPtr of conversion_assign
-  | INSTR_PtrToInt of conversion_assign
-  | INSTR_BitCast  of conversion_assign
   | INSTR_Select
   | INSTR_VAArg
   | INSTR_Ret of (typ * value)
@@ -218,12 +230,6 @@ and instr =
   | INSTR_AtomicCmpXchg
   | INSTR_AtomicRMW
   | INSTR_Fence
-  | INSTR_GetElementPtr
-  | INSTR_ExtractElement
-  | INSTR_InsertElement
-  | INSTR_ShuffleVector
-  | INSTR_ExtractValue
-  | INSTR_InsertValue
   | INSTR_LandingPad
   | INSTR_Label of ident
 

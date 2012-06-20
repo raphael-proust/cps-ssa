@@ -40,41 +40,6 @@ let fresh_var =
     incr var_counter;
     "v:_" ^ string_of_int !var_counter
 
-(* things that are used in expressions. *)
-type value =
-  | Vvar of var
-  | Vconst of const
-  | Vnull
-  | Vundef
-  | Vstruct of value list
-  | Vzero
-
-(* expressions are operation (or not, see ONone) on values. Might be completed
- * later. It might also need to be lifted to a value lattice. *)
-type expr =
-  | ONone of value
-  | OPlus  of (value * value)
-  | OMult  of (value * value)
-  | OMinus of (value * value)
-  | ODiv   of (value * value)
-  | ORem   of (value * value)
-  | OMax of (value * value)
-  | OMin of (value * value)
-  | OGt of (value * value)
-  | OGe of (value * value)
-  | OLt of (value * value)
-  | OLe of (value * value)
-  | OEq of (value * value)
-  | ONe of (value * value)
-  | OAnd of (value * value)
-  | OOr  of (value * value)
-  | OXor of (value * value)
-  | ORead of value
-
-type mem_w =
-  | MWrite of value
-  | MAlloc
-
 (* labels are for jump. This is somehow specific to ssa and might get moved in
  * the corresponding module. Type is abstracted in the interface. *)
 type label = string
@@ -92,6 +57,40 @@ let fresh_label =
 (* Standard conversion for when one translates labels into closure variables. *)
 let var_of_label l = var l
 let label_of_var v = label v
+
+(* things that are used in expressions. *)
+type value =
+  | Vvar of var
+  | Vconst of const
+  | Vnull
+  | Vundef
+  | Vstruct of value list
+  | Vzero
+  | Vexpr of expr
+
+(* expressions are operation (or not, see ONone) on values. Might be completed
+ * later. It might also need to be lifted to a value lattice. *)
+and expr =
+  | ONone of value
+  | OPlus  of (value * value)
+  | OMult  of (value * value)
+  | OMinus of (value * value)
+  | ODiv   of (value * value)
+  | ORem   of (value * value)
+  | OGt of (value * value)
+  | OGe of (value * value)
+  | OLt of (value * value)
+  | OLe of (value * value)
+  | OEq of (value * value)
+  | ONe of (value * value)
+  | OAnd of (value * value)
+  | OOr  of (value * value)
+  | OXor of (value * value)
+  | ORead of value
+
+type mem_w =
+  | MWrite of value
+  | MAlloc
 
 let reset_idxs () =
   var_counter := (-1);

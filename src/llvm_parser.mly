@@ -75,11 +75,11 @@ toplevelentry:
   | d = declaration                       { TLE_Declaration d    }
   | KW_TARGET KW_DATALAYOUT EQ s = STRING { TLE_Datalayout s     }
   | KW_TARGET KW_TRIPLE EQ s = STRING     { TLE_Target s         }
-  | i = ident EQ KW_TYPE t = typ          { TLE_Type_decl (i, t) }
+  | i = local EQ KW_TYPE t = typ          { TLE_Type_decl (i, t) }
   | g = global_decl                       { TLE_Global g         }
 
 global_decl:
-  | g_ident = ident EQ
+  | g_ident = global EQ
       linkage? visibility? KW_THREAD_LOCAL? addrspace? KW_UNNAMED_ADDR?
       g_constant = global_is_constant g_typ = typ g_value = value
       comma_section? comma_align?
@@ -226,91 +226,111 @@ instr_eol:
   | i = instr EOL+ { i }
 
 %public binop(KW):
-  | i = ident EQ KW t = typ o1 = value COMMA o2 = value
-    { (i, t, o1, o2) }
+  | KW t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
 
 %public binop1(KW,OPT1):
-  | i = ident EQ KW OPT1? t = typ o1 = value COMMA o2 = value
-    { (i, t, o1, o2) }
+  | KW OPT1? t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
 
 %public binop2(KW,OPT1,OPT2):
-  | i = ident EQ KW OPT1? OPT2? t = typ o1 = value COMMA o2 = value
-    { (i, t, o1, o2) }
+  | KW OPT1? OPT2? t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
 
 %public conversion(KW):
-  | i = ident EQ KW t = typ v = value KW_TO t2 = typ
-    { (i, t, v, t2) }
+  (* parens are compulsory in constant expr and forbidden in instrs *)
+  | KW LPAREN t = typ v = value KW_TO t2 = typ RPAREN
+    { (t, v, t2) }
+  | KW t = typ v = value KW_TO t2 = typ
+    { (t, v, t2) }
 
 %public icmp(KW):
-  | i = ident EQ KW_ICMP KW t = typ o1 = value COMMA o2 = value
-    { (i, t, o1, o2) }
+  | KW_ICMP KW t = typ o1 = value COMMA o2 = value
+    { (t, o1, o2) }
 
-instr:
-  (* arith, binop *)
-  | b = binop2(KW_ADD,KW_NUW,KW_NSW) { INSTR_Add  b }
-  | KW_FADD (*TODO*)                 { INSTR_FAdd   }
-  | b = binop2(KW_SUB,KW_NUW,KW_NSW) { INSTR_Sub  b }
-  | KW_FSUB (*TODO*)                 { INSTR_FSub   }
-  | b = binop2(KW_MUL,KW_NUW,KW_NSW) { INSTR_Mul  b }
-  | KW_FMUL (*TODO*)                 { INSTR_FMul   }
-  | b = binop1(KW_UDIV,KW_EXACT)     { INSTR_UDiv b }
-  | b = binop1(KW_SDIV,KW_EXACT)     { INSTR_SDiv b }
-  | KW_FDIV (*TODO*)                 { INSTR_FDiv   }
-  | b = binop (KW_UREM)              { INSTR_URem b }
-  | b = binop (KW_SREM)              { INSTR_SRem b }
-  | KW_FREM  (*TODO*)                { INSTR_FRem   }
+expr:
+  (* arith binop *)
+  | b = binop2(KW_ADD,KW_NUW,KW_NSW) { EXPR_Add  b }
+  | KW_FADD (*TODO*)                 { failwith "EXPR_FAdd"   }
+  | b = binop2(KW_SUB,KW_NUW,KW_NSW) { EXPR_Sub  b }
+  | KW_FSUB (*TODO*)                 { failwith "EXPR_FSub"   }
+  | b = binop2(KW_MUL,KW_NUW,KW_NSW) { EXPR_Mul  b }
+  | KW_FMUL (*TODO*)                 { failwith "EXPR_FMul"   }
+  | b = binop1(KW_UDIV,KW_EXACT)     { EXPR_UDiv b }
+  | b = binop1(KW_SDIV,KW_EXACT)     { EXPR_SDiv b }
+  | KW_FDIV (*TODO*)                 { failwith "EXPR_FDiv"   }
+  | b = binop (KW_UREM)              { EXPR_URem b }
+  | b = binop (KW_SREM)              { EXPR_SRem b }
+  | KW_FREM  (*TODO*)                { failwith "EXPR_FRem"   }
 
-  (* bitwise, binop *)
-  | b = binop(KW_SHL)  { INSTR_Shl  b }
-  | b = binop(KW_LSHR) { INSTR_LShr b }
-  | b = binop(KW_ASHR) { INSTR_AShr b }
-  | b = binop(KW_AND)  { INSTR_And  b }
-  | b = binop(KW_OR)   { INSTR_Or   b }
-  | b = binop(KW_XOR)  { INSTR_Xor  b }
+  (* bitwise binop *)
+  | b = binop(KW_SHL)  { EXPR_Shl  b }
+  | b = binop(KW_LSHR) { EXPR_LShr b }
+  | b = binop(KW_ASHR) { EXPR_AShr b }
+  | b = binop(KW_AND)  { EXPR_And  b }
+  | b = binop(KW_OR)   { EXPR_Or   b }
+  | b = binop(KW_XOR)  { EXPR_Xor  b }
 
   (* comparison *)
   (*TODO: factorisation. How?*)
-  | i = icmp(KW_EQ ) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Eq,  t, o1, o2) }
-  | i = icmp(KW_NE ) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ne,  t, o1, o2) }
-  | i = icmp(KW_UGT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ugt, t, o1, o2) }
-  | i = icmp(KW_UGE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Uge, t, o1, o2) }
-  | i = icmp(KW_ULT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ult, t, o1, o2) }
-  | i = icmp(KW_ULE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Ule, t, o1, o2) }
-  | i = icmp(KW_SGT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Sgt, t, o1, o2) }
-  | i = icmp(KW_SGE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Sge, t, o1, o2) }
-  | i = icmp(KW_SLT) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Slt, t, o1, o2) }
-  | i = icmp(KW_SLE) { let i, t, o1, o2 = i in INSTR_ICmp (i, Cmp_Sle, t, o1, o2) }
+  | i = icmp(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }
+  | i = icmp(KW_NE ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ne,  t, o1, o2) }
+  | i = icmp(KW_UGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ugt, t, o1, o2) }
+  | i = icmp(KW_UGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Uge, t, o1, o2) }
+  | i = icmp(KW_ULT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ult, t, o1, o2) }
+  | i = icmp(KW_ULE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ule, t, o1, o2) }
+  | i = icmp(KW_SGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sgt, t, o1, o2) }
+  | i = icmp(KW_SGE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sge, t, o1, o2) }
+  | i = icmp(KW_SLT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Slt, t, o1, o2) }
+  | i = icmp(KW_SLE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sle, t, o1, o2) }
 
-  | KW_FCMP           { INSTR_FCmp } (*TODO*)
+  | KW_FCMP           { failwith "TODO: KW_FCMP" }
+
+  (* conversions *)
+  | c = conversion(KW_TRUNC)    { EXPR_Trunc c    }
+  | c = conversion(KW_ZEXT)     { EXPR_ZExt c     }
+  | c = conversion(KW_SEXT)     { EXPR_SExt c     }
+  | c = conversion(KW_FPTRUNC)  { EXPR_FPTrunc c  }
+  | c = conversion(KW_FPEXT)    { EXPR_FPExt c    }
+  | c = conversion(KW_UITOFP)   { EXPR_UIToFP c   }
+  | c = conversion(KW_SITOFP)   { EXPR_SIToFP c   }
+  | c = conversion(KW_FPTOUI)   { EXPR_FPToUI c   }
+  | c = conversion(KW_FPTOSI)   { EXPR_FPToSI c   }
+  | c = conversion(KW_INTTOPTR) { EXPR_IntToPtr c }
+  | c = conversion(KW_PTRTOINT) { EXPR_PtrToInt c }
+  | c = conversion(KW_BITCAST)  { EXPR_BitCast c  }
+
+  | KW_GETELEMENTPTR { failwith "EXPR_GetElementPtr" }
+
+  (* vector ops, not supported *)
+  | KW_EXTRACTELEMENT { failwith "EXPR_ExtractElement" }
+  | KW_INSERTELEMENT  { failwith "EXPR_InsertElement"  }
+  | KW_SHUFFLEVECTOR  { failwith "EXPR_ShuffleVector"  }
+
+  (* aggregate ops, not supported *)
+  | KW_EXTRACTVALUE { failwith "EXPR_ExtractValue" }
+  | KW_INSERTVALUE  { failwith "EXPR_InsertValue"  }
+
+
+instr:
+  | i = ident EQ e = expr { INSTR_Assign (i, e) }
+
+  (* call *)
+  (* TODO: factorise calls *)
+  | i = ident EQ KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
+                 n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
+                 list(fn_attr)
+    { INSTR_Call (i, (t, n, a)) }
+  | KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
+                 n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
+                 list(fn_attr)
+    { INSTR_Call_unit (t, n, a) }
 
   (* phi *)
   | i = ident EQ KW_PHI t = typ
                      table = separated_nonempty_list(COMMA, phi_table_entry)
     { INSTR_PHI (i, t, table) }
 
-  (* call *)
-  | i = ident EQ KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
-                 n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
-                 list(fn_attr)
-    { INSTR_Call (i, t, n, a) }
-  | KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
-                 n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
-                 list(fn_attr)
-    { INSTR_Call_unit (t, n, a) }
-
-  (* conversions *)
-  | c = conversion(KW_TRUNC)    { INSTR_Trunc c    }
-  | c = conversion(KW_ZEXT)     { INSTR_ZExt c     }
-  | c = conversion(KW_SEXT)     { INSTR_SExt c     }
-  | c = conversion(KW_FPTRUNC)  { INSTR_FPTrunc c  }
-  | c = conversion(KW_FPEXT)    { INSTR_FPExt c    }
-  | c = conversion(KW_UITOFP)   { INSTR_UIToFP c   }
-  | c = conversion(KW_SITOFP)   { INSTR_SIToFP c   }
-  | c = conversion(KW_FPTOUI)   { INSTR_FPToUI c   }
-  | c = conversion(KW_FPTOSI)   { INSTR_FPToSI c   }
-  | c = conversion(KW_INTTOPTR) { INSTR_IntToPtr c }
-  | c = conversion(KW_PTRTOINT) { INSTR_PtrToInt c }
-  | c = conversion(KW_BITCAST)  { INSTR_BitCast c  }
 
   (* other *)
   | KW_SELECT { INSTR_Select }
@@ -349,16 +369,6 @@ instr:
   | KW_ATOMICCMPXCHG { INSTR_AtomicCmpXchg }
   | KW_ATOMICRMW     { INSTR_AtomicRMW     }
   | KW_FENCE         { INSTR_Fence         }
-  | KW_GETELEMENTPTR { INSTR_GetElementPtr }
-
-  (* vector ops, not supported *)
-  | KW_EXTRACTELEMENT { INSTR_ExtractElement }
-  | KW_INSERTELEMENT  { INSTR_InsertElement  }
-  | KW_SHUFFLEVECTOR  { INSTR_ShuffleVector  }
-
-  (* aggregate ops, not supported *)
-  | KW_EXTRACTVALUE { INSTR_ExtractValue }
-  | KW_INSERTVALUE  { INSTR_InsertValue  }
   | KW_LANDINGPAD   { INSTR_LandingPad   }
 
   (* explicit labels *)
@@ -389,6 +399,7 @@ value:
   | LT l = separated_list(COMMA, typ_value) GT
                        { VALUE_Vector l }
   | KW_ZEROINITIALIZER { VALUE_Zero_initializer }
+  | e = expr           { VALUE_Expr e }
 
 typ_value:
   | t = typ i = value { (t,i) }

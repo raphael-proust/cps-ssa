@@ -39,41 +39,6 @@ val string_of_var: var -> string
 (** A generic variable generator. *)
 val fresh_var : unit -> var
 
-(** Values are either variables or constants. *)
-type value =
-  | Vvar   of var
-  | Vconst of const
-  | Vnull
-  | Vundef
-  | Vstruct of value list
-  | Vzero
-
-(** Expressions are either values, arithmetical operations on values,
-    comparisons, or IO primitives. *)
-type expr =
-  | ONone of value
-  | OPlus  of (value * value)
-  | OMult  of (value * value)
-  | OMinus of (value * value)
-  | ODiv   of (value * value)
-  | ORem   of (value * value)
-  | OMax of (value * value)
-  | OMin of (value * value)
-  | OGt of (value * value)
-  | OGe of (value * value)
-  | OLt of (value * value)
-  | OLe of (value * value)
-  | OEq of (value * value)
-  | ONe of (value * value)
-  | OAnd of (value * value)
-  | OOr  of (value * value)
-  | OXor of (value * value)
-  | ORead of value
-
-type mem_w =
-  | MWrite of value
-  | MAlloc
-
 (** Labels. Like variables but for procedure block naming. *)
 type label = private string
 
@@ -91,6 +56,42 @@ val fresh_label : unit -> label
 
 val var_of_label : label -> var
 val label_of_var : var -> label
+
+(*TODO: merge values and exprs *)
+
+(** Values are either variables or constants. *)
+type value =
+  | Vvar   of var
+  | Vconst of const
+  | Vnull
+  | Vundef
+  | Vstruct of value list
+  | Vzero
+  | Vexpr of expr
+
+(** Expressions are either values, arithmetical operations on values,
+    comparisons, or IO primitives. *)
+and expr =
+  | ONone of value
+  | OPlus  of (value * value)
+  | OMult  of (value * value)
+  | OMinus of (value * value)
+  | ODiv   of (value * value)
+  | ORem   of (value * value)
+  | OGt of (value * value)
+  | OGe of (value * value)
+  | OLt of (value * value)
+  | OLe of (value * value)
+  | OEq of (value * value)
+  | ONe of (value * value)
+  | OAnd of (value * value)
+  | OOr  of (value * value)
+  | OXor of (value * value)
+  | ORead of value
+
+type mem_w =
+  | MWrite of value
+  | MAlloc
 
 (**/*)
 val reset_idxs: unit -> unit

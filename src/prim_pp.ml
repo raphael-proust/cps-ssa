@@ -36,20 +36,15 @@ let rec pp_value = function
   | Prim.Vundef     -> !^ "undef"
   | Prim.Vstruct vs -> PP.with_paren (PP.list ~sep:PP.comma pp_value vs)
   | Prim.Vzero      -> !^ "!0" (*TODO: better printing *)
+  | Prim.Vexpr e    -> pp_expr e
 
-let pp_expr e =
-  match e with
-  (* Direct value *)
-  | Prim.ONone v -> pp_value v
+and pp_expr = function
   (* Arithmetic ops *)
   | Prim.OPlus  (v1, v2) -> PP.op pp_value v1 Pprint.plus    v2
   | Prim.OMult  (v1, v2) -> PP.op pp_value v1 Pprint.star    v2
   | Prim.OMinus (v1, v2) -> PP.op pp_value v1 Pprint.minus   v2
   | Prim.ODiv   (v1, v2) -> PP.op pp_value v1 Pprint.bar     v2
   | Prim.ORem   (v1, v2) -> PP.op pp_value v1 Pprint.percent v2
-  (* Arithmetic functions *)
-  | Prim.OMax (v1, v2) -> PP.fn2 pp_value (!^ "max") v1 v2
-  | Prim.OMin (v1, v2) -> PP.fn2 pp_value (!^ "min") v1 v2
   (* Comparisons *)
   | Prim.OGt (v1, v2) -> PP.op pp_value v1 (!^ ">" ) v2
   | Prim.OGe (v1, v2) -> PP.op pp_value v1 (!^ ">=") v2
@@ -62,7 +57,7 @@ let pp_expr e =
   | Prim.OOr  (v1, v2) -> PP.op pp_value v1 (!^ "||" ) v2
   | Prim.OXor (v1, v2) -> PP.op pp_value v1 (!^ "^^" ) v2
   (* IO *)
-  | Prim.ORead v -> PP.fn1 pp_value (!^ "read") v
+  | Prim.ORead v -> PP.fn pp_value (!^ "read") [v]
 
 let pp_mem_w = function
   | Prim.MWrite v -> (!^ "<-") ^^ PP.space ^^ pp_value v
