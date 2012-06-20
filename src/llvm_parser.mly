@@ -337,35 +337,38 @@ instr:
   | KW_VAARG  { INSTR_VAArg  }
 
   (* terminator *)
-  | KW_RET t = typ o = value { INSTR_Ret (t, o) }
-  | KW_RET KW_VOID           { INSTR_Ret_void }
+  | KW_RET t = typ o = value { INSTR_Terminator (TERM_Ret (t, o)) }
+  | KW_RET KW_VOID           { INSTR_Terminator (TERM_Ret_void) }
   | KW_BR t = typ_i o = value COMMA
           KW_LABEL o1 = ident COMMA KW_LABEL o2 = ident
-    { assert (t = 1); INSTR_Br (o, o1, o2) }
-  | KW_BR KW_LABEL o = ident       { INSTR_Br_1 o }
+    { assert (t = 1); INSTR_Terminator (TERM_Br (o, o1, o2)) }
+  | KW_BR KW_LABEL o = ident       { INSTR_Terminator (TERM_Br_1 o) }
   | KW_SWITCH t = typ v = value COMMA
               KW_LABEL def = value
               LSQUARE table = list(switch_table_entry) RSQUARE
-    { INSTR_Switch (t, v, def, table) }
-  | KW_INDIRECTBR     { INSTR_IndirectBr } (*TODO *)
+    { INSTR_Terminator (TERM_Switch (t, v, def, table)) }
+  | KW_INDIRECTBR     { INSTR_Terminator (TERM_IndirectBr) } (*TODO*)
   | KW_INVOKE cconv? t = ret_type i = ident
               LPAREN a = separated_list(COMMA, call_arg) RPAREN
               list(fn_attr)
               KW_TO KW_LABEL l1 = ident
               KW_UNWIND KW_LABEL l2 = ident
-    { INSTR_Invoke (t, i, a, l1, l2)  }
-  | KW_RESUME t = typ o = value { INSTR_Resume (t, o) }
-  | KW_UNREACHABLE    { INSTR_Unreachable }
+    { INSTR_Terminator (TERM_Invoke (t, i, a, l1, l2))  }
+  | KW_RESUME t = typ o = value { INSTR_Terminator (TERM_Resume (t, o)) }
+  | KW_UNREACHABLE    { INSTR_Terminator (TERM_Unreachable) }
 
   (* memory instrs, partial support *)
-  | i = ident EQ KW_ALLOCA t = typ comma_align? { INSTR_Alloca (i, t) } (*TODO: support NumElements *)
+  | i = ident EQ KW_ALLOCA t = typ comma_align? (*TODO: support more options *)
+    { INSTR_Mem (MEM_Alloca (i, t)) }
   | i = ident EQ KW_LOAD KW_VOLATILE? tp = typ p = ident comma_align? (*TODO: support more options *)
-    { INSTR_Load (i, tp, p) }
+    { INSTR_Mem (MEM_Load (i, tp, p)) }
   | KW_STORE KW_VOLATILE? tv = typ v = value COMMA
                           ti = typ i = ident
                           comma_align? (*TODO: support atomic and non-temporal*)
     { assert (match ti with | TYPE_Pointer _ -> true | _ -> false);
-      INSTR_Store (tv, v, ti, i) }
+      INSTR_Mem (MEM_Store (tv, v, ti, i)) }
+
+  (* others *)
   | KW_ATOMICCMPXCHG { INSTR_AtomicCmpXchg }
   | KW_ATOMICRMW     { INSTR_AtomicRMW     }
   | KW_FENCE         { INSTR_Fence         }

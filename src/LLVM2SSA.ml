@@ -26,17 +26,11 @@ let is_terminator i =
   let open LLVM in
   match i with
   (* Thoses are terminators *)
-  | INSTR_Ret _ | INSTR_Ret_void
-  | INSTR_Br _ | INSTR_Br_1 _
-  | INSTR_Switch _
-  | INSTR_IndirectBr
-  | INSTR_Invoke _
-  | INSTR_Resume _
-  | INSTR_Unreachable -> true
+  | INSTR_Terminator _ -> true
 
   (* Those are not *)
   |INSTR_Assign _ |INSTR_PHI _ |INSTR_Call _ |INSTR_Call_unit _ |INSTR_Select
-  |INSTR_VAArg |INSTR_Alloca _ |INSTR_Load _ |INSTR_Store _ |INSTR_AtomicCmpXchg
+  |INSTR_VAArg |INSTR_Mem _ |INSTR_AtomicCmpXchg
   |INSTR_AtomicRMW |INSTR_Fence |INSTR_LandingPad |INSTR_Label _
   -> false
 
@@ -159,9 +153,7 @@ let get_assigns instrs =
     (* Those forms are illegal *)
     | []
     | (INSTR_PHI _) :: _
-    | ( INSTR_Ret _ | INSTR_Ret_void | INSTR_Br _ | INSTR_Br_1 _
-      | INSTR_Switch _ | INSTR_IndirectBr | INSTR_Invoke _
-      | INSTR_Resume _ | INSTR_Unreachable) :: _ :: _
+    | (INSTR_Terminator _) :: _ :: _
     | (INSTR_Label _) :: _
     -> assert false
 
@@ -180,13 +172,13 @@ let get_assigns instrs =
     | INSTR_Select :: _ -> unsupported_feature "INSTR_Select"
     | INSTR_VAArg :: _ -> unsupported_feature "INSTR_VAArg"
 
-    | INSTR_Alloca (i, _) :: instrs ->
+    | INSTR_Mem (MEM_Alloca (i, _)) :: instrs ->
       aux (SSA.IMemWrite (ident_left i, Prim.MAlloc) :: accu) instrs
-    | INSTR_Load (i1, _, i2) :: instrs ->
+    | INSTR_Mem (MEM_Load (i1, _, i2)) :: instrs ->
       aux
         (SSA.IAssignExpr (ident_left i1, Prim.Vexpr (Prim.ORead (var i2))) :: accu)
         instrs
-    | INSTR_Store (_, v, _, i) :: instrs ->
+    | INSTR_Mem (MEM_Store (_, v, _, i)) :: instrs ->
       aux (SSA.IMemWrite (ident i, Prim.MWrite (value v)) :: accu) instrs
 
     | INSTR_AtomicCmpXchg :: _  -> unsupported_feature "INSTR_AtomicCmpXchg"
@@ -195,9 +187,10 @@ let get_assigns instrs =
     | INSTR_LandingPad :: _     -> unsupported_feature "INSTR_LandingPad"
 
     (* Those indicate the end of the instruction section and arrival of the terminator *)
-    | (  INSTR_Ret _ | INSTR_Ret_void | INSTR_Br _ | INSTR_Br_1 _
-       | INSTR_Switch _ | INSTR_IndirectBr | INSTR_Invoke _
-       | INSTR_Resume _ | INSTR_Unreachable) as terminator :: []
+    | INSTR_Terminator
+      (( TERM_Ret _ | TERM_Ret_void | TERM_Br _ | TERM_Br_1 _ | TERM_Switch _
+       | TERM_IndirectBr | TERM_Invoke _ | TERM_Resume _ | TERM_Unreachable
+       ) as terminator) :: []
     ->  (List.rev accu, terminator)
   in
   aux [] instrs
@@ -205,24 +198,18 @@ let get_assigns instrs =
 let get_terminator terminator =
   let open LLVM in
   match terminator with
-  | INSTR_Ret (_, i) -> SSA.Jreturn (value i)
-  | INSTR_Ret_void -> SSA.Jreturnvoid
-  | INSTR_Br (i, l1, l2) ->
+  | TERM_Ret (_, i) -> SSA.Jreturn (value i)
+  | TERM_Ret_void -> SSA.Jreturnvoid
+  | TERM_Br (i, l1, l2) ->
     SSA.Jcond (value i, label l1, label l2)
-  | INSTR_Br_1 i -> SSA.Jgoto (label i)
-  | INSTR_Switch _ -> unsupported_feature "INSTR_Switch"
-  | INSTR_IndirectBr _ -> unsupported_feature "INSTR_IndirectBr"
-  | INSTR_Invoke (_, fn, args, i, _) ->
+  | TERM_Br_1 i -> SSA.Jgoto (label i)
+  | TERM_Switch _ -> unsupported_feature "TERM_Switch"
+  | TERM_IndirectBr _ -> unsupported_feature "TERM_IndirectBr"
+  | TERM_Invoke (_, fn, args, i, _) ->
     let args = List.map (fun (_, v) -> value v) args in
     SSA.Jtail (label fn, args, label i)
-  | INSTR_Resume _ -> unsupported_feature "INSTR_Resume"
-  | INSTR_Unreachable -> unsupported_feature "INSTR_Unreachable"
-
-  (* These are illegals *)
-  |INSTR_Assign _ |INSTR_PHI _ |INSTR_Call_unit _ |INSTR_Call _ |INSTR_Select
-  |INSTR_VAArg |INSTR_Alloca _ |INSTR_Load _ |INSTR_Store _ |INSTR_AtomicCmpXchg
-  |INSTR_AtomicRMW |INSTR_Fence |INSTR_LandingPad |INSTR_Label _
-  -> assert false
+  | TERM_Resume _ -> unsupported_feature "TERM_Resume"
+  | TERM_Unreachable -> unsupported_feature "TERM_Unreachable"
 
 let get_label = function
   | LLVM.INSTR_Label l :: instrs -> (label l, instrs)

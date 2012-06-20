@@ -178,6 +178,22 @@ type tvalue = typ * value
 
 type call = typ * ident * (typ * value) list
 
+type terminator =
+  | TERM_Ret of (typ * value)
+  | TERM_Ret_void
+  | TERM_Br of (value * ident * ident) (*types are constant *)
+  | TERM_Br_1 of ident
+  | TERM_Switch of (typ * value * value * (typ * value * ident) list)
+  | TERM_IndirectBr
+  | TERM_Invoke of (typ * ident * (typ * value) list * ident * ident)
+  | TERM_Resume of (typ * value)
+  | TERM_Unreachable
+
+type memop =
+  | MEM_Alloca of (ident * typ)
+  | MEM_Load of (ident * typ * ident)
+  | MEM_Store of (typ * value * typ * ident)
+
 type module_ = toplevelentry list
 
 and toplevelentry =
@@ -213,20 +229,10 @@ and instr =
   | INSTR_Call of (ident * call)
   | INSTR_Call_unit of call
   | INSTR_PHI of (ident * typ * (value * ident) list)
+  | INSTR_Terminator of terminator
   | INSTR_Select
   | INSTR_VAArg
-  | INSTR_Ret of (typ * value)
-  | INSTR_Ret_void
-  | INSTR_Br of (value * ident * ident) (*types are constant *)
-  | INSTR_Br_1 of ident
-  | INSTR_Switch of (typ * value * value * (typ * value * ident) list)
-  | INSTR_IndirectBr
-  | INSTR_Invoke of (typ * ident * (typ * value) list * ident * ident)
-  | INSTR_Resume of (typ * value)
-  | INSTR_Unreachable
-  | INSTR_Alloca of (ident * typ)
-  | INSTR_Load of (ident * typ * ident)
-  | INSTR_Store of (typ * value * typ * ident)
+  | INSTR_Mem of memop
   | INSTR_AtomicCmpXchg
   | INSTR_AtomicRMW
   | INSTR_Fence
