@@ -63,7 +63,7 @@ clean:
 	rm -f $(CMOS) $(CMIS) $(CMXS) $(MLS:.ml=.o) $(TRASH)
 
 purge: clean
-	rm -f .depend $(BINNAME).native $(BINNAME).byte pprint.mli pprint.ml
+	rm -f .depend $(BINNAME).native $(BINNAME).byte pprint.mli pprint.ml LLVM.ml
 
 
 depend: $(MLS) $(MLIS)

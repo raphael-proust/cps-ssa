@@ -14,6 +14,7 @@ src/llvm_lexer.ml
 src/llvm_lexer.mli
 src/llvm_parser.ml
 src/llvm_parser.mli
+src/LLVM.ml
 src/.depend
 src/llvm_parser.conflicts
 .*.swp
