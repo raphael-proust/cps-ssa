@@ -33,6 +33,8 @@ let pp_phi (v, les) =
     PP.list ~sep:PP.comma_space pp_phi_entry les
   )
 
+let pp_phi_br phi = pp_phi phi ^^ PP.break1
+
 let pp_call (l, es) =
     Prim_pp.pp_label l ^^ PP.with_paren (
       PP.list ~sep:PP.comma_space Prim_pp.pp_value es
@@ -46,6 +48,8 @@ let pp_core_instr = function
   | SSA.ICall call -> pp_call call
   | SSA.IMemWrite (v, m) -> !^ "store" ^^ PP.space ^^
     Prim_pp.pp_var v ^^ PP.space ^^ Prim_pp.pp_mem_w m
+
+let pp_core_instr_br ci = pp_core_instr ci ^^ PP.break1
 
 let pp_jump = function
   | SSA.Jgoto l -> !^ "goto" ^^ PP.space ^^ Prim_pp.pp_label l
@@ -61,32 +65,33 @@ let pp_jump = function
     Prim_pp.pp_label l2
 
 let pp_block {SSA.b_label; b_phis; b_core_instrs; b_jump;} =
-  Prim_pp.pp_label b_label ^^ (!^ ":") ^^ PP.break1 ^^ PP.level (
-    PP.list ~sep:PP.break1 pp_phi b_phis ^^ PP.break1 ^^
-    PP.list ~sep:PP.break1 pp_core_instr b_core_instrs ^^ PP.break1 ^^
-    pp_jump b_jump) ^^ PP.break1 ^^
-  PP.break1
+  Prim_pp.pp_label b_label ^^ (!^ ":") ^^ PP.level (PP.break0 ^^
+    PP.list ~sep:PP.empty pp_phi_br b_phis ^^
+    PP.list ~sep:PP.empty pp_core_instr_br b_core_instrs ^^
+    pp_jump b_jump)
 
-let pp_entry_block {SSA.eb_core_instrs; eb_jump} =
-  PP.list ~sep:PP.break1 pp_core_instr eb_core_instrs ^^ PP.break1 ^^
-  pp_jump eb_jump ^^ PP.break1 ^^
-  PP.break1
+let pp_entry_block {SSA.eb_label; eb_core_instrs; eb_jump} =
+  Prim_pp.pp_label eb_label ^^ (!^ ":" ) ^^ PP.level (PP.break0 ^^
+    PP.list ~sep:PP.empty pp_core_instr_br eb_core_instrs ^^
+    pp_jump eb_jump
+  )
 
 let pp_proc {SSA.p_name; p_args; p_entry_block; p_blocks;} =
   Prim_pp.pp_label p_name ^^ PP.with_paren (
     PP.list ~sep:PP.comma_space Prim_pp.pp_var p_args
   ) ^^
-  PP.lbrace ^^ PP.break1 ^^
-    PP.level (pp_entry_block p_entry_block ^^ PP.break1) ^^ PP.break1 ^^
-    PP.list ~sep:(PP.break1 ^^ PP.break1) pp_block p_blocks ^^
-    PP.break1 ^^
+  PP.lbrace ^^
+    PP.level (PP.break0 ^^ pp_entry_block p_entry_block) ^^ PP.break1 ^^
+    PP.list ~sep:(PP.break1)
+      (fun b -> PP.level (PP.break0 ^^ pp_block b))
+      p_blocks ^^
   PP.rbrace ^^ PP.break1
 
 let pp_module = PP.list ~sep:(PP.break1 ^^ PP.break1 ^^ PP.break1) pp_proc
 
 let pp_prog (main, module_) =
   !^ "main" ^^ PP.hardline ^^
-  PP.level (pp_proc main) ^^ PP.hardline ^^
+  PP.level (PP.break0 ^^ pp_proc main) ^^ PP.hardline ^^
   PP.hardline ^^
-  PP.level (pp_module module_)
+  PP.level (PP.break0 ^^ pp_module module_)
 
