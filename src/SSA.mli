@@ -24,7 +24,7 @@ open Util
     memory writes. *)
 type core_instr =
   | IAssignExpr of (Prim.var * Prim.value)
-  | IAssigncall of (Prim.var * Prim.label * Prim.value list)
+  | IAssigncall of (Prim.var * (Prim.label * Prim.value list))
   | ICall       of (Prim.label * Prim.value list)
   | IMemWrite   of (Prim.var * Prim.mem_w)
 

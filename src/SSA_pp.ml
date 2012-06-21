@@ -33,18 +33,17 @@ let pp_phi (v, les) =
     PP.list ~sep:PP.comma_space pp_phi_entry les
   )
 
+let pp_call (l, es) =
+    Prim_pp.pp_label l ^^ PP.with_paren (
+      PP.list ~sep:PP.comma_space Prim_pp.pp_value es
+    )
+
+let pp_assign v = Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space
+
 let pp_core_instr = function
-  | SSA.IAssignExpr (v, e) ->
-    Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^ Prim_pp.pp_value e
-  | SSA.IAssigncall (v, l, es) ->
-    Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
-    Prim_pp.pp_label l ^^ PP.with_paren (
-      PP.list ~sep:PP.comma_space Prim_pp.pp_value es
-    )
-  | SSA.ICall (l, es) ->
-    Prim_pp.pp_label l ^^ PP.with_paren (
-      PP.list ~sep:PP.comma_space Prim_pp.pp_value es
-    )
+  | SSA.IAssignExpr (v, e) -> pp_assign v ^^ Prim_pp.pp_value e
+  | SSA.IAssigncall (v, call) -> pp_assign v ^^ pp_call call
+  | SSA.ICall call -> pp_call call
   | SSA.IMemWrite (v, m) -> !^ "store" ^^ PP.space ^^
     Prim_pp.pp_var v ^^ PP.space ^^ Prim_pp.pp_mem_w m
 

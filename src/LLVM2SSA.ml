@@ -149,6 +149,9 @@ let ident_left = function
 
 let get_assigns instrs =
   let open LLVM in
+  let aux_call (_, fn, args) =
+    (label fn, List.map (fun (_, v) -> value v) args)
+  in
   let rec aux accu = function
     (* Those forms are illegal *)
     | []
@@ -160,14 +163,12 @@ let get_assigns instrs =
     (* Those are what we are looking for *)
     | INSTR_Assign (i, e) :: instrs ->
       aux (SSA.IAssignExpr (ident_left i, expr e) :: accu) instrs
-    (*TODO: factor Calls *)
-    | INSTR_Call (i, (_, fn, args)) :: instrs ->
-      let args = List.map (fun (_, v) -> value v) args in
-      aux (SSA.IAssigncall (ident_left i, label fn, args) :: accu) instrs
 
-    | INSTR_Call_unit (_, fn, args) :: instrs ->
-      let args = List.map (fun (_, v) -> value v) args in
-      aux (SSA.ICall (label fn, args) :: accu) instrs
+    | INSTR_Call (i, call) :: instrs ->
+      aux (SSA.IAssigncall (ident_left i, aux_call call) :: accu) instrs
+
+    | INSTR_Call_unit call :: instrs ->
+      aux (SSA.ICall (aux_call call) :: accu) instrs
 
     | INSTR_Select :: _ -> unsupported_feature "INSTR_Select"
     | INSTR_VAArg :: _ -> unsupported_feature "INSTR_VAArg"

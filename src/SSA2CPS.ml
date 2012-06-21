@@ -44,7 +44,7 @@ let core_instrs_and_jump k proc current_l cis j =
   let open CPS in
   let rec aux = function
   | SSA.IAssignExpr (v, e) :: cis -> Mlet (v, e, aux cis)
-  | SSA.IAssigncall (v, l, es) :: cis ->
+  | SSA.IAssigncall (v, (l, es)) :: cis ->
       Mapp (Prim.var_of_label l, es, C (v, aux cis))
   | SSA.ICall (l, es) :: cis ->
       Mapp (Prim.var_of_label l, es, C (var_unit, aux cis))
