@@ -223,6 +223,8 @@ rule token = parse
   | '<'  { LT }
   | '>'  { GT }
 
+  | "cc" (digit+ as n) { CC (int_of_string n) }
+
   (* labels *)
   | (label_char)+ as l ':' { LABEL l }
 
