@@ -19,7 +19,7 @@
   * }}}                                                                      *)
 
  (** Translate procedures. There should be no need to use directly as [prog]
-	* does all the necessary steps. Could be used for debugging. *)
+   * does all the necessary steps. Could be used for debugging. *)
 val proc : SSA.proc -> CPS.lambda
 
 (** Translate programs. This is probably the function you need. The assumptions
