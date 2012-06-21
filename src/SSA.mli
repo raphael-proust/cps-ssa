@@ -74,6 +74,9 @@ type proc = {
   *)
 type prog = proc list
 
+(** list all the labels the jump jumps to. *)
+val labels_of_jump: jump -> Prim.label list
+
 (** find a block in a list by its label *)
 val block_of_label: proc -> Prim.label -> (entry_block, block) E.either
 

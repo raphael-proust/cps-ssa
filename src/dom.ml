@@ -43,17 +43,9 @@ end
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(BlockVertex)
 
 let vertices_of_jump proc v0 j =
-  match j with
-  (* inter-procedural jumps are ignored in the translation *)
-  | SSA.Jreturnvoid | SSA.Jreturn _ | SSA.Jtail _ -> []
-  (* intra-procedural simple jump *)
-  | SSA.Jgoto label ->
-    [G.E.create v0 () (SSA.block_of_label proc label)]
-  (* intra-procedural conditional jump *)
-  | SSA.Jcond (_, label1, label2) ->
-    [G.E.create v0 () (SSA.block_of_label proc label1);
-     G.E.create v0 () (SSA.block_of_label proc label2);
-    ]
+  List.map
+    (fun l -> G.E.create v0 () (SSA.block_of_label proc l))
+    (SSA.labels_of_jump j)
 
 let vertices_of_block proc b =
   vertices_of_jump proc (E.Right b) b.SSA.b_jump
