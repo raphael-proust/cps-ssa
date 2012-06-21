@@ -64,6 +64,10 @@ type proc = {
 
 type prog = proc list
 
+let labels_of_jump = function
+  | Jreturn _ | Jreturnvoid | Jtail _ -> []
+  | Jgoto l -> [l]
+  | Jcond (_, l1, l2) -> [l1;l2]
 
 (*TODO? memoize or build a map before use? *)
 let block_of_label proc label =
@@ -85,11 +89,22 @@ let block_of_label proc label =
 
 let check_ssa prog =
 
-  (* one procedure is the "main" *)
-  (* there is no way to preserve name with ghc so we can't rely on that. *)
-(*   assert (L.exists_one (fun p -> p.p_name = label_main) prog); *)
+  assert (L.unique (fun p -> Some p.p_name) prog);
 
   let check_proc proc =
+
+    let labels = List.map (fun b -> b.b_label) proc.p_blocks in
+    let jumps =
+      List.concat (
+           labels_of_jump proc.p_entry_block.eb_jump
+        :: List.map (fun b -> labels_of_jump b.b_jump) proc.p_blocks
+      )
+    in
+    assert (
+      List.for_all
+        (fun l -> l <> proc.p_entry_block.eb_label && List.mem l labels)
+        jumps
+    );
 
     (* no two labels are identical *)
     assert (L.unique (fun b -> Some b.b_label) proc.p_blocks);
@@ -114,8 +129,6 @@ let check_ssa prog =
   List.iter check_proc prog
 
   (* TODO: check def dominates use (requires dominator info, not necessary) *)
-  (* TODO: check no jumps to entry_block *)
-  (* TODO: check no two procedure are called the same *)
 
 
 (* For making entry blocks *)
