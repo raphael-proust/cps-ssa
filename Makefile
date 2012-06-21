@@ -1,7 +1,7 @@
 
 all:
-	make -C src .depend
-	make -C src all
+	make -C tests all
 
 clean:
-	make -C src clean
+	make -C src purge
+	make -C tests clean
