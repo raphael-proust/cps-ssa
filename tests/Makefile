@@ -23,9 +23,14 @@ CS= \
 		vals.c \
 		vars.c
 
-LLS=$(CS:.c=.ll)
-SSAS=$(CS:.c=.ssa)
-CPSS=$(CS:.c=.cps)
+HSS= \
+	fibonacci_pat.hs \
+	fibonacci_zip.hs \
+	fun.hs
+
+LLS=$(CS:.c=.ll) $(HSS:.hs=.ll)
+SSAS=$(CS:.c=.ssa) $(HSS:.hs=.ssa)
+CPSS=$(CS:.c=.cps) $(HSS:.hs=.cps)
 
 OPTS= \
 			argpromotion adce basiccg constmerge constprop \
@@ -53,10 +58,13 @@ ssas: $(SSAS)
 cpss: $(CPSS)
 
 clean:
-	rm -f $(BCS) *.ssa *.cps *.ll
+	rm -f $(BCS) *.ssa *.cps *.ll *.hi *.o
 
 %.ll: %.c
 	clang $< -O0 -emit-llvm -S -o $@
+
+%.ll: %.hs
+	ghc -keep-llvm-file -O1 -c $<
 
 %.cps %.ssa: %.ll
 	../src/run.native $<
