@@ -25,4 +25,4 @@ val proc : SSA.proc -> CPS.lambda
 (** Translate programs. This is probably the function you need. The assumptions
     made by this functions are those checked by [SSA.check_ssa] (or should be,
     if not, a bug fix is necessary). *)
-val prog : SSA.prog -> CPS.m
+val prog : SSA.prog -> (Prim.var * CPS.lambda) list

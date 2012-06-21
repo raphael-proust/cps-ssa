@@ -60,7 +60,7 @@ let run ll_file =
   let () = SSA.check_ssa ssa_prog in
 
   (* Phase 3: transform to CPS *)
-  let cps_m =
+  let cps_prog =
     try
       SSA2CPS.prog ssa_prog
     with
@@ -69,7 +69,7 @@ let run ll_file =
         base_file;
       raise e
   in
-  let cps_doc = CPS_pp.pp_m cps_m in
+  let cps_doc = CPS_pp.pp_prog cps_prog in
   let cps_file = base_file ^ ".cps" in
   let out_cps = open_out cps_file in
   let () = Pprint.Channel.pretty 0. 100 out_cps cps_doc in

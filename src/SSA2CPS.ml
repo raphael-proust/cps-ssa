@@ -105,27 +105,9 @@ let tr_proc proc =
   CPS.Lproc (proc.SSA.p_args, k, m)
 
 let tr_prog prog =
-  let open CPS in
-  let (main, _) =
-    try
-      L.pick_one_such_as
-        (fun proc -> proc.SSA.p_name = SSA.label_main)
-        prog
-    with
-    | Not_found -> match prog with hd::tl -> (hd, tl)
-  in
-  let lambdas =
     List.map
       (fun proc -> (Prim.var_of_label proc.SSA.p_name, tr_proc proc))
       prog
-  in
-  Mrec
-    (lambdas,
-     Mapp (Prim.var_of_label main.SSA.p_name,
-           List.map (fun v -> Prim.Vvar v) main.SSA.p_args,
-           Cvar var_run
-          )
-    )
 
 
 let proc = tr_proc

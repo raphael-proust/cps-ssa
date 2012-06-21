@@ -36,3 +36,6 @@ val pp_cont   : CPS.cont -> Pprint.document
 
 (** prettyr-prints CPS lambdas (either merge points or source functions). *)
 val pp_lambda : CPS.lambda -> Pprint.document
+
+(** pretty-prints a collection of CPS lambdas. *)
+val pp_prog   : (Prim.var * CPS.lambda) list -> Pprint.document
