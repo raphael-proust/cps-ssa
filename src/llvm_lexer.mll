@@ -229,13 +229,8 @@ rule token = parse
   | (label_char)+ as l ':' { LABEL l }
 
   (* identifier *)
-  (* TODO: factorisation *)
-  | '@' ((ident_fst ident_nxt* ) as i) { GLOBAL i }
-  | '@' (digit+ as i) { GLOBAL i }
-  | '@' '"' { GLOBAL (string (Buffer.create 10) (Lexing.lexeme_start_p lexbuf) lexbuf) }
-  | '%' ((ident_fst ident_nxt* ) as i) { LOCAL i }
-  | '%' (digit+ as i) { LOCAL i }
-  | '%' '"' { LOCAL (string (Buffer.create 10) (Lexing.lexeme_start_p lexbuf) lexbuf) }
+  | '@' { GLOBAL (ident_body lexbuf) }
+  | '%' { LOCAL  (ident_body lexbuf) }
 
   (* constants *)
   | ('-'? digit+ ) as d { INTEGER (int_of_string d) }
@@ -260,3 +255,8 @@ and string b p = parse
   | eol { raise (P.Lex_error_unterminated_string p) }
   | eof { raise (P.Lex_error_unterminated_string p) }
   | _ as c { Buffer.add_char b c; string b p lexbuf }
+
+and ident_body = parse
+  | (ident_fst ident_nxt*) as i { i }
+  | digit+ as i { i }
+  | '"' { string (Buffer.create 10) (Lexing.lexeme_start_p lexbuf) lexbuf }
