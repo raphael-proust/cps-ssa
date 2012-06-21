@@ -82,8 +82,13 @@ global_decl:
   | ident = GLOBAL EQ
       linkage? visibility? KW_THREAD_LOCAL? addrspace? KW_UNNAMED_ADDR?
       g_constant = global_is_constant g_typ = typ g_value = value?
-      comma_section? comma_align?
+      global_attr?
       { {g_ident = ID_Global ident; g_typ; g_constant; g_value;} }
+
+global_attr:
+  | comma_section             { }
+  | comma_section comma_align { }
+  | comma_align               { }
 
 %inline global_is_constant:
   | KW_GLOBAL { false }
