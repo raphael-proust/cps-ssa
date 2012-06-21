@@ -403,20 +403,17 @@ expr_assign:
   | KW_EXTRACTVALUE { failwith "EXPR_ExtractValue" }
   | KW_INSERTVALUE  { failwith "EXPR_InsertValue"  }
 
-
-instr:
-  | i = ident EQ e = expr_assign { INSTR_Assign (i, e) }
-
-  (* call *)
-  (* TODO: factorise calls *)
-  | i = ident EQ KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
-                 n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
-                 list(fn_attr)
-    { INSTR_Call (i, (t, n, a)) }
+call:
   | KW_TAIL? KW_CALL cconv? list(typ_attr) t = typ
                  n = ident LPAREN a = separated_list(COMMA, call_arg) RPAREN
                  list(fn_attr)
-    { INSTR_Call_unit (t, n, a) }
+    { (t, n, a) }
+
+instr:
+  (* assignement and calls *)
+  | i = ident EQ e = expr_assign { INSTR_Assign (i, e) }
+  | i = ident EQ c = call        { INSTR_Call   (i, c) }
+  | c = call                     { INSTR_Call_unit  c  }
 
   (* phi *)
   | i = ident EQ KW_PHI t = typ
