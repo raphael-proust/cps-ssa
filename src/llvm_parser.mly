@@ -24,7 +24,6 @@
 
 %}
 
-(*TODO: vectors and vector types *)
 (*TODO: floats *)
 (*TODO: don't throw things away *)
 
@@ -214,9 +213,9 @@ fn_attr:
 
 fn_attr_gen:
   | f = fn_attr { Some f }
-  | KW_ALIGN power2   { None (*TODO: fix *) }
-  | KW_GC STRING      { None (*TODO: fix *) }
-  | KW_SECTION STRING { None (*TODO: fix *) }
+  | KW_ALIGN power2   { None }
+  | KW_GC STRING      { None }
+  | KW_SECTION STRING { None }
 
 %inline power2:
   | n = INTEGER { assert (List.mem n [0;1;2;4;8;16;32;64]); n }
@@ -253,17 +252,17 @@ fn_attr_gen:
 expr:
   (* arith binop *)
   | b = binop2_expr(KW_ADD,KW_NUW,KW_NSW) { EXPR_Add  b }
-  | KW_FADD (*TODO*)                 { failwith "EXPR_FAdd"   }
+  | KW_FADD                               { failwith "EXPR_FAdd"   }
   | b = binop2_expr(KW_SUB,KW_NUW,KW_NSW) { EXPR_Sub  b }
-  | KW_FSUB (*TODO*)                 { failwith "EXPR_FSub"   }
+  | KW_FSUB                               { failwith "EXPR_FSub"   }
   | b = binop2_expr(KW_MUL,KW_NUW,KW_NSW) { EXPR_Mul  b }
-  | KW_FMUL (*TODO*)                 { failwith "EXPR_FMul"   }
+  | KW_FMUL                               { failwith "EXPR_FMul"   }
   | b = binop1_expr(KW_UDIV,KW_EXACT)     { EXPR_UDiv b }
   | b = binop1_expr(KW_SDIV,KW_EXACT)     { EXPR_SDiv b }
-  | KW_FDIV (*TODO*)                 { failwith "EXPR_FDiv"   }
+  | KW_FDIV                               { failwith "EXPR_FDiv"   }
   | b = binop_expr (KW_UREM)              { EXPR_URem b }
   | b = binop_expr (KW_SREM)              { EXPR_SRem b }
-  | KW_FREM  (*TODO*)                { failwith "EXPR_FRem"   }
+  | KW_FREM                               { failwith "EXPR_FRem"   }
 
   (* bitwise binop *)
   | b = binop_expr(KW_SHL)  { EXPR_Shl  b }
@@ -274,7 +273,6 @@ expr:
   | b = binop_expr(KW_XOR)  { EXPR_Xor  b }
 
   (* comparison *)
-  (*TODO: factorisation. How?*)
   | i = icmp_expr(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }
   | i = icmp_expr(KW_NE ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ne,  t, o1, o2) }
   | i = icmp_expr(KW_UGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ugt, t, o1, o2) }
@@ -286,7 +284,7 @@ expr:
   | i = icmp_expr(KW_SLT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Slt, t, o1, o2) }
   | i = icmp_expr(KW_SLE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sle, t, o1, o2) }
 
-  | KW_FCMP           { failwith "TODO: KW_FCMP" }
+  | KW_FCMP           { failwith "KW_FCMP" }
 
   (* conversions *)
   | c = conversion_expr(KW_TRUNC)    { EXPR_Trunc c    }
@@ -341,17 +339,17 @@ getelementptr_item:
 expr_assign:
   (* arith binop *)
   | b = binop2_assign(KW_ADD,KW_NUW,KW_NSW) { EXPR_Add  b }
-  | KW_FADD (*TODO*)                 { failwith "EXPR_FAdd"   }
+  | KW_FADD                                 { failwith "EXPR_FAdd"   }
   | b = binop2_assign(KW_SUB,KW_NUW,KW_NSW) { EXPR_Sub  b }
-  | KW_FSUB (*TODO*)                 { failwith "EXPR_FSub"   }
+  | KW_FSUB                                 { failwith "EXPR_FSub"   }
   | b = binop2_assign(KW_MUL,KW_NUW,KW_NSW) { EXPR_Mul  b }
-  | KW_FMUL (*TODO*)                 { failwith "EXPR_FMul"   }
+  | KW_FMUL                                 { failwith "EXPR_FMul"   }
   | b = binop1_assign(KW_UDIV,KW_EXACT)     { EXPR_UDiv b }
   | b = binop1_assign(KW_SDIV,KW_EXACT)     { EXPR_SDiv b }
-  | KW_FDIV (*TODO*)                 { failwith "EXPR_FDiv"   }
+  | KW_FDIV                                 { failwith "EXPR_FDiv"   }
   | b = binop_assign (KW_UREM)              { EXPR_URem b }
   | b = binop_assign (KW_SREM)              { EXPR_SRem b }
-  | KW_FREM  (*TODO*)                { failwith "EXPR_FRem"   }
+  | KW_FREM                                 { failwith "EXPR_FRem"   }
 
   (* bitwise binop *)
   | b = binop_assign(KW_SHL)  { EXPR_Shl  b }
@@ -362,7 +360,6 @@ expr_assign:
   | b = binop_assign(KW_XOR)  { EXPR_Xor  b }
 
   (* comparison *)
-  (*TODO: factorisation. How?*)
   | i = icmp_assign(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }
   | i = icmp_assign(KW_NE ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ne,  t, o1, o2) }
   | i = icmp_assign(KW_UGT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Ugt, t, o1, o2) }
@@ -374,7 +371,7 @@ expr_assign:
   | i = icmp_assign(KW_SLT) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Slt, t, o1, o2) }
   | i = icmp_assign(KW_SLE) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Sle, t, o1, o2) }
 
-  | KW_FCMP           { failwith "TODO: KW_FCMP" }
+  | KW_FCMP           { failwith "KW_FCMP" }
 
   (* conversions *)
   | c = conversion_assign(KW_TRUNC)    { EXPR_Trunc c    }
@@ -422,8 +419,8 @@ instr:
 
 
   (* other *)
-  | KW_SELECT { INSTR_Select }
-  | KW_VAARG  { INSTR_VAArg  }
+  | KW_SELECT { failwith"INSTR_Select" }
+  | KW_VAARG  { failwith"INSTR_VAArg"  }
 
   (* terminator *)
   | KW_RET t = typ o = value { INSTR_Terminator (TERM_Ret (t, o)) }
@@ -436,7 +433,7 @@ instr:
               KW_LABEL def = value
               LSQUARE table = list(switch_table_entry) RSQUARE
     { INSTR_Terminator (TERM_Switch (t, v, def, table)) }
-  | KW_INDIRECTBR     { INSTR_Terminator (TERM_IndirectBr) } (*TODO*)
+  | KW_INDIRECTBR { failwith "TERM_IndirectBr" }
   | KW_INVOKE cconv? t = ret_type i = ident
               LPAREN a = separated_list(COMMA, call_arg) RPAREN
               list(fn_attr)
@@ -458,10 +455,10 @@ instr:
       INSTR_Mem (MEM_Store (tv, v, ti, i)) }
 
   (* others *)
-  | KW_ATOMICCMPXCHG { INSTR_AtomicCmpXchg }
-  | KW_ATOMICRMW     { INSTR_AtomicRMW     }
-  | KW_FENCE         { INSTR_Fence         }
-  | KW_LANDINGPAD   { INSTR_LandingPad   }
+  | KW_ATOMICCMPXCHG { failwith"INSTR_AtomicCmpXchg" }
+  | KW_ATOMICRMW     { failwith"INSTR_AtomicRMW"     }
+  | KW_FENCE         { failwith"INSTR_Fence"         }
+  | KW_LANDINGPAD    { failwith"INSTR_LandingPad"    }
 
   (* explicit labels *)
   | l = LABEL { INSTR_Label (ID_Local l) }
