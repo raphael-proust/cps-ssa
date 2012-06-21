@@ -57,37 +57,39 @@ val fresh_label : unit -> label
 val var_of_label : label -> var
 val label_of_var : var -> label
 
-(*TODO: merge values and exprs *)
-
-(** Values are either variables or constants. *)
+(** Values are either variables, constants, undefined, null, zeros, structures,
+    dummies, or operations. *)
 type value =
+  (* var *)
   | Vvar   of var
+  (* integer const *)
   | Vconst of const
+  (* null, undef, and the like *)
   | Vnull
   | Vundef
-  | Vstruct of value list
-  | Vzero
-  | Vexpr of expr
   | Vdummy of string (* for things we won't translate *)
-
-(* expressions are operation on values. Might be completed
- * later. It might also need to be lifted to a value lattice. *)
-and expr =
-  | OPlus  of (value * value)
-  | OMult  of (value * value)
-  | OMinus of (value * value)
-  | ODiv   of (value * value)
-  | ORem   of (value * value)
-  | OGt of (value * value)
-  | OGe of (value * value)
-  | OLt of (value * value)
-  | OLe of (value * value)
-  | OEq of (value * value)
-  | ONe of (value * value)
-  | OAnd of (value * value)
-  | OOr  of (value * value)
-  | OXor of (value * value)
-  | ORead of value
+  | Vzero
+  (* structures (arrays, vectors, structs) *)
+  | Vstruct of value list
+  (* arith binop *)
+  | VPlus  of (value * value)
+  | VMult  of (value * value)
+  | VMinus of (value * value)
+  | VDiv   of (value * value)
+  | VRem   of (value * value)
+  (* cmp *)
+  | VGt of (value * value)
+  | VGe of (value * value)
+  | VLt of (value * value)
+  | VLe of (value * value)
+  | VEq of (value * value)
+  | VNe of (value * value)
+  (* bool binop *)
+  | VAnd of (value * value)
+  | VOr  of (value * value)
+  | VXor of (value * value)
+  (* mem read *)
+  | VRead of value
 
 type mem_w =
   | MWrite of value

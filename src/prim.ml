@@ -58,35 +58,29 @@ let fresh_label =
 let var_of_label l = var l
 let label_of_var v = label v
 
-(* things that are used in expressions. *)
 type value =
-  | Vvar of var
+  | Vvar   of var
   | Vconst of const
   | Vnull
   | Vundef
-  | Vstruct of value list
-  | Vzero
-  | Vexpr of expr
   | Vdummy of string (* for things we won't translate *)
-
-(* expressions are operation on values. Might be completed
- * later. It might also need to be lifted to a value lattice. *)
-and expr =
-  | OPlus  of (value * value)
-  | OMult  of (value * value)
-  | OMinus of (value * value)
-  | ODiv   of (value * value)
-  | ORem   of (value * value)
-  | OGt of (value * value)
-  | OGe of (value * value)
-  | OLt of (value * value)
-  | OLe of (value * value)
-  | OEq of (value * value)
-  | ONe of (value * value)
-  | OAnd of (value * value)
-  | OOr  of (value * value)
-  | OXor of (value * value)
-  | ORead of value
+  | Vzero
+  | Vstruct of value list
+  | VPlus  of (value * value)
+  | VMult  of (value * value)
+  | VMinus of (value * value)
+  | VDiv   of (value * value)
+  | VRem   of (value * value)
+  | VGt of (value * value)
+  | VGe of (value * value)
+  | VLt of (value * value)
+  | VLe of (value * value)
+  | VEq of (value * value)
+  | VNe of (value * value)
+  | VAnd of (value * value)
+  | VOr  of (value * value)
+  | VXor of (value * value)
+  | VRead of value
 
 type mem_w =
   | MWrite of value

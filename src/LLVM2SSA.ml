@@ -51,38 +51,38 @@ let int_of_bool = function
 let rec expr e =
   let open LLVM in
   match e with
-  | EXPR_Add (_, v0, v1) -> Prim.(Vexpr (OPlus (value v0, value v1)))
+  | EXPR_Add (_, v0, v1) -> Prim.VPlus (value v0, value v1)
   | EXPR_FAdd -> unsupported_feature "EXPR_FAdd"
-  | EXPR_Sub (_, v0, v1) -> Prim.(Vexpr (OMinus (value v0, value v1)))
+  | EXPR_Sub (_, v0, v1) -> Prim.VMinus (value v0, value v1)
   | EXPR_FSub -> unsupported_feature "EXPR_FSub"
-  | EXPR_Mul (_, v0, v1) -> Prim.(Vexpr (OMult (value v0, value v1)))
+  | EXPR_Mul (_, v0, v1) -> Prim.VMult (value v0, value v1)
   | EXPR_FMul -> unsupported_feature "EXPR_FMul"
   | EXPR_UDiv (_, v0, v1)
-  | EXPR_SDiv (_, v0, v1) -> Prim.(Vexpr (ODiv (value v0, value v1)))
+  | EXPR_SDiv (_, v0, v1) -> Prim.VDiv (value v0, value v1)
   | EXPR_FDiv -> unsupported_feature "EXPR_FDiv"
   | EXPR_URem (_, v0, v1)
-  | EXPR_SRem (_, v0, v1) -> Prim.(Vexpr (ORem (value v0, value v1)))
+  | EXPR_SRem (_, v0, v1) -> Prim.VRem (value v0, value v1)
   | EXPR_FRem -> unsupported_feature "EXPR_FRem"
 
   | EXPR_Shl _ -> unsupported_feature "EXPR_Shl"
   | EXPR_LShr _ -> unsupported_feature "EXPR_LShr"
   | EXPR_AShr _ -> unsupported_feature "EXPR_AShr"
 
-  | EXPR_And (_, v0, v1) -> Prim.(Vexpr (OAnd (value v0, value v1)))
-  | EXPR_Or (_, v0, v1) -> Prim.(Vexpr (OOr (value v0, value v1)))
-  | EXPR_Xor (_, v0, v1) -> Prim.(Vexpr (OXor (value v0, value v1)))
+  | EXPR_And (_, v0, v1) -> Prim.VAnd (value v0, value v1)
+  | EXPR_Or (_, v0, v1) -> Prim.VOr (value v0, value v1)
+  | EXPR_Xor (_, v0, v1) -> Prim.VXor (value v0, value v1)
 
   | EXPR_ICmp (icmp, _, v1, v2) -> begin match icmp with
-    | Cmp_Eq  -> Prim.(Vexpr (OEq (value v1, value v2)))
-    | Cmp_Ne  -> Prim.(Vexpr (ONe (value v1, value v2)))
+    | Cmp_Eq  -> Prim.VEq (value v1, value v2)
+    | Cmp_Ne  -> Prim.VNe (value v1, value v2)
     | Cmp_Ugt
-    | Cmp_Sgt -> Prim.(Vexpr (OGt (value v1, value v2)))
+    | Cmp_Sgt -> Prim.VGt (value v1, value v2)
     | Cmp_Uge
-    | Cmp_Sge -> Prim.(Vexpr (OGe (value v1, value v2)))
+    | Cmp_Sge -> Prim.VGe (value v1, value v2)
     | Cmp_Ult
-    | Cmp_Slt -> Prim.(Vexpr (OLt (value v1, value v2)))
+    | Cmp_Slt -> Prim.VLt (value v1, value v2)
     | Cmp_Ule
-    | Cmp_Sle -> Prim.(Vexpr (OLe (value v1, value v2)))
+    | Cmp_Sle -> Prim.VLe (value v1, value v2)
   end
   | EXPR_FCmp -> unsupported_feature "EXPR_FCmp"
 
@@ -177,7 +177,7 @@ let get_assigns instrs =
       aux (SSA.IMemWrite (ident_left i, Prim.MAlloc) :: accu) instrs
     | INSTR_Mem (MEM_Load (i1, _, i2)) :: instrs ->
       aux
-        (SSA.IAssignExpr (ident_left i1, Prim.Vexpr (Prim.ORead (var i2))) :: accu)
+        (SSA.IAssignExpr (ident_left i1, Prim.VRead (var i2)) :: accu)
         instrs
     | INSTR_Mem (MEM_Store (_, v, _, i)) :: instrs ->
       aux (SSA.IMemWrite (ident i, Prim.MWrite (value v)) :: accu) instrs
