@@ -18,6 +18,11 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(** This module is for LLVM. It only exports types that can represent an LLVM
+    module. Note that it is incomplete, it is just enough to parse and use files
+    produced by clang or ghc. It might or might not be completed in the future.
+    It might or might not be set in a proper library in the future. *)
+
 type linkage =
   | LINKAGE_Private
   | LINKAGE_Linker_private

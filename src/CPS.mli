@@ -36,32 +36,32 @@ type m =
   | Mcond of ( Prim.value
              * (Prim.var * Prim.value list)
              * (Prim.var * Prim.value list))
-  (** Let-binding. Note that it only bounds values. *)
+  (** Let-binding. It only bounds values. For lambdas, use [Mrec]. *)
   | Mlet  of (Prim.var * Prim.value * m)
-  (** Recursive let binding. It binds lambdas. *)
+  (** Recursive let-binding. It only binds lambdas. For values, use [Mlet]. *)
   | Mrec  of ((Prim.var * lambda) list * m)
-  (** Sequences are for memory side-effect operation. *)
+  (** Sequences are for memory side-effect operation only. *)
   | Mseq  of (Prim.var * Prim.mem_w * m)
 
 (* [cont] are continuations. *)
 and cont =
-    (** Continuation Variable. *)
+    (** Continuation Variable. For the "return" continuation only. *)
   | Cvar of Prim.var
-    (** Explicit Continuation. *)
+    (** Explicit Continuation. For binding the result of a computation. *)
   | C    of Prim.var * m
 
 (* [lambda] are lambdas translated from either join point or procedures. *)
 and lambda =
   (** Procedures. These are for source program functions/procedures translation.
-      The last [var]iable is for continuation passing.
+      The last [var]iable is for the "return" continuation.
     *)
   | Lproc of (Prim.var list * Prim.var * m)
   (** Intra-procedure Jumps. E.g. for join points. *)
   | Ljump of (Prim.var list * m)
 
-(** [var_run] is for top-monad entry application. Fullfilling the same purpose
+(** [var_run] is for the top return continuation. Fulfilling the same purpose
     as to [SSA.label_main] somehow. *)
 val var_run: Prim.var
 
-(** [var_unit] is for assignements of calls that do not return. *)
+(** [var_unit] is for assignments of calls that do not return. *)
 val var_unit: Prim.var

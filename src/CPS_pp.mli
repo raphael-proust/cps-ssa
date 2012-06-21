@@ -19,8 +19,7 @@
   * }}}                                                                      *)
 
  (** This module does CPS term pretty printing. It is intended to be used as a
-     preparation for plain-text diff(1). Thus it introduces lots of linebreaks
-     for ease of diff-ing
+     preparation for plain-text diff(1). Thus it introduces lots of linebreaks.
    *)
 
  (** [pp_α x] pretty-prints [x] into a [Pprint.document] (where [x] has type
@@ -28,14 +27,14 @@
      [Pprint.RENDERER]s for [document] printing.
    *)
 
-(** prettyr-prints CPS terms. *)
-val pp_m      : CPS.m -> Pprint.document
+(** pretty-prints CPS terms. *)
+val pp_m     : CPS.m -> Pprint.document
 
-(** prettyr-prints CPS continuations. *)
-val pp_cont   : CPS.cont -> Pprint.document
+(** pretty-prints CPS continuations. *)
+val pp_cont  : CPS.cont -> Pprint.document
 
-(** prettyr-prints CPS lambdas (either merge points or source functions). *)
-val pp_lambda : CPS.lambda -> Pprint.document
+(** pretty-prints CPS lambdas (either merge points or source functions). *)
+val pp_lambda: CPS.lambda -> Pprint.document
 
 (** pretty-prints a collection of CPS lambdas. *)
 val pp_prog   : (Prim.var * CPS.lambda) list -> Pprint.document

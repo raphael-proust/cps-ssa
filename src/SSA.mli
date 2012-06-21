@@ -18,8 +18,6 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-open Util
-
 (** Instructions are assignements of direct expressions or function calls or
     memory writes. *)
 type core_instr =
@@ -78,14 +76,13 @@ type prog = proc list
 val labels_of_jump: jump -> Prim.label list
 
 (** find a block in a list by its label *)
-val block_of_label: proc -> Prim.label -> (entry_block, block) E.either
+val block_of_label: proc -> Prim.label -> (entry_block, block) Util.E.either
 
 (** Label for program entry point. *)
 val label_main : Prim.label
 
 (** checks that the ssa program is indeed ssa. In particular, it checks that
-    each variable is assigned to, only once, there is exactly one main procedure,
-    and other things.
+    each variable is assigned to only once, and other things.
   *)
 val check_ssa : prog -> unit
 
