@@ -1,22 +1,37 @@
-Studying the relation between SSA and CPS (and ANF when appropriate).
+%Studying the relation between SSA and CPS
 
-Most representations and algorithms are from litterature. Here is a
-non-exhaustive list of papers that were used:
 
-- A Functional Perspective on SSA Optimisation Algorithms;
-  Chakravarty, Keller and Zadarnowski.
-- SSA is Functional Programming;  Appel.
-- Efficiently Computing Static Single Assignment Form and The Control Dependence
-  Graph;  Cytron, Ferrante, Rosen, Wegman and Zadeck
-- Compiling Standard ML to Java Bytecodes;  Benton, Kennedy and Russell.
-- Compiling with Continuations, Continued;  Kennedy.
-- Design and Implementation of Code Optimizations for a Type-Directed Compiler
-  for Standard ML;  Tarditi.
-- Separating Stages in the CPS Transformation;  Lawall and Danvy.
-- Optimizing Nested Loops Using Local CPS Conversion;  Reppy.
-- A Generic Account of Continuation Passing Styles;  Hatcliff, Danvy.
-- Contification Using Dominators;  Fluet and Weeks.
-- Global Value Numbers and Redundant Computations;  Rosen, Wegman and Zadeck.
-- A Correspondence between Continuation Passing Style and Static Single
-  Assignment Form;  Kelsey.
+#End
 
+We want to see what the SSA based optimisations do on CPS (and maybe later ANF).
+
+
+#Mean
+
+We use an SSA to CPS translator and feed it LLVM assembly files. Here is what
+the program does:
+
+
+~~~~~~~
+                     +>file.opt.ll --> LLVM --> SSA --> CPS
+                     |                                   |
+                    opt                                  |
+                     |                                   |
+file.c --clang--> file.ll --> LLVM --> SSA --> CPS       |
+                                                |        |
+                                               pp       pp
+                                                |        |
+                                                v        v
+                                           file.cps   file.opt.cps
+                                                |        |
+                                                +--diff--+
+                                                    |
+                                                    v
+                                                   ????
+                                                    |
+                                                    v
+                                                  PROFIT
+~~~~~~~
+
+Note that we can also use Haskell (`.hs`) files and feed them to ghc to get llvm
+(`.ll`) files.
