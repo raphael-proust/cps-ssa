@@ -88,7 +88,7 @@ and pp_l c vs m =
 
 and pp_cont = function
   | CPS.Cvar v   -> Prim_pp.pp_var v
-  | CPS.C (v, m) -> pp_l 'c' [v] m
+  | CPS.C (v, m) -> PP.with_paren (pp_l 'c' [v] m)
 
 and pp_lambda = function
   | CPS.Lproc (vs, v, m) -> pp_l 'p' (vs @ [v]) m
