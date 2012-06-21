@@ -111,7 +111,7 @@ let rec expr e =
 and value = function
   | LLVM.VALUE_Ident i          -> var i
   | LLVM.VALUE_Integer i        -> Prim.Vconst i
-  | LLVM.VALUE_Float _          -> unsupported_feature "VALUE_Float" (*TODO*)
+  | LLVM.VALUE_Float _          -> unsupported_feature "VALUE_Float"
   | LLVM.VALUE_Bool b           -> Prim.Vconst (int_of_bool b)
   | LLVM.VALUE_Null             -> Prim.Vnull
   | LLVM.VALUE_Undef            -> Prim.Vundef
