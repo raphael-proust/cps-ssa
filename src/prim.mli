@@ -68,6 +68,7 @@ type value =
   | Vstruct of value list
   | Vzero
   | Vexpr of expr
+  | Vdummy of string (* for things we won't translate *)
 
 (* expressions are operation on values. Might be completed
  * later. It might also need to be lifted to a value lattice. *)

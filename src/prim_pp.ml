@@ -58,6 +58,7 @@ and pp_value = function
   | Prim.Vstruct vs -> PP.with_paren (PP.list ~sep:PP.comma pp_value vs)
   | Prim.Vzero      -> !^ "!0" (*TODO: better printing *)
   | Prim.Vexpr e    -> pp_expr e
+  | Prim.Vdummy s   -> !^ ("dummy:" ^ s)
 
 let pp_mem_w = function
   | Prim.MWrite v -> (!^ "<-") ^^ PP.space ^^ pp_value v
