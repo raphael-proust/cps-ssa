@@ -18,6 +18,6 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
- (** This function translates an LLVM module into an SSA program. Everything is
+ (** This function translates an LLVM module into an SSA module_. Everything is
      managed automatically. *)
-val prog: LLVM.module_ -> SSA.prog
+val module_: LLVM.module_ -> SSA.module_

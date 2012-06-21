@@ -26,4 +26,5 @@ val pp_core_instr : SSA.core_instr -> Pprint.document
 val pp_jump : SSA.jump -> Pprint.document
 val pp_block : SSA.block -> Pprint.document
 val pp_proc : SSA.proc -> Pprint.document
-val pp_prog : SSA.proc list -> Pprint.document
+val pp_module : SSA.module_ -> Pprint.document
+val pp_prog : SSA.prog -> Pprint.document

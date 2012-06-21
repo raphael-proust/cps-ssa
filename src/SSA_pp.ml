@@ -82,5 +82,11 @@ let pp_proc {SSA.p_name; p_args; p_entry_block; p_blocks;} =
     PP.break1 ^^
   PP.rbrace ^^ PP.break1
 
-let pp_prog = PP.list ~sep:(PP.break1 ^^ PP.break1 ^^ PP.break1) pp_proc
+let pp_module = PP.list ~sep:(PP.break1 ^^ PP.break1 ^^ PP.break1) pp_proc
+
+let pp_prog (main, module_) =
+  !^ "main" ^^ PP.hardline ^^
+  PP.level (pp_proc main) ^^ PP.hardline ^^
+  PP.hardline ^^
+  PP.level (pp_module module_)
 

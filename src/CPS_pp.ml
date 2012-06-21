@@ -97,5 +97,5 @@ and pp_lambda = function
 let pp_var_lambda (v, l) =
   Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.level (pp_lambda l)
 
-let pp_prog vls = PP.list ~sep:PP.hardline pp_var_lambda vls
+let pp_module vls = PP.list ~sep:PP.hardline pp_var_lambda vls
 

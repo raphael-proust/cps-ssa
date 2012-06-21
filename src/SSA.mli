@@ -67,10 +67,15 @@ type proc = {
   p_blocks     : block list;
 }
 
-(** A program is a set of procedures. Exactly one of those has to be labeled
-    with [label_main].
-  *)
-type prog = proc list
+(** A module is a set of procedures. *)
+type module_ = proc list
+
+(** A Program is a main procedure and a set of those. *)
+type prog = proc * module_
+
+(** [prog m l] extrract the procedure labeled [l] from the module [m] and
+    returns a program. *)
+val prog: module_ -> Prim.label -> prog
 
 (** list all the labels the jump jumps to. *)
 val labels_of_jump: jump -> Prim.label list
@@ -84,7 +89,9 @@ val label_main : Prim.label
 (** checks that the ssa program is indeed ssa. In particular, it checks that
     each variable is assigned to only once, and other things.
   *)
-val check_ssa : prog -> unit
+val check_prog : prog -> unit
+
+val check_module: module_ -> unit
 
 
 module Entry_blocks :sig

@@ -29,7 +29,7 @@ let run ll_file =
   (* Phase 1: parse LLVM *)
   let in_ll = open_in ll_file in
   let lexbuf  = Lexing.from_channel in_ll in
-  let llvm_prog =
+  let llvm_module =
     try
         Llvm_parser.module_ (Llvm_lexer.token) lexbuf
     with
@@ -43,33 +43,33 @@ let run ll_file =
   let () = close_in in_ll in
 
   (* Phase 2: transform to SSA *)
-  let ssa_prog =
+  let ssa_module =
     try
-      LLVM2SSA.prog llvm_prog
+      LLVM2SSA.module_ llvm_module
     with
     | e ->
       Printf.eprintf "Uncaught exception while translating %s from LLVM to SSA\n"
         base_file;
         raise e
   in
-  let ssa_doc = SSA_pp.pp_prog ssa_prog in
+  let ssa_doc = SSA_pp.pp_module ssa_module in
   let ssa_file = base_file ^ ".ssa" in
   let out_ssa = open_out ssa_file in
   let () = Pprint.Channel.pretty 1. 20 out_ssa ssa_doc in
   let () = close_out out_ssa in
-  let () = SSA.check_ssa ssa_prog in
+  let () = SSA.check_module ssa_module in
 
   (* Phase 3: transform to CPS *)
-  let cps_prog =
+  let cps_module =
     try
-      SSA2CPS.prog ssa_prog
+      SSA2CPS.module_ ssa_module
     with
     | e ->
       Printf.eprintf "Uncaught exception while translating %s SSA to CPS\n"
         base_file;
       raise e
   in
-  let cps_doc = CPS_pp.pp_prog cps_prog in
+  let cps_doc = CPS_pp.pp_module cps_module in
   let cps_file = base_file ^ ".cps" in
   let out_cps = open_out cps_file in
   let () = Pprint.Channel.pretty 0. 100 out_cps cps_doc in

@@ -22,7 +22,12 @@
    * does all the necessary steps. Could be used for debugging. *)
 val proc : SSA.proc -> CPS.lambda
 
-(** Translate programs. This is probably the function you need. The assumptions
-    made by this functions are those checked by [SSA.check_ssa] (or should be,
+(** Translate modules. This is probably the function you need. The assumptions
+    made by this functions are those checked by [SSA.check_module] (or should be,
     if not, a bug fix is necessary). *)
-val prog : SSA.prog -> (Prim.var * CPS.lambda) list
+val module_ : SSA.module_ -> (Prim.var * CPS.lambda) list
+
+(** Translate programs. This is probably the function you need. The assumptions
+    made by this functions are those checked by [SSA.check_prog] (or should be,
+    if not, a bug fix is necessary). *)
+val prog: SSA.prog -> CPS.m

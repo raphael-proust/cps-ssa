@@ -62,7 +62,11 @@ type proc = {
   p_blocks     : block list;
 }
 
-type prog = proc list
+type module_ = proc list
+
+type prog = proc * module_
+
+let prog m l = L.pick_one_such_as (fun p -> p.p_name = l) m
 
 let labels_of_jump = function
   | Jreturn _ | Jreturnvoid | Jtail _ -> []
@@ -87,9 +91,9 @@ let block_of_label proc label =
         ;
       raise e
 
-let check_ssa prog =
+let check_module module_ =
 
-  assert (L.unique (fun p -> Some p.p_name) prog);
+  assert (L.unique (fun p -> Some p.p_name) module_);
 
   let check_proc proc =
 
@@ -113,7 +117,7 @@ let check_ssa prog =
     assert (
       List.for_all
         (fun p -> List.for_all (fun b -> b.b_label <> p.p_name) p.p_blocks)
-        prog
+        module_
     );
 
     (* no two assignments share their lhs variable *)
@@ -126,9 +130,12 @@ let check_ssa prog =
       (L.concat_map (fun b -> b.b_core_instrs) proc.p_blocks)
     )
   in
-  List.iter check_proc prog
+  List.iter check_proc module_
 
   (* TODO: check def dominates use (requires dominator info, not necessary) *)
+
+
+let check_prog (main,module_) = check_module (main :: module_)
 
 
 (* For making entry blocks *)

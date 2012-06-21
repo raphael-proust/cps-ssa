@@ -104,11 +104,21 @@ let tr_proc proc =
   let m = tr_entry_block dom k proc proc.SSA.p_entry_block in
   CPS.Lproc (proc.SSA.p_args, k, m)
 
-let tr_prog prog =
+let tr_module module_ =
     List.map
       (fun proc -> (Prim.var_of_label proc.SSA.p_name, tr_proc proc))
-      prog
+      module_
 
+let tr_prog (main, module_) =
+  let open CPS in
+  Mrec
+    (tr_module (main :: module_),
+     Mapp (Prim.var_of_label main.SSA.p_name,
+           List.map (fun v -> Prim.Vvar v) main.SSA.p_args,
+           Cvar var_run
+          )
+    )
 
-let proc = tr_proc
-let prog = tr_prog
+let proc    = tr_proc
+let module_ = tr_module
+let prog    = tr_prog

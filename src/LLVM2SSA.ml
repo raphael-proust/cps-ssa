@@ -286,7 +286,7 @@ let tpl = function
   | LLVM.TLE_Global _ -> None
   | LLVM.TLE_Definition d -> Some (proc d)
 
-let prog m =
+let module_ m =
   Prim.reset_idxs ();
   Util.L.map_option tpl m
 
