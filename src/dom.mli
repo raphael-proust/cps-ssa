@@ -19,15 +19,15 @@
   * }}}                                                                      *)
 
 type node = (SSA.entry_block, SSA.block) Util.E.either
+
+(** Even though we present a graph interface, it is only ever presented to the
+    outside (of this module) as a tree. *)
 module G : Graph.Sig.P with type     V.t = node
                         and type V.label = node
                         and type     E.t = node * node
                         and type E.label = unit
 
-(** [dom_of_blocks blocks] evaluates to a dominator tree. The translation
-    assumes :
-      - the list of blocks is not empty
-      - the head of the (non-empty) list of blocks is the entry block
-      - the graph the blocks form is connex (dead-code much?)
-  *)
+(** [dom_of_proc proc] evaluates to a dominator tree. *)
 val dom_of_proc: SSA.proc -> G.t
+
+(*TODO: export a tree instead of a graph. *)

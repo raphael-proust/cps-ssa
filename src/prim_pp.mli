@@ -18,6 +18,9 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(** This is standard pretty-printing. See [CPS_pp]'s interface for explanations.
+    *)
+
 val pp_var  : Prim.var   -> Pprint.document
 val pp_label: Prim.label -> Pprint.document
 val pp_value: Prim.value -> Pprint.document

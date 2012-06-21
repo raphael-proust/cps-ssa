@@ -19,15 +19,12 @@
   * }}}                                                                      *)
 
 (** Constants are only integers when working on the intermediate
-    representation.
+    representation. If and when floats are supported, this might change.
   *)
 type const = int
 
-(** Variables are represented as strings. They are private so as to ease
-    printing and comparison, while making it possible, in the future to check for
-    uniqueness of variable names (well, not really, but sort of).
-  *)
-type var = private string
+(** Variables. *)
+type var
 
 (** Variable Generation. Uses the argument as a base and adds unspecified
     prefixes and suffixes.
@@ -40,7 +37,7 @@ val string_of_var: var -> string
 val fresh_var : unit -> var
 
 (** Labels. Like variables but for procedure block naming. *)
-type label = private string
+type label
 
 (** Label generation. Similar to [var]. *)
 val label : string -> label

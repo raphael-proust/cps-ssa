@@ -25,4 +25,6 @@ val ll_files: string list
     the members of [ll_files]. *)
 val optimisations: string list
 
+(** When [verbose] is set, the driver prints information about the steps it
+    takes. *)
 val verbose: bool
