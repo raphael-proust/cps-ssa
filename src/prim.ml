@@ -59,13 +59,13 @@ let var_of_label l = var l
 let label_of_var v = label v
 
 type value =
-  | Vvar   of var
-  | Vconst of const
-  | Vnull
-  | Vundef
-  | Vdummy of string (* for things we won't translate *)
-  | Vzero
-  | Vstruct of value list
+  | VVar   of var
+  | VConst of const
+  | VNull
+  | VUndef
+  | VDummy of string (* for things we won't translate *)
+  | VZero
+  | VStruct of value list
   | VPlus  of (value * value)
   | VMult  of (value * value)
   | VMinus of (value * value)

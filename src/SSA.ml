@@ -27,17 +27,17 @@ let label_main = Prim.label "@entry"
 
 type core_instr =
   | IAssignExpr   of (Prim.var * Prim.value)
-  | IAssigncall   of (Prim.var * (Prim.label * Prim.value list))
+  | IAssignCall   of (Prim.var * (Prim.label * Prim.value list))
   | IAssignSelect of (Prim.var * Prim.value * Prim.value * Prim.value)
   | ICall         of (Prim.label * Prim.value list)
   | IMemWrite     of (Prim.var * Prim.mem_w)
 
 type jump =
-  | Jgoto       of Prim.label
-  | Jreturn     of Prim.value
-  | Jreturnvoid
-  | Jtail       of (Prim.label * Prim.value list * Prim.label)
-  | Jcond       of (Prim.value * Prim.label * Prim.label)
+  | JGoto       of Prim.label
+  | JReturn     of Prim.value
+  | JReturnVoid
+  | JTail       of (Prim.label * Prim.value list * Prim.label)
+  | JCond       of (Prim.value * Prim.label * Prim.label)
 
 type phi = Prim.var * (Prim.label * Prim.value) list
 
@@ -70,9 +70,9 @@ type prog = proc * module_
 let prog m l = L.pick_one_such_as (fun p -> p.p_name = l) m
 
 let labels_of_jump = function
-  | Jreturn _ | Jreturnvoid | Jtail _ -> []
-  | Jgoto l -> [l]
-  | Jcond (_, l1, l2) -> [l1;l2]
+  | JReturn _ | JReturnVoid | JTail _ -> []
+  | JGoto l -> [l]
+  | JCond (_, l1, l2) -> [l1;l2]
 
 (*TODO? memoize or build a map before use? *)
 let block_of_label proc label =
@@ -125,7 +125,7 @@ let check_module module_ =
     assert (L.unique
       (function
         | IAssignExpr (v, _)
-        | IAssigncall (v, _)
+        | IAssignCall (v, _)
         | IAssignSelect (v, _, _, _) -> Some v
         | ICall _ | IMemWrite _ -> None
       )
@@ -153,22 +153,22 @@ module Entry_blocks = struct
     }
 
   let return ?label ?instrs e =
-    entry_block ?label ?instrs (Jreturn e)
+    entry_block ?label ?instrs (JReturn e)
   let return_const ?label ?instrs c =
-    return ?label ?instrs (Prim.Vconst c)
+    return ?label ?instrs (Prim.VConst c)
   let return_0 ?label ?instrs () =
     return_const ?label ?instrs 0
   let return_var ?label ?instrs v =
-    return ?label ?instrs (Prim.Vvar v)
+    return ?label ?instrs (Prim.VVar v)
 
   let cond ?label ?instrs e l1 l2 =
-    entry_block ?label ?instrs (Jcond (e, l1, l2))
+    entry_block ?label ?instrs (JCond (e, l1, l2))
 
   let tail ?label ?instrs l es d =
-    entry_block ?label ?instrs (Jtail (l, es, d))
+    entry_block ?label ?instrs (JTail (l, es, d))
 
   let goto ?label ?instrs l =
-    entry_block ?label ?instrs (Jgoto l)
+    entry_block ?label ?instrs (JGoto l)
 
 end
 
@@ -186,21 +186,21 @@ module Blocks = struct
     }
 
   let return ?label ?phis ?instrs e =
-    block ?label ?phis ?instrs (Jreturn e)
+    block ?label ?phis ?instrs (JReturn e)
   let return_const ?label ?phis ?instrs c =
-    return ?label ?phis ?instrs (Prim.Vconst c)
+    return ?label ?phis ?instrs (Prim.VConst c)
   let return_0 ?label ?phis ?instrs () = return_const ?label ?phis ?instrs 0
   let return_var ?label ?phis ?instrs v =
-    return ?label ?phis ?instrs (Prim.Vvar v)
+    return ?label ?phis ?instrs (Prim.VVar v)
 
   let cond ?label ?phis ?instrs e l1 l2 =
-    block ?label ?phis ?instrs (Jcond (e, l1, l2))
+    block ?label ?phis ?instrs (JCond (e, l1, l2))
 
   let tail ?label ?phis ?instrs l es d =
-    block ?label ?phis ?instrs (Jtail (l, es, d))
+    block ?label ?phis ?instrs (JTail (l, es, d))
 
   let goto ?label ?phis ?instrs l =
-    block ?label ?phis ?instrs (Jgoto l)
+    block ?label ?phis ?instrs (JGoto l)
 
 end
 

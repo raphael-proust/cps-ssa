@@ -22,7 +22,7 @@
     memory writes. *)
 type core_instr =
   | IAssignExpr   of (Prim.var * Prim.value)
-  | IAssigncall   of (Prim.var * (Prim.label * Prim.value list))
+  | IAssignCall   of (Prim.var * (Prim.label * Prim.value list))
   | IAssignSelect of (Prim.var * Prim.value * Prim.value * Prim.value)
   | ICall         of (Prim.label * Prim.value list)
   | IMemWrite     of (Prim.var * Prim.mem_w)
@@ -31,11 +31,11 @@ type core_instr =
     or conditional jumping.
   *)
 type jump =
-  | Jgoto       of Prim.label
-  | Jreturn     of Prim.value
-  | Jreturnvoid
-  | Jtail       of (Prim.label * Prim.value list * Prim.label)
-  | Jcond       of (Prim.value * Prim.label * Prim.label)
+  | JGoto       of Prim.label
+  | JReturn     of Prim.value
+  | JReturnVoid
+  | JTail       of (Prim.label * Prim.value list * Prim.label)
+  | JCond       of (Prim.value * Prim.label * Prim.label)
 
 (** SSA-magic is made of phi-functions. *)
 type phi = Prim.var * (Prim.label * Prim.value) list

@@ -35,18 +35,18 @@ open PP.Operators
 (*We define pp_* functions for pretty-printing. *)
 
 let rec pp_m = function
-  | CPS.Mapp  (v, es, k) ->
+  | CPS.MApp  (v, es, k) ->
     Prim_pp.pp_var v ^^ PP.space ^^
       PP.list (* This list is never empty *)
         ~sep:PP.space
         (PP.either Prim_pp.pp_value pp_cont)
         (List.map (fun e -> E.Left e) es @ [E.Right k])
 
-  | CPS.Mcont (v, es) ->
+  | CPS.MCont (v, es) ->
     Prim_pp.pp_var v ^^ PP.space ^^
     PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_value es
 
-  | CPS.Mcond (e, (v1, es1), (v2, es2)) ->
+  | CPS.MCond (e, (v1, es1), (v2, es2)) ->
     !^ "if" ^^ PP.with_paren (Prim_pp.pp_value e) ^^
     PP.level (PP.break0 ^^
       PP.with_paren (Prim_pp.pp_var v1 ^^ PP.space ^^
@@ -57,13 +57,13 @@ let rec pp_m = function
       )
     )
 
-  | CPS.Mlet  (v, e, m) ->
+  | CPS.MLet  (v, e, m) ->
     !^ "let " ^^ Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
       Prim_pp.pp_value e ^^
     !^ " in" ^^ PP.break1 ^^
       pp_m m
 
-  | CPS.Msel  (v, c, v1, v2, m) ->
+  | CPS.MSel  (v, c, v1, v2, m) ->
     !^ "sel " ^^ Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
       PP.with_paren (Prim_pp.pp_value c ) ^^ PP.space ^^
       PP.with_paren (Prim_pp.pp_value v1) ^^ PP.space ^^
@@ -71,7 +71,7 @@ let rec pp_m = function
     !^ " in" ^^ PP.break1 ^^
       pp_m m
 
-  | CPS.Mrec  (vls, m) ->
+  | CPS.MRec  (vls, m) ->
     let vl (v, l) =
       Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
       (pp_lambda l)
@@ -82,7 +82,7 @@ let rec pp_m = function
       pp_m m
     )
 
-  | CPS.Mseq (v, w, m) ->
+  | CPS.MSeq (v, w, m) ->
     !^ "let " ^^ PP.unit ^^ PP.space ^^ PP.equals ^^ PP.space ^^
       Prim_pp.pp_var v ^^ PP.space ^^
       Prim_pp.pp_mem_w w ^^ !^ " in" ^^ PP.break1 ^^
@@ -95,12 +95,12 @@ and pp_l c vs m =
   ^^ PP.with_paren_br (PP.level (PP.break0 ^^ pp_m m))
 
 and pp_cont = function
-  | CPS.Cvar v   -> Prim_pp.pp_var v
+  | CPS.CVar v   -> Prim_pp.pp_var v
   | CPS.C (v, m) -> PP.with_paren (pp_l 'c' [v] m)
 
 and pp_lambda = function
-  | CPS.Lproc (vs, v, m) -> pp_l 'p' (vs @ [v]) m
-  | CPS.Ljump (vs, m)    -> pp_l 'j' vs m
+  | CPS.LProc (vs, v, m) -> pp_l 'p' (vs @ [v]) m
+  | CPS.LJump (vs, m)    -> pp_l 'j' vs m
 
 let pp_var_lambda (v, l) =
   Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.level (PP.break0 ^^

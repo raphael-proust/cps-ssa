@@ -30,13 +30,13 @@ let pp_var v = !^ (Prim.string_of_var v)
 let pp_label l = !^ (Prim.string_of_label l)
 
 let rec pp_value = function
-  | Prim.Vvar v     -> pp_var v
-  | Prim.Vconst c   -> !^ (string_of_int c)
-  | Prim.Vnull      -> !^ "null"
-  | Prim.Vundef     -> !^ "undef"
-  | Prim.Vstruct vs -> PP.with_paren (PP.list ~sep:PP.comma pp_value vs)
-  | Prim.Vzero      -> !^ "(0..0)"
-  | Prim.Vdummy s   -> !^ ("dummy:" ^ s)
+  | Prim.VVar v     -> pp_var v
+  | Prim.VConst c   -> !^ (string_of_int c)
+  | Prim.VNull      -> !^ "null"
+  | Prim.VUndef     -> !^ "undef"
+  | Prim.VStruct vs -> PP.with_paren (PP.list ~sep:PP.comma pp_value vs)
+  | Prim.VZero      -> !^ "(0..0)"
+  | Prim.VDummy s   -> !^ ("dummy:" ^ s)
   (* Arithmetic ops *)
   | Prim.VPlus  (v1, v2) -> PP.op pp_value v1 Pprint.plus    v2
   | Prim.VMult  (v1, v2) -> PP.op pp_value v1 Pprint.star    v2

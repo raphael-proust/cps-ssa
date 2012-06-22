@@ -58,16 +58,16 @@ val label_of_var : var -> label
     dummies, or operations. *)
 type value =
   (* var *)
-  | Vvar   of var
+  | VVar   of var
   (* integer const *)
-  | Vconst of const
+  | VConst of const
   (* null, undef, and the like *)
-  | Vnull
-  | Vundef
-  | Vdummy of string (* for things we won't translate *)
-  | Vzero
+  | VNull
+  | VUndef
+  | VDummy of string (* for things we won't translate *)
+  | VZero
   (* structures (arrays, vectors, structs) *)
-  | Vstruct of value list
+  | VStruct of value list
   (* arith binop *)
   | VPlus  of (value * value)
   | VMult  of (value * value)

@@ -43,23 +43,23 @@ let args_of_label proc orig dest =
 let core_instrs_and_jump k proc current_l cis j =
   let open CPS in
   let rec aux = function
-  | SSA.IAssignExpr (v, e) :: cis -> Mlet (v, e, aux cis)
-  | SSA.IAssigncall (v, (l, es)) :: cis ->
-      Mapp (Prim.var_of_label l, es, C (v, aux cis))
+  | SSA.IAssignExpr (v, e) :: cis -> MLet (v, e, aux cis)
+  | SSA.IAssignCall (v, (l, es)) :: cis ->
+      MApp (Prim.var_of_label l, es, C (v, aux cis))
   | SSA.ICall (l, es) :: cis ->
-      Mapp (Prim.var_of_label l, es, C (var_unit, aux cis))
+      MApp (Prim.var_of_label l, es, C (var_unit, aux cis))
   | SSA.IAssignSelect (v, c, v1, v2) :: cis ->
-      Msel (v, c, v1, v2, aux cis)
-  | SSA.IMemWrite (v, w) :: cis -> Mseq (v, w, aux cis)
+      MSel (v, c, v1, v2, aux cis)
+  | SSA.IMemWrite (v, w) :: cis -> MSeq (v, w, aux cis)
   | [] -> match j with
-    | SSA.Jgoto l ->
-        Mapp (Prim.var_of_label l, args_of_label proc current_l l, Cvar k)
-    | SSA.Jreturn e   -> Mcont (k, [e])
-    | SSA.Jreturnvoid -> Mcont (k, [])
-    | SSA.Jtail (l, es, lc) ->
-        Mapp (Prim.var_of_label l, es, Cvar (Prim.var_of_label lc))
-    | SSA.Jcond (e, l1, l2) ->
-        Mcond (e,
+    | SSA.JGoto l ->
+        MApp (Prim.var_of_label l, args_of_label proc current_l l, CVar k)
+    | SSA.JReturn e   -> MCont (k, [e])
+    | SSA.JReturnVoid -> MCont (k, [])
+    | SSA.JTail (l, es, lc) ->
+        MApp (Prim.var_of_label l, es, CVar (Prim.var_of_label lc))
+    | SSA.JCond (e, l1, l2) ->
+        MCond (e,
                (Prim.var_of_label l1, args_of_label proc current_l l1),
                (Prim.var_of_label l2, args_of_label proc current_l l2))
   in
@@ -76,7 +76,7 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
         (fun domed -> (*terminates bc dominator tree is a DAG*)
           let lbl = Prim.var_of_label domed.SSA.b_label in
           let vs = List.map fst domed.SSA.b_phis in
-          let lambda = CPS.Ljump (vs, tr_block dom k proc domed) in
+          let lambda = CPS.LJump (vs, tr_block dom k proc domed) in
           (lbl, lambda)
         )
         (List.map
@@ -89,7 +89,7 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
     in
     (*FIXME: scoping problem! order should be: assignements, continuations, body
      * *)
-    CPS.Mrec (l, m)
+    CPS.MRec (l, m)
 
 
 and tr_block dom k proc block =
@@ -106,7 +106,7 @@ let tr_proc proc =
   let dom = Dom.dom_of_proc proc in
   let k = Prim.fresh_var () in
   let m = tr_entry_block dom k proc proc.SSA.p_entry_block in
-  CPS.Lproc (proc.SSA.p_args, k, m)
+  CPS.LProc (proc.SSA.p_args, k, m)
 
 let tr_module module_ =
     List.map
@@ -115,11 +115,11 @@ let tr_module module_ =
 
 let tr_prog (main, module_) =
   let open CPS in
-  Mrec
+  MRec
     (tr_module (main :: module_),
-     Mapp (Prim.var_of_label main.SSA.p_name,
-           List.map (fun v -> Prim.Vvar v) main.SSA.p_args,
-           Cvar var_run
+     MApp (Prim.var_of_label main.SSA.p_name,
+           List.map (fun v -> Prim.VVar v) main.SSA.p_args,
+           CVar var_run
           )
     )
 

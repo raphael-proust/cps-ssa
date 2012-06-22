@@ -42,7 +42,7 @@ let ident i = Prim.var (ident_string i)
 
 let label l = Prim.label (ident_string l)
 
-let var i = Prim.Vvar (ident i)
+let var i = Prim.VVar (ident i)
 
 let int_of_bool = function
   | true -> 1
@@ -100,7 +100,7 @@ let rec expr e =
   | EXPR_BitCast  (_, v, _) ->
     value v
 
-  | EXPR_GetElementPtr _ -> Prim.Vdummy "GetElementPtr"
+  | EXPR_GetElementPtr _ -> Prim.VDummy "GetElementPtr"
   | EXPR_ExtractElement  -> unsupported_feature "EXPR_ExtractElement"
   | EXPR_InsertElement   -> unsupported_feature "EXPR_InsertElement"
   | EXPR_ShuffleVector   -> unsupported_feature "EXPR_ShuffleVector"
@@ -110,17 +110,17 @@ let rec expr e =
 
 and value = function
   | LLVM.VALUE_Ident i          -> var i
-  | LLVM.VALUE_Integer i        -> Prim.Vconst i
+  | LLVM.VALUE_Integer i        -> Prim.VConst i
   | LLVM.VALUE_Float _          -> unsupported_feature "VALUE_Float"
-  | LLVM.VALUE_Bool b           -> Prim.Vconst (int_of_bool b)
-  | LLVM.VALUE_Null             -> Prim.Vnull
-  | LLVM.VALUE_Undef            -> Prim.Vundef
+  | LLVM.VALUE_Bool b           -> Prim.VConst (int_of_bool b)
+  | LLVM.VALUE_Null             -> Prim.VNull
+  | LLVM.VALUE_Undef            -> Prim.VUndef
   | LLVM.VALUE_Vector tvs
   | LLVM.VALUE_Array tvs
   | LLVM.VALUE_Packed_struct tvs
   | LLVM.VALUE_Struct tvs       ->
-    Prim.Vstruct (List.map (fun (_, v) -> value v) tvs)
-  | LLVM.VALUE_Zero_initializer -> Prim.Vzero
+    Prim.VStruct (List.map (fun (_, v) -> value v) tvs)
+  | LLVM.VALUE_Zero_initializer -> Prim.VZero
   | LLVM.VALUE_Expr e           -> expr e
 
 
@@ -165,7 +165,7 @@ let get_assigns instrs =
       aux (SSA.IAssignExpr (ident_left i, expr e) :: accu) instrs
 
     | INSTR_Call (i, call) :: instrs ->
-      aux (SSA.IAssigncall (ident_left i, aux_call call) :: accu) instrs
+      aux (SSA.IAssignCall (ident_left i, aux_call call) :: accu) instrs
 
     | INSTR_Call_unit call :: instrs ->
       aux (SSA.ICall (aux_call call) :: accu) instrs
@@ -207,16 +207,16 @@ let get_assigns instrs =
 let get_terminator terminator =
   let open LLVM in
   match terminator with
-  | TERM_Ret (_, i) -> SSA.Jreturn (value i)
-  | TERM_Ret_void -> SSA.Jreturnvoid
+  | TERM_Ret (_, i) -> SSA.JReturn (value i)
+  | TERM_Ret_void -> SSA.JReturnVoid
   | TERM_Br (i, l1, l2) ->
-    SSA.Jcond (value i, label l1, label l2)
-  | TERM_Br_1 i -> SSA.Jgoto (label i)
+    SSA.JCond (value i, label l1, label l2)
+  | TERM_Br_1 i -> SSA.JGoto (label i)
   | TERM_Switch _ -> unsupported_feature "TERM_Switch"
   | TERM_IndirectBr _ -> unsupported_feature "TERM_IndirectBr"
   | TERM_Invoke (_, fn, args, i, _) ->
     let args = List.map (fun (_, v) -> value v) args in
-    SSA.Jtail (label fn, args, label i)
+    SSA.JTail (label fn, args, label i)
   | TERM_Resume _ -> unsupported_feature "TERM_Resume"
   | TERM_Unreachable -> unsupported_feature "TERM_Unreachable"
 

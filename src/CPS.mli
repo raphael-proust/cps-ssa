@@ -29,29 +29,29 @@ type m =
   (** Application. The [var]iable can only be a procedure/function call. An
       extra continuation argument is needed.
     *)
-  | Mapp  of (Prim.var * Prim.value list * cont)
+  | MApp  of (Prim.var * Prim.value list * cont)
   (** Continuation call. The [var]iable must be a continuation. *)
-  | Mcont of (Prim.var * Prim.value list)
+  | MCont of (Prim.var * Prim.value list)
   (** Conditional Branching. Both branches must use continuation [var]iables. *)
-  | Mcond of ( Prim.value
+  | MCond of ( Prim.value
              * (Prim.var * Prim.value list)
              * (Prim.var * Prim.value list))
   (** Let-binding. It only bounds values. For lambdas, use [Mrec]. *)
-  | Mlet  of (Prim.var * Prim.value * m)
+  | MLet  of (Prim.var * Prim.value * m)
   (** Select binding. The [Msel (v, c, v1, v2, m)] is equivalent to an ML
       [let v = if c then v1 esle v2 in m]. We compile this way (and thus
       get even further from λ-calculus) because it is easier and it does not
       blur the effect of llvm optimisations. *)
-  | Msel of (Prim.var * Prim.value * Prim.value * Prim.value * m)
+  | MSel of (Prim.var * Prim.value * Prim.value * Prim.value * m)
   (** Recursive let-binding. It only binds lambdas. For values, use [Mlet]. *)
-  | Mrec  of ((Prim.var * lambda) list * m)
+  | MRec  of ((Prim.var * lambda) list * m)
   (** Sequences are for memory side-effect operation only. *)
-  | Mseq  of (Prim.var * Prim.mem_w * m)
+  | MSeq  of (Prim.var * Prim.mem_w * m)
 
 (* [cont] are continuations. *)
 and cont =
     (** Continuation Variable. For the "return" continuation only. *)
-  | Cvar of Prim.var
+  | CVar of Prim.var
     (** Explicit Continuation. For binding the result of a computation. *)
   | C    of Prim.var * m
 
@@ -60,9 +60,9 @@ and lambda =
   (** Procedures. These are for source program functions/procedures translation.
       The last [var]iable is for the "return" continuation.
     *)
-  | Lproc of (Prim.var list * Prim.var * m)
+  | LProc of (Prim.var list * Prim.var * m)
   (** Intra-procedure Jumps. E.g. for join points. *)
-  | Ljump of (Prim.var list * m)
+  | LJump of (Prim.var list * m)
 
 (** [var_run] is for the top return continuation. Fulfilling the same purpose
     as to [SSA.label_main] somehow. *)

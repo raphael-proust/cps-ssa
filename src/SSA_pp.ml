@@ -44,7 +44,7 @@ let pp_assign v = Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space
 
 let pp_core_instr = function
   | SSA.IAssignExpr (v, e) -> pp_assign v ^^ Prim_pp.pp_value e
-  | SSA.IAssigncall (v, call) -> pp_assign v ^^ pp_call call
+  | SSA.IAssignCall (v, call) -> pp_assign v ^^ pp_call call
   | SSA.ICall call -> pp_call call
   | SSA.IAssignSelect (v, c, v1, v2) ->
     pp_assign v ^^ (!^ "select") ^^ PP.space ^^
@@ -57,14 +57,14 @@ let pp_core_instr = function
 let pp_core_instr_br ci = pp_core_instr ci ^^ PP.break1
 
 let pp_jump = function
-  | SSA.Jgoto l -> !^ "goto" ^^ PP.space ^^ Prim_pp.pp_label l
-  | SSA.Jreturn e -> !^ "return" ^^ PP.space ^^ Prim_pp.pp_value e
-  | SSA.Jreturnvoid -> !^ "return"
-  | SSA.Jtail (l, es, d) ->
+  | SSA.JGoto l -> !^ "goto" ^^ PP.space ^^ Prim_pp.pp_label l
+  | SSA.JReturn e -> !^ "return" ^^ PP.space ^^ Prim_pp.pp_value e
+  | SSA.JReturnVoid -> !^ "return"
+  | SSA.JTail (l, es, d) ->
     !^ "tailcall" ^^ PP.space ^^ Prim_pp.pp_label l ^^ PP.with_paren (
       PP.list ~sep:PP.comma_space Prim_pp.pp_value es
     ) ^^ PP.space ^^ (!^ "to") ^^ PP.space ^^ Prim_pp.pp_label d
-  | SSA.Jcond (e, l1, l2) ->
+  | SSA.JCond (e, l1, l2) ->
     !^ "branch" ^^ PP.space ^^ PP.with_paren (Prim_pp.pp_value e) ^^ PP.space ^^
     Prim_pp.pp_label l1 ^^ PP.space ^^
     Prim_pp.pp_label l2

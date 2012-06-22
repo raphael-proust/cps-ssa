@@ -19,24 +19,24 @@
   * }}}                                                                      *)
 
 type m =
-  | Mapp  of (Prim.var * Prim.value list * cont)
-  | Mcont of (Prim.var * Prim.value list)
-  | Mcond of (  Prim.value
+  | MApp  of (Prim.var * Prim.value list * cont)
+  | MCont of (Prim.var * Prim.value list)
+  | MCond of (  Prim.value
               * (Prim.var * Prim.value list)
               * (Prim.var * Prim.value list)
              )
-  | Mlet  of (Prim.var * Prim.value * m)
-  | Msel  of (Prim.var * Prim.value * Prim.value * Prim.value * m)
-  | Mrec  of ((Prim.var * lambda) list * m)
-  | Mseq  of (Prim.var * Prim.mem_w * m)
+  | MLet  of (Prim.var * Prim.value * m)
+  | MSel  of (Prim.var * Prim.value * Prim.value * Prim.value * m)
+  | MRec  of ((Prim.var * lambda) list * m)
+  | MSeq  of (Prim.var * Prim.mem_w * m)
 
 and cont =
-  | Cvar of Prim.var
+  | CVar of Prim.var
   | C    of Prim.var * m
 
 and lambda =
-  | Lproc of (Prim.var list * Prim.var * m)
-  | Ljump of (Prim.var list * m)
+  | LProc of (Prim.var list * Prim.var * m)
+  | LJump of (Prim.var list * m)
 
 (* This is for monad entry application. *)
 let var_run = Prim.var "run"
