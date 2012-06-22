@@ -29,7 +29,7 @@ type const = int
 type var = string
 
 (* creation (note the prefixing) and conversion. *)
-let var s = ("v:" ^ s : var)
+let var s = ("v_" ^ s : var)
 external string_of_var : var -> string = "%identity"
 
 (* whoohoo indexes! *)
@@ -38,13 +38,13 @@ let var_counter = ref (-1)
 let fresh_var =
   fun () ->
     incr var_counter;
-    "v:_" ^ string_of_int !var_counter
+    "v__" ^ string_of_int !var_counter
 
 (* labels are for jump. This is somehow specific to ssa and might get moved in
  * the corresponding module. Type is abstracted in the interface. *)
 type label = string
 
-let label s = ("l:" ^ s : label)
+let label s = ("l_" ^ s : label)
 external string_of_label : label -> string = "%identity"
 
 let label_counter = ref (-1)
@@ -52,7 +52,7 @@ let label_counter = ref (-1)
 let fresh_label =
   fun () ->
     incr label_counter;
-    "l:_" ^ string_of_int !label_counter
+    "l__" ^ string_of_int !label_counter
 
 (* Standard conversion for when one translates labels into closure variables. *)
 let var_of_label l = var l
