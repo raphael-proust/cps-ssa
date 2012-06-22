@@ -175,9 +175,9 @@ let get_assigns instrs =
 
     | INSTR_Mem (MEM_Alloca (i, _, _)) :: instrs ->
       aux (SSA.IMemWrite (ident_left i, Prim.MAlloc) :: accu) instrs
-    | INSTR_Mem (MEM_Load (i1, _, i2)) :: instrs ->
+    | INSTR_Mem (MEM_Load (i, _, v)) :: instrs ->
       aux
-        (SSA.IAssignExpr (ident_left i1, Prim.VRead (var i2)) :: accu)
+        (SSA.IAssignExpr (ident_left i, Prim.VRead (value v)) :: accu)
         instrs
     | INSTR_Mem (MEM_Store (_, v, _, i)) :: instrs ->
       aux (SSA.IMemWrite (ident i, Prim.MWrite (value v)) :: accu) instrs

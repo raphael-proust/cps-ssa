@@ -196,7 +196,7 @@ type terminator =
 
 type memop =
   | MEM_Alloca of (ident * int * typ)
-  | MEM_Load of (ident * typ * ident)
+  | MEM_Load of (ident * typ * value)
   | MEM_Store of (typ * value * typ * ident)
 
 type module_ = toplevelentry list
