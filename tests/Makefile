@@ -43,7 +43,7 @@ OPTS= \
 			dce die dse globaldce globalopt gvn indvars instcombine \
 			instsimplify iv-users licm loop-deletion loop-extract \
 			loop-extract-single loop-idiom loop-instsimplify loop-reduce \
-			loop-rotate loop-simplify loop-unroll loop-unswitch mem2reg \
+			loop-rotate loop-simplify loop-unroll loop-unswitch \
 			mergereturn reg2mem sccp sink tailcallelim
 
 all: run
@@ -66,11 +66,15 @@ cpss: $(CPSS)
 clean:
 	rm -f $(BCS) *.ssa *.cps *.ll *.hi *.o
 
-%.ll: %.c
+%.pre.ll: %.c
 	clang $< -O0 -emit-llvm -S -o $@
 
 %.ll: %.hs
 	ghc -keep-llvm-file -O1 -c $<
+	opt -S -mem2reg $@ > $@
+
+%.ll: %.pre.ll
+	opt -S -mem2reg $< > $@
 
 %.cps %.ssa: %.ll
 	../src/run.native $<
