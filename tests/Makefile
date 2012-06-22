@@ -29,7 +29,10 @@ HSS= \
 	fun.hs \
 	mutual.hs \
 	mutual_dead.hs \
-	mutual_infinite.hs
+	mutual_infinite.hs \
+	x.hs \
+	y.hs \
+	funif.hs
 
 LLS=$(CS:.c=.ll) $(HSS:.hs=.ll)
 SSAS=$(CS:.c=.ssa) $(HSS:.hs=.ssa)
