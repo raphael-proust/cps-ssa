@@ -133,7 +133,7 @@ module PP = struct
     | E.Right r -> pr r
   let level d = Pprint.nest 2 (d)
   let unit = !^ "()"
-  let op pp_v v1 op v2 = pp_v v1 ^^ op ^^ pp_v v2
+  let op pp_v v1 op v2 = pp_v v1 ^^Pprint.space^^ op ^^Pprint.space^^ pp_v v2
   let fn pp_v fn vs =
     fn ^^ Pprint.space ^^ with_paren (list ~sep:comma_space pp_v vs)
 
