@@ -154,6 +154,8 @@ module Entry_blocks = struct
 
   let return ?label ?instrs e =
     entry_block ?label ?instrs (JReturn e)
+  let return_void ?label ?instrs () =
+    entry_block ?label ?instrs JReturnVoid
   let return_const ?label ?instrs c =
     return ?label ?instrs (Prim.VConst c)
   let return_0 ?label ?instrs () =
@@ -187,6 +189,8 @@ module Blocks = struct
 
   let return ?label ?phis ?instrs e =
     block ?label ?phis ?instrs (JReturn e)
+  let return_void ?label ?phis ?instrs () =
+    block ?label ?phis ?instrs JReturnVoid
   let return_const ?label ?phis ?instrs c =
     return ?label ?phis ?instrs (Prim.VConst c)
   let return_0 ?label ?phis ?instrs () = return_const ?label ?phis ?instrs 0

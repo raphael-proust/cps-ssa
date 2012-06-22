@@ -102,6 +102,8 @@ module Entry_blocks :sig
 
   val return: ?label:Prim.label ->
     ?instrs:core_instr list -> Prim.value -> entry_block
+  val return_void: ?label:Prim.label ->
+    ?instrs:core_instr list -> unit -> entry_block
   val return_const: ?label:Prim.label ->
     ?instrs:core_instr list -> int -> entry_block
   val return_0: ?label:Prim.label ->
@@ -129,6 +131,9 @@ module Blocks :sig
   val return: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     Prim.value -> block
+  val return_void: ?label:Prim.label ->
+    ?phis:phi list -> ?instrs:core_instr list ->
+    unit -> block
   val return_const: ?label:Prim.label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     int -> block
