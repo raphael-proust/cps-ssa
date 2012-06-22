@@ -26,10 +26,11 @@ let label_main = Prim.label "@entry"
 
 
 type core_instr =
-  | IAssignExpr of (Prim.var * Prim.value)
-  | IAssigncall of (Prim.var * (Prim.label * Prim.value list))
-  | ICall       of (Prim.label * Prim.value list)
-  | IMemWrite   of (Prim.var * Prim.mem_w)
+  | IAssignExpr   of (Prim.var * Prim.value)
+  | IAssigncall   of (Prim.var * (Prim.label * Prim.value list))
+  | IAssignSelect of (Prim.var * Prim.value * Prim.value * Prim.value)
+  | ICall         of (Prim.label * Prim.value list)
+  | IMemWrite     of (Prim.var * Prim.mem_w)
 
 type jump =
   | Jgoto       of Prim.label
@@ -124,7 +125,8 @@ let check_module module_ =
     assert (L.unique
       (function
         | IAssignExpr (v, _)
-        | IAssigncall (v, _) -> Some v
+        | IAssigncall (v, _)
+        | IAssignSelect (v, _, _, _) -> Some v
         | ICall _ | IMemWrite _ -> None
       )
       (L.concat_map (fun b -> b.b_core_instrs) proc.p_blocks)

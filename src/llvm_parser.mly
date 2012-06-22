@@ -424,7 +424,20 @@ instr:
 
 
   (* other *)
-  | KW_SELECT { failwith"INSTR_Select" }
+  | i = ident EQ KW_SELECT t = typ v = value COMMA
+      t1 = typ v1 = value COMMA t2 = typ v2 = value
+    { assert (match t with
+        | TYPE_I n -> n=1
+        | TYPE_Struct l -> List.for_all ((=) (TYPE_I 1)) l
+        | TYPE_Pointer _ | TYPE_Void | TYPE_Half | TYPE_Float | TYPE_Double
+        | TYPE_X86_fp80 | TYPE_Fp128 | TYPE_Ppc_fp128 | TYPE_Label
+        | TYPE_Metadata | TYPE_X86_mmx | TYPE_Ident _ | TYPE_Array _
+        | TYPE_Function _ | TYPE_Packed_struct _ | TYPE_Opaque | TYPE_Vector _
+        -> false
+      );
+      assert (t1 = t2);
+      INSTR_Select (i, t, v, t1, v1, v2)
+    }
   | KW_VAARG  { failwith"INSTR_VAArg"  }
 
   (* terminator *)

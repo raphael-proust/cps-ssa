@@ -29,7 +29,7 @@ let is_terminator i =
   | INSTR_Terminator _ -> true
 
   (* Those are not *)
-  |INSTR_Assign _ |INSTR_PHI _ |INSTR_Call _ |INSTR_Call_unit _ |INSTR_Select
+  |INSTR_Assign _ |INSTR_PHI _ |INSTR_Call _ |INSTR_Call_unit _ |INSTR_Select _
   |INSTR_VAArg |INSTR_Mem _ |INSTR_AtomicCmpXchg
   |INSTR_AtomicRMW |INSTR_Fence |INSTR_LandingPad |INSTR_Label _
   -> false
@@ -170,7 +170,15 @@ let get_assigns instrs =
     | INSTR_Call_unit call :: instrs ->
       aux (SSA.ICall (aux_call call) :: accu) instrs
 
-    | INSTR_Select :: _ -> unsupported_feature "INSTR_Select"
+    | INSTR_Select (i, _, v, _, v1, v2) :: instrs ->
+      (* It is difficult to compile to several blocks because we are working
+       * "inside" the block. Moreover that would blur the effects of the
+       * optimisations. *)
+      let vv  = value v  in
+      let vv1 = value v1 in
+      let vv2 = value v2 in
+      aux (SSA.IAssignSelect (ident_left i, vv, vv1, vv2) :: accu) instrs
+
     | INSTR_VAArg :: _ -> unsupported_feature "INSTR_VAArg"
 
     | INSTR_Mem (MEM_Alloca (i, _, _)) :: instrs ->

@@ -235,7 +235,7 @@ and instr =
   | INSTR_Call_unit of call
   | INSTR_PHI of (ident * typ * (value * ident) list)
   | INSTR_Terminator of terminator
-  | INSTR_Select
+  | INSTR_Select of (ident * typ * value * typ * value * value)
   | INSTR_VAArg
   | INSTR_Mem of memop
   | INSTR_AtomicCmpXchg

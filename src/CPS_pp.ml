@@ -63,6 +63,14 @@ let rec pp_m = function
     !^ " in" ^^ PP.break1 ^^
       pp_m m
 
+  | CPS.Msel  (v, c, v1, v2, m) ->
+    !^ "sel " ^^ Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
+      PP.with_paren (Prim_pp.pp_value c ) ^^ PP.space ^^
+      PP.with_paren (Prim_pp.pp_value v1) ^^ PP.space ^^
+      PP.with_paren (Prim_pp.pp_value v2) ^^ PP.space ^^
+    !^ " in" ^^ PP.break1 ^^
+      pp_m m
+
   | CPS.Mrec  (vls, m) ->
     let vl (v, l) =
       Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^

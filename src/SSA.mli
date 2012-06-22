@@ -21,10 +21,11 @@
 (** Instructions are assignements of direct expressions or function calls or
     memory writes. *)
 type core_instr =
-  | IAssignExpr of (Prim.var * Prim.value)
-  | IAssigncall of (Prim.var * (Prim.label * Prim.value list))
-  | ICall       of (Prim.label * Prim.value list)
-  | IMemWrite   of (Prim.var * Prim.mem_w)
+  | IAssignExpr   of (Prim.var * Prim.value)
+  | IAssigncall   of (Prim.var * (Prim.label * Prim.value list))
+  | IAssignSelect of (Prim.var * Prim.value * Prim.value * Prim.value)
+  | ICall         of (Prim.label * Prim.value list)
+  | IMemWrite     of (Prim.var * Prim.mem_w)
 
 (** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
     or conditional jumping.

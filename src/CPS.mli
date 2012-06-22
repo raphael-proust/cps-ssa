@@ -38,6 +38,11 @@ type m =
              * (Prim.var * Prim.value list))
   (** Let-binding. It only bounds values. For lambdas, use [Mrec]. *)
   | Mlet  of (Prim.var * Prim.value * m)
+  (** Select binding. The [Msel (v, c, v1, v2, m)] is equivalent to an ML
+      [let v = if c then v1 esle v2 in m]. We compile this way (and thus
+      get even further from λ-calculus) because it is easier and it does not
+      blur the effect of llvm optimisations. *)
+  | Msel of (Prim.var * Prim.value * Prim.value * Prim.value * m)
   (** Recursive let-binding. It only binds lambdas. For values, use [Mlet]. *)
   | Mrec  of ((Prim.var * lambda) list * m)
   (** Sequences are for memory side-effect operation only. *)

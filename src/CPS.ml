@@ -26,6 +26,7 @@ type m =
               * (Prim.var * Prim.value list)
              )
   | Mlet  of (Prim.var * Prim.value * m)
+  | Msel  of (Prim.var * Prim.value * Prim.value * Prim.value * m)
   | Mrec  of ((Prim.var * lambda) list * m)
   | Mseq  of (Prim.var * Prim.mem_w * m)
 

@@ -46,6 +46,11 @@ let pp_core_instr = function
   | SSA.IAssignExpr (v, e) -> pp_assign v ^^ Prim_pp.pp_value e
   | SSA.IAssigncall (v, call) -> pp_assign v ^^ pp_call call
   | SSA.ICall call -> pp_call call
+  | SSA.IAssignSelect (v, c, v1, v2) ->
+    pp_assign v ^^ (!^ "select") ^^ PP.space ^^
+      PP.with_paren (Prim_pp.pp_value c) ^^ PP.space ^^
+      PP.with_paren (Prim_pp.pp_value v1) ^^ PP.space ^^
+      PP.with_paren (Prim_pp.pp_value v2)
   | SSA.IMemWrite (v, m) -> !^ "store" ^^ PP.space ^^
     Prim_pp.pp_var v ^^ PP.space ^^ Prim_pp.pp_mem_w m
 
