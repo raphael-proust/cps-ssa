@@ -26,7 +26,10 @@ CS= \
 HSS= \
 	fibonacci_pat.hs \
 	fibonacci_zip.hs \
-	fun.hs
+	fun.hs \
+	mutual.hs \
+	mutual_dead.hs \
+	mutual_infinite.hs
 
 LLS=$(CS:.c=.ll) $(HSS:.hs=.ll)
 SSAS=$(CS:.c=.ssa) $(HSS:.hs=.ssa)
