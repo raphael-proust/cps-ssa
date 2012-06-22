@@ -87,6 +87,8 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
           domeds
         )
     in
+    (*FIXME: scoping problem! order should be: assignements, continuations, body
+     * *)
     CPS.Mrec (l, m)
 
 
