@@ -56,6 +56,8 @@ let rec pp_value = function
   | Prim.VXor (v1, v2) -> PP.op pp_value v1 (!^ "^^" ) v2
   (* IO *)
   | Prim.VRead v -> PP.fn pp_value (!^ "read") [v]
+  (* Cast *)
+  | Prim.VCast v -> PP.fn pp_value (!^ "cast") [v]
 
 let pp_mem_w = function
   | Prim.MWrite v -> (!^ "<-") ^^ PP.space ^^ pp_value v

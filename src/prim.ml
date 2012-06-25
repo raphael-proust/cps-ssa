@@ -81,6 +81,7 @@ type value =
   | VOr  of (value * value)
   | VXor of (value * value)
   | VRead of value
+  | VCast of value
 
 type mem_w =
   | MWrite of value

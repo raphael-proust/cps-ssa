@@ -87,6 +87,8 @@ type value =
   | VXor of (value * value)
   (* mem read *)
   | VRead of value
+  (* casting *)
+  | VCast of value
 
 type mem_w =
   | MWrite of value

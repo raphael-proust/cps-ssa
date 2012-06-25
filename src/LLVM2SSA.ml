@@ -98,7 +98,7 @@ let rec expr e =
   | EXPR_IntToPtr (_, v, _)
   | EXPR_PtrToInt (_, v, _)
   | EXPR_BitCast  (_, v, _) ->
-    value v
+    Prim.VCast (value v)
 
   | EXPR_GetElementPtr _ -> Prim.VDummy "GetElementPtr"
   | EXPR_ExtractElement  -> unsupported_feature "EXPR_ExtractElement"
