@@ -34,6 +34,10 @@ open PP.Operators
 
 (*We define pp_* functions for pretty-printing. *)
 
+let pp_mcont (v, es) =
+  Prim_pp.pp_var v ^^ PP.space ^^
+    PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_value es
+
 let rec pp_m = function
   | CPS.MApp  (v, es, k) ->
     Prim_pp.pp_var v ^^ PP.space ^^
@@ -42,19 +46,13 @@ let rec pp_m = function
         (PP.either Prim_pp.pp_value pp_cont)
         (List.map (fun e -> E.Left e) es @ [E.Right k])
 
-  | CPS.MCont (v, es) ->
-    Prim_pp.pp_var v ^^ PP.space ^^
-    PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_value es
+  | CPS.MCont cont -> pp_mcont cont
 
-  | CPS.MCond (e, (v1, es1), (v2, es2)) ->
+  | CPS.MCond (e, cont1, cont2) ->
     !^ "if" ^^ PP.with_paren (Prim_pp.pp_value e) ^^
     PP.level (PP.break0 ^^
-      PP.with_paren (Prim_pp.pp_var v1 ^^ PP.space ^^
-          PP.list ~empty:PP.unit Prim_pp.pp_value es1
-      ) ^^ PP.break0 ^^
-      PP.with_paren (Prim_pp.pp_var v2 ^^ PP.space ^^
-        PP.list ~empty:PP.unit Prim_pp.pp_value es2
-      )
+      PP.with_paren (pp_mcont cont1) ^^ PP.break0 ^^
+      PP.with_paren (pp_mcont cont2)
     )
 
   | CPS.MLet  (v, e, m) ->
@@ -100,7 +98,7 @@ and pp_cont = function
 
 and pp_lambda = function
   | CPS.LProc (vs, v, m) -> pp_l 'p' (vs @ [v]) m
-  | CPS.LJump (vs, m)    -> pp_l 'j' vs m
+  | CPS.LJump (vs, m)    -> pp_l 'j'  vs        m
 
 let pp_var_lambda (v, l) =
   Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.level (PP.break0 ^^
