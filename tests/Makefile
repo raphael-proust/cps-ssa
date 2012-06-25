@@ -46,10 +46,13 @@ OPTS= \
 			loop-rotate loop-simplify loop-unroll loop-unswitch \
 			mergereturn reg2mem sccp sink tailcallelim
 
+OPTS1= gvn mergereturn sccp indvars instcombine
+OPTS2= gvn mergereturn sccp indvars instcombine
+
 all: run
 
 run: lls runner
-	../src/run.native $(LLS) -- $(OPTS)
+	../src/run.native $(LLS) -- $(OPTS1) -- $(OPTS2)
 
 runner:
 	make -C ../src depend
@@ -71,7 +74,8 @@ clean:
 
 %.ll: %.hs
 	ghc -keep-llvm-file -O1 -c $<
-	opt -S -mem2reg $@ > $@
+	opt -S -mem2reg $@ > $@.pre
+	mv $@.pre $@
 
 %.ll: %.pre.ll
 	opt -S -mem2reg $< > $@

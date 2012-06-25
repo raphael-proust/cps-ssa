@@ -56,6 +56,7 @@ let run ll_file =
   let ssa_file = base_file ^ ".ssa" in
   let out_ssa = open_out ssa_file in
   let () = Pprint.Channel.pretty 1. 20 out_ssa ssa_doc in
+  let () = flush out_ssa in
   let () = close_out out_ssa in
   let () = SSA.check_module ssa_module in
 
@@ -73,10 +74,11 @@ let run ll_file =
   let cps_file = base_file ^ ".cps" in
   let out_cps = open_out cps_file in
   let () = Pprint.Channel.pretty 0. 100 out_cps cps_doc in
+  let () = flush out_cps in
   let () = close_out out_cps in
   ()
 
-let generate_optimised ll_file optimisations =
+let one_file_optims ll_file optimisations =
   let base_file = Filename.chop_suffix ll_file ".ll" in
   let optimised =
     List.fold_left
@@ -107,12 +109,21 @@ let generate_optimised ll_file optimisations =
   in
   ll_file :: optimised
 
+let recursive_optims ll_file optimisationss =
+  List.fold_left
+    (fun accu optimisations ->
+      List.flatten (List.map (fun t -> one_file_optims t optimisations) accu)
+      @ accu
+    )
+    [ll_file]
+    optimisationss
+
 
 let () =
     List.iter
       (fun t ->
         try
-          let lls = generate_optimised t Options.optimisations in
+          let lls = recursive_optims t Options.optimisations in
           List.iter run lls
         with
         | e ->
