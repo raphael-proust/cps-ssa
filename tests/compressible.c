@@ -1,4 +1,4 @@
-int entry(){
+int entry(int b){
   int count = 0;
 
   int i = 0;
