@@ -53,7 +53,7 @@ let core_instrs_and_jump k proc current_l cis j =
   | SSA.IMemWrite (v, w) :: cis -> MSeq (v, w, aux cis)
   | [] -> match j with
     | SSA.JGoto l ->
-        MApp (Prim.var_of_label l, args_of_label proc current_l l, CVar k)
+        MCont (Prim.var_of_label l, args_of_label proc current_l l)
     | SSA.JReturn e   -> MCont (k, [e])
     | SSA.JReturnVoid -> MCont (k, [])
     | SSA.JTail (l, es, lc) ->
