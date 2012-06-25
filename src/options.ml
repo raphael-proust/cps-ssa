@@ -49,6 +49,7 @@ let add_optimistation s =
 
 let parse_fn = function
   | "--" -> witness_dashdash ()
+  | "-verbose" -> verbose := true
   | s ->
     if !dashdash then
       add_optimistation s
