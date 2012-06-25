@@ -21,9 +21,11 @@
 (** [ll_files] is the list of files the program will use. *)
 val ll_files: string list
 
-(** [optimisations] is the set of optimisations the program will use on each of
-    the members of [ll_files]. *)
-val optimisations: string list
+(** [optimisations] is a list of sets of optimisations the program will use on
+    each of the members of [ll_files]. The first set is applied and then the
+    second set and so forth. All intermediate files are kept. /!\ don't get
+    combinatorial! *)
+val optimisations: string list list
 
 (** When [verbose] is set, the driver prints information about the steps it
     takes. *)

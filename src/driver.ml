@@ -76,7 +76,7 @@ let run ll_file =
   let () = close_out out_cps in
   ()
 
-let generate_optimised ll_file optimisations =
+let one_file_optims ll_file optimisations =
   let base_file = Filename.chop_suffix ll_file ".ll" in
   let optimised =
     List.fold_left
@@ -107,12 +107,21 @@ let generate_optimised ll_file optimisations =
   in
   ll_file :: optimised
 
+let recursive_optims ll_file optimisationss =
+  List.fold_left
+    (fun accu optimisations ->
+      List.flatten (List.map (fun t -> one_file_optims t optimisations) accu)
+      @ accu
+    )
+    [ll_file]
+    optimisationss
+
 
 let () =
     List.iter
       (fun t ->
         try
-          let lls = generate_optimised t Options.optimisations in
+          let lls = recursive_optims t Options.optimisations in
           List.iter run lls
         with
         | e ->

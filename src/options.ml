@@ -22,7 +22,7 @@
 
 let ll_files = ref []
 
-let optimisations = ref []
+let optimisations = ref ([], [])
 
 let verbose = ref false
 
@@ -32,9 +32,14 @@ let dashdash = ref false
 
 let witness_dashdash () =
   if !dashdash then
-    raise (Arg.Bad "Multiple '--' witnessed")
+    let (nu, olds) = !optimisations in
+    optimisations := ([], nu :: olds)
   else
     dashdash := true
+
+let witness_opt o =
+  let (nu, olds) = !optimisations in
+  optimisations := (o :: nu, olds)
 
 let add_ll_file s =
   if s = "-v" then
@@ -44,15 +49,12 @@ let add_ll_file s =
   else
     raise (Arg.Bad (s ^ " is not an .ll file"))
 
-let add_optimistation s =
-  optimisations := s :: !optimisations
-
 let parse_fn = function
   | "--" -> witness_dashdash ()
   | "-verbose" -> verbose := true
   | s ->
     if !dashdash then
-      add_optimistation s
+      witness_opt s
     else
       add_ll_file s
 
@@ -64,5 +66,5 @@ let () = Array.iter parse_fn args
 (* Exporting dereferenced values *)
 
 let ll_files = !ll_files
-let optimisations = !optimisations
+let optimisations = let (nu, olds) = !optimisations in List.rev (nu :: olds)
 let verbose = !verbose
