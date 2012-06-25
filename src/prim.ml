@@ -31,6 +31,8 @@ type var = string
 (* creation (note the prefixing) and conversion. *)
 let var s = ("v_" ^ s : var)
 external string_of_var : var -> string = "%identity"
+external var_magic : string -> var = "%identity"
+
 
 (* whoohoo indexes! *)
 let var_counter = ref (-1)
@@ -46,6 +48,7 @@ type label = string
 
 let label s = ("l_" ^ s : label)
 external string_of_label : label -> string = "%identity"
+external label_magic : string -> label = "%identity"
 
 let label_counter = ref (-1)
 

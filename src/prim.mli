@@ -96,3 +96,5 @@ type mem_w =
 
 (**/*)
 val reset_idxs: unit -> unit
+val var_magic: string -> var
+val label_magic: string -> label

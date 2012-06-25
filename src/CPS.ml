@@ -39,7 +39,7 @@ and lambda =
   | LJump of (Prim.var list * m)
 
 (* This is for monad entry application. *)
-let var_run = Prim.var "run"
+let var_run = Prim.var_magic "run"
 
 (* This is for sequences of side-effects. *)
-let var_unit = Prim.var "()"
+let var_unit = Prim.var_magic "()"
