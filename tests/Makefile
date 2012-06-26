@@ -21,7 +21,8 @@ CS= \
 		smallish.c \
 		supervals.c \
 		vals.c \
-		vars.c
+		vars.c \
+		calls.c
 
 HSS= \
 	fibonacci_pat.hs \
