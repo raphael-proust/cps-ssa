@@ -22,7 +22,9 @@ CS= \
 		supervals.c \
 		vals.c \
 		vars.c \
-		calls.c
+		calls.c \
+		calls_if.c \
+		calls_if_const.c
 
 HSS= \
 	fibonacci_pat.hs \
