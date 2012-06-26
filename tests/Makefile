@@ -24,7 +24,8 @@ CS= \
 		vars.c \
 		calls.c \
 		calls_if.c \
-		calls_if_const.c
+		calls_if_const.c \
+		calls_simpl.c
 
 HSS= \
 	fibonacci_pat.hs \
@@ -49,17 +50,13 @@ OPTS= \
 			loop-rotate loop-simplify loop-unroll loop-unswitch \
 			mergereturn reg2mem sccp sink tailcallelim
 
-OPTS1= gvn mergereturn sccp indvars instcombine
-OPTS2= gvn mergereturn sccp indvars instcombine
+OPTS1= gvn sccp indvars instcombine inline adce
+OPTS2= gvn sccp indvars instcombine inline adce
 
 all: run
 
-run: lls runner
+run: lls
 	../src/run.native $(LLS) -- $(OPTS1) -- $(OPTS2)
-
-runner:
-	make -C ../src depend
-	make -C ../src native
 
 bcs: $(BCS)
 
