@@ -29,7 +29,14 @@ let pp_var v = !^ (Prim.string_of_var v)
 
 let pp_label l = !^ (Prim.string_of_label l)
 
-let rec pp_value = function
+let rec pp_op ~paren op vs =
+  let f op (v1, v2) = PP.op (pp_value ~paren) v1 op v2 in
+  if paren then
+    PP.with_paren (f op vs)
+  else
+    f op vs
+
+and pp_value ?(paren = false) = function
   | Prim.VVar v     -> pp_var v
   | Prim.VConst c   -> !^ (string_of_int c)
   | Prim.VNull      -> !^ "null"
@@ -38,30 +45,30 @@ let rec pp_value = function
   | Prim.VZero      -> !^ "(0..0)"
   | Prim.VDummy s   -> !^ ("dummy:" ^ s)
   (* Arithmetic ops *)
-  | Prim.VPlus  (v1, v2) -> PP.op pp_value v1 Pprint.plus    v2
-  | Prim.VMult  (v1, v2) -> PP.op pp_value v1 Pprint.star    v2
-  | Prim.VMinus (v1, v2) -> PP.op pp_value v1 Pprint.minus   v2
-  | Prim.VDiv   (v1, v2) -> PP.op pp_value v1 Pprint.bar     v2
-  | Prim.VRem   (v1, v2) -> PP.op pp_value v1 Pprint.percent v2
+  | Prim.VPlus  vt -> pp_op ~paren Pprint.plus    vt
+  | Prim.VMult  vt -> pp_op ~paren Pprint.star    vt
+  | Prim.VMinus vt -> pp_op ~paren Pprint.minus   vt
+  | Prim.VDiv   vt -> pp_op ~paren Pprint.bar     vt
+  | Prim.VRem   vt -> pp_op ~paren Pprint.percent vt
   (* Comparisons *)
-  | Prim.VGt (v1, v2) -> PP.op pp_value v1 (!^ ">" ) v2
-  | Prim.VGe (v1, v2) -> PP.op pp_value v1 (!^ ">=") v2
-  | Prim.VLt (v1, v2) -> PP.op pp_value v1 (!^ "<" ) v2
-  | Prim.VLe (v1, v2) -> PP.op pp_value v1 (!^ "=<") v2
-  | Prim.VEq (v1, v2) -> PP.op pp_value v1 (!^ "==") v2
-  | Prim.VNe (v1, v2) -> PP.op pp_value v1 (!^ "<>") v2
+  | Prim.VGt vt -> pp_op ~paren (!^ ">" ) vt
+  | Prim.VGe vt -> pp_op ~paren (!^ ">=") vt
+  | Prim.VLt vt -> pp_op ~paren (!^ "<" ) vt
+  | Prim.VLe vt -> pp_op ~paren (!^ "=<") vt
+  | Prim.VEq vt -> pp_op ~paren (!^ "==") vt
+  | Prim.VNe vt -> pp_op ~paren (!^ "<>") vt
   (* Boolean ops *)
-  | Prim.VAnd (v1, v2) -> PP.op pp_value v1 (!^ "&&" ) v2
-  | Prim.VOr  (v1, v2) -> PP.op pp_value v1 (!^ "||" ) v2
-  | Prim.VXor (v1, v2) -> PP.op pp_value v1 (!^ "^^" ) v2
+  | Prim.VAnd vt -> pp_op ~paren (!^ "&&" ) vt
+  | Prim.VOr  vt -> pp_op ~paren (!^ "||" ) vt
+  | Prim.VXor vt -> pp_op ~paren (!^ "^^" ) vt
   (* IO *)
   | Prim.VRead v -> PP.fn pp_value (!^ "read") [v]
   (* Cast *)
   | Prim.VCast v -> PP.fn pp_value (!^ "cast") [v]
   (* Bitwise *)
-  | Prim.VShl  (v1, v2) -> PP.op pp_value v1 (!^ "<<<") v2
-  | Prim.VLShr (v1, v2) -> PP.op pp_value v1 (!^ ">>>") v2
-  | Prim.VAShr (v1, v2) -> PP.op pp_value v1 (!^ ">->") v2
+  | Prim.VShl  vt -> pp_op ~paren (!^ "<<<") vt
+  | Prim.VLShr vt -> pp_op ~paren (!^ ">>>") vt
+  | Prim.VAShr vt -> pp_op ~paren (!^ ">->") vt
 
 let pp_mem_w = function
   | Prim.MWrite v -> (!^ "<-") ^^ PP.space ^^ pp_value v

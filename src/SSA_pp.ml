@@ -25,6 +25,8 @@ module PP = struct
 end
 open PP.Operators
 
+let paren = true (* for ~paren *)
+
 let pp_phi_entry (l, e) = Prim_pp.pp_label l ^^ PP.colon ^^ Prim_pp.pp_value e
 
 let pp_phi (v, les) =
@@ -48,9 +50,9 @@ let pp_core_instr = function
   | SSA.ICall call -> pp_call call
   | SSA.IAssignSelect (v, c, v1, v2) ->
     pp_assign v ^^ (!^ "select") ^^ PP.space ^^
-      PP.with_paren (Prim_pp.pp_value c) ^^ PP.space ^^
-      PP.with_paren (Prim_pp.pp_value v1) ^^ PP.space ^^
-      PP.with_paren (Prim_pp.pp_value v2)
+      Prim_pp.pp_value ~paren c ^^ PP.space ^^
+      Prim_pp.pp_value ~paren v1 ^^ PP.space ^^
+      Prim_pp.pp_value ~paren v2
   | SSA.IMemWrite (v, m) -> !^ "store" ^^ PP.space ^^
     Prim_pp.pp_var v ^^ PP.space ^^ Prim_pp.pp_mem_w m
 
@@ -58,14 +60,14 @@ let pp_core_instr_br ci = pp_core_instr ci ^^ PP.break1
 
 let pp_jump = function
   | SSA.JGoto l -> !^ "goto" ^^ PP.space ^^ Prim_pp.pp_label l
-  | SSA.JReturn e -> !^ "return" ^^ PP.space ^^ Prim_pp.pp_value e
+  | SSA.JReturn e -> !^ "return" ^^ PP.space ^^ Prim_pp.pp_value ~paren e
   | SSA.JReturnVoid -> !^ "return"
   | SSA.JTail (l, es, d) ->
     !^ "tailcall" ^^ PP.space ^^ Prim_pp.pp_label l ^^ PP.with_paren (
       PP.list ~sep:PP.comma_space Prim_pp.pp_value es
     ) ^^ PP.space ^^ (!^ "to") ^^ PP.space ^^ Prim_pp.pp_label d
   | SSA.JCond (e, l1, l2) ->
-    !^ "branch" ^^ PP.space ^^ PP.with_paren (Prim_pp.pp_value e) ^^ PP.space ^^
+    !^ "branch" ^^ PP.space ^^ Prim_pp.pp_value ~paren e ^^ PP.space ^^
     Prim_pp.pp_label l1 ^^ PP.space ^^
     Prim_pp.pp_label l2
 
@@ -89,7 +91,7 @@ let pp_proc {SSA.p_name; p_args; p_entry_block; p_blocks;} =
     PP.level (PP.break0 ^^ pp_entry_block p_entry_block) ^^ PP.break1 ^^
     PP.list ~sep:(PP.break1)
       (fun b -> PP.level (PP.break0 ^^ pp_block b))
-      p_blocks ^^
+      p_blocks ^^ PP.break1 ^^
   PP.rbrace ^^ PP.break1
 
 let pp_module = PP.list ~sep:(PP.break1 ^^ PP.break1 ^^ PP.break1) pp_proc
