@@ -89,6 +89,10 @@ type value =
   | VRead of value
   (* casting *)
   | VCast of value
+  (* bitwise *)
+  | VShl  of (value * value)
+  | VLShr of (value * value)
+  | VAShr of (value * value)
 
 type mem_w =
   | MWrite of value

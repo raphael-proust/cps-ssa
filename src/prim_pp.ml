@@ -58,6 +58,10 @@ let rec pp_value = function
   | Prim.VRead v -> PP.fn pp_value (!^ "read") [v]
   (* Cast *)
   | Prim.VCast v -> PP.fn pp_value (!^ "cast") [v]
+  (* Bitwise *)
+  | Prim.VShl  (v1, v2) -> PP.op pp_value v1 (!^ "<<<") v2
+  | Prim.VLShr (v1, v2) -> PP.op pp_value v1 (!^ ">>>") v2
+  | Prim.VAShr (v1, v2) -> PP.op pp_value v1 (!^ ">->") v2
 
 let pp_mem_w = function
   | Prim.MWrite v -> (!^ "<-") ^^ PP.space ^^ pp_value v

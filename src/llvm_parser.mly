@@ -270,12 +270,12 @@ expr:
   | KW_FREM                               { failwith "EXPR_FRem"   }
 
   (* bitwise binop *)
-  | b = binop_expr(KW_SHL)  { EXPR_Shl  b }
-  | b = binop_expr(KW_LSHR) { EXPR_LShr b }
-  | b = binop_expr(KW_ASHR) { EXPR_AShr b }
-  | b = binop_expr(KW_AND)  { EXPR_And  b }
-  | b = binop_expr(KW_OR)   { EXPR_Or   b }
-  | b = binop_expr(KW_XOR)  { EXPR_Xor  b }
+  | b = binop2_expr(KW_SHL,KW_NUW,KW_NSW) { EXPR_Shl  b }
+  | b = binop1_expr(KW_LSHR,KW_EXACT)     { EXPR_LShr b }
+  | b = binop1_expr(KW_ASHR,KW_EXACT)     { EXPR_AShr b }
+  | b = binop_expr (KW_AND)               { EXPR_And  b }
+  | b = binop_expr (KW_OR)                { EXPR_Or   b }
+  | b = binop_expr (KW_XOR)               { EXPR_Xor  b }
 
   (* comparison *)
   | i = icmp_expr(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }
@@ -357,12 +357,12 @@ expr_assign:
   | KW_FREM                                 { failwith "EXPR_FRem"   }
 
   (* bitwise binop *)
-  | b = binop_assign(KW_SHL)  { EXPR_Shl  b }
-  | b = binop_assign(KW_LSHR) { EXPR_LShr b }
-  | b = binop_assign(KW_ASHR) { EXPR_AShr b }
-  | b = binop_assign(KW_AND)  { EXPR_And  b }
-  | b = binop_assign(KW_OR)   { EXPR_Or   b }
-  | b = binop_assign(KW_XOR)  { EXPR_Xor  b }
+  | b = binop2_assign(KW_SHL,KW_NUW,KW_NSW) { EXPR_Shl  b }
+  | b = binop1_assign(KW_LSHR,KW_EXACT)     { EXPR_LShr b }
+  | b = binop1_assign(KW_ASHR,KW_EXACT)     { EXPR_AShr b }
+  | b = binop_assign (KW_AND)               { EXPR_And  b }
+  | b = binop_assign (KW_OR)                { EXPR_Or   b }
+  | b = binop_assign (KW_XOR)               { EXPR_Xor  b }
 
   (* comparison *)
   | i = icmp_assign(KW_EQ ) { let t, o1, o2 = i in EXPR_ICmp (Cmp_Eq,  t, o1, o2) }

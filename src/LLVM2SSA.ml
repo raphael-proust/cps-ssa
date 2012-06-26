@@ -64,9 +64,9 @@ let rec expr e =
   | EXPR_SRem (_, v0, v1) -> Prim.VRem (value v0, value v1)
   | EXPR_FRem -> unsupported_feature "EXPR_FRem"
 
-  | EXPR_Shl _ -> unsupported_feature "EXPR_Shl"
-  | EXPR_LShr _ -> unsupported_feature "EXPR_LShr"
-  | EXPR_AShr _ -> unsupported_feature "EXPR_AShr"
+  | EXPR_Shl  (_, v0, v1) -> Prim.VShl (value v0, value v1)
+  | EXPR_LShr (_, v0, v1) -> Prim.VLShr (value v0, value v1)
+  | EXPR_AShr (_, v0, v1) -> Prim.VAShr (value v0, value v1)
 
   | EXPR_And (_, v0, v1) -> Prim.VAnd (value v0, value v1)
   | EXPR_Or (_, v0, v1) -> Prim.VOr (value v0, value v1)
