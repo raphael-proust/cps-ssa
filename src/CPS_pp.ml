@@ -41,21 +41,12 @@ let pp_mcont (v, es) =
     PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_value es
 
 let rec pp_m = function
-  | CPS.MApp  (v, es, CPS.CVar k) ->
+  | CPS.MApp  (v, es, k) ->
     Prim_pp.pp_var v ^^ PP.space ^^
       PP.list (* This list is never empty *)
         ~sep:PP.space
-        (PP.either (Prim_pp.pp_value ~paren) Prim_pp.pp_var)
+        (PP.either (Prim_pp.pp_value ~paren) pp_cont)
         (List.map (fun e -> E.Left e) es @ [E.Right k])
-
-  | CPS.MApp  (v, es, (CPS.C _ as k)) ->
-    Prim_pp.pp_var v ^^
-      PP.level (PP.break1 ^^
-        PP.list (* This list is never empty *)
-          ~sep:PP.break1
-          (PP.either (Prim_pp.pp_value ~paren) pp_cont)
-          (List.map (fun e -> E.Left e) es @ [E.Right k])
-      )
 
   | CPS.MCont cont -> pp_mcont cont
 
@@ -101,7 +92,7 @@ and pp_l c vs m =
   (* This is used for both lambdas and explicit continuations *)
   !^ "λ" ^^ PP.char c ^^ PP.space ^^
     PP.list ~empty:PP.unit ~sep:PP.space Prim_pp.pp_var vs ^^ PP.space ^^ PP.dot
-  ^^ PP.with_paren_br (PP.level (PP.break0 ^^ pp_m m))
+  ^^ PP.with_paren (PP.level (PP.break0 ^^ pp_m m))
 
 and pp_cont = function
   | CPS.CVar v   -> Prim_pp.pp_var v
