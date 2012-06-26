@@ -21,7 +21,8 @@
 (** All these functions are for pretty printing. They do what thei type says and
     have no side-effect. *)
 
-val pp_phi : Prim.var * (Prim.label * Prim.value) list -> Pprint.document
+val pp_label: SSA.label -> Pprint.document
+val pp_phi : SSA.phi -> Pprint.document
 val pp_core_instr : SSA.core_instr -> Pprint.document
 val pp_jump : SSA.jump -> Pprint.document
 val pp_block : SSA.block -> Pprint.document

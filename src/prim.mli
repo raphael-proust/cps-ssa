@@ -36,24 +36,6 @@ val string_of_var: var -> string
 (** A generic variable generator. *)
 val fresh_var : unit -> var
 
-(** Labels. Like variables but for procedure block naming. *)
-type label
-
-(** Label generation. Similar to [var]. *)
-val label : string -> label
-
-val string_of_label: label -> string
-
-(** A generic label generator. *)
-val fresh_label : unit -> label
-
-(** [label] to and from [var] translation. Usefull for translating procedures
-    into lambdas and vice versa.
-  *)
-
-val var_of_label : label -> var
-val label_of_var : var -> label
-
 (** Values are either variables, constants, undefined, null, zeros, structures,
     dummies, or operations. *)
 type value =
@@ -100,5 +82,3 @@ type mem_w =
 
 (**/*)
 val reset_idxs: unit -> unit
-val var_magic: string -> var
-val label_magic: string -> label

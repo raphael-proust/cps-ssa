@@ -18,32 +18,50 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(** Labels. Like variables but for procedure block naming. *)
+type label
+
+(** Label generation. Similar to [var]. *)
+val label : string -> label
+
+val string_of_label: label -> string
+
+(** A generic label generator. *)
+val fresh_label : unit -> label
+
+(** [label] to and from [var] translation. Usefull for translating procedures
+    into lambdas and vice versa.
+  *)
+
+val var_of_label : label -> Prim.var
+val label_of_var : Prim.var -> label
+
 (** Instructions are assignements of direct expressions or function calls or
     memory writes. *)
 type core_instr =
   | IAssignExpr   of (Prim.var * Prim.value)
-  | IAssignCall   of (Prim.var * (Prim.label * Prim.value list))
+  | IAssignCall   of (Prim.var * (Prim.var * Prim.value list))
   | IAssignSelect of (Prim.var * Prim.value * Prim.value * Prim.value)
-  | ICall         of (Prim.label * Prim.value list)
+  | ICall         of (Prim.var * Prim.value list)
   | IMemWrite     of (Prim.var * Prim.mem_w)
 
 (** Jumps are for intra-procedure control-flow, returning to caller, tail-calls
     or conditional jumping.
   *)
 type jump =
-  | JGoto       of Prim.label
+  | JGoto       of label
   | JReturn     of Prim.value
   | JReturnVoid
-  | JTail       of (Prim.label * Prim.value list * Prim.label)
-  | JCond       of (Prim.value * Prim.label * Prim.label)
+  | JTail       of (Prim.var * Prim.value list * label)
+  | JCond       of (Prim.value * label * label)
 
 (** SSA-magic is made of phi-functions. *)
-type phi = Prim.var * (Prim.label * Prim.value) list
+type phi = Prim.var * (label * Prim.value) list
 
 (** The entry block has no phi nodes. *)
 type entry_block = {
   mutable eb_order      : int;
-  (*   *) eb_label      : Prim.label;
+  (*   *) eb_label      : label;
   (*   *) eb_core_instrs: core_instr list;
   (*   *) eb_jump       : jump;
 }
@@ -54,7 +72,7 @@ type entry_block = {
   *)
 type block = {
   mutable b_order      : int;
-  (*   *) b_label      : Prim.label;
+  (*   *) b_label      : label;
   (*   *) b_phis       : phi list;
   (*   *) b_core_instrs: core_instr list;
   (*   *) b_jump       : jump;
@@ -62,7 +80,7 @@ type block = {
 
 (** A procedure has arguments and a body (constituted of blocks). *)
 type proc = {
-  p_name       : Prim.label;
+  p_name       : Prim.var;
   p_args       : Prim.var list;
   p_entry_block: entry_block;
   p_blocks     : block list;
@@ -76,16 +94,16 @@ type prog = proc * module_
 
 (** [prog m l] extrract the procedure labeled [l] from the module [m] and
     returns a program. *)
-val prog: module_ -> Prim.label -> prog
+val prog: module_ -> Prim.var -> prog
 
 (** list all the labels the jump jumps to. *)
-val labels_of_jump: jump -> Prim.label list
+val labels_of_jump: jump -> label list
 
 (** find a block in a list by its label *)
-val block_of_label: proc -> Prim.label -> (entry_block, block) Util.E.either
+val block_of_label: proc -> label -> (entry_block, block) Util.E.either
 
 (** Label for program entry point. *)
-val label_main : Prim.label
+val label_main : label
 
 (** checks that the ssa program is indeed ssa. In particular, it checks that
     each variable is assigned to only once, and other things.
@@ -97,84 +115,87 @@ val check_module: module_ -> unit
 
 module Entry_blocks :sig
 
-  val entry_block: ?label:Prim.label ->
+  val entry_block: ?label:label ->
     ?instrs:core_instr list -> jump -> entry_block
 
-  val return: ?label:Prim.label ->
+  val return: ?label:label ->
     ?instrs:core_instr list -> Prim.value -> entry_block
-  val return_void: ?label:Prim.label ->
+  val return_void: ?label:label ->
     ?instrs:core_instr list -> unit -> entry_block
-  val return_const: ?label:Prim.label ->
+  val return_const: ?label:label ->
     ?instrs:core_instr list -> int -> entry_block
-  val return_0: ?label:Prim.label ->
+  val return_0: ?label:label ->
     ?instrs:core_instr list -> unit -> entry_block
-  val return_var: ?label:Prim.label ->
+  val return_var: ?label:label ->
     ?instrs:core_instr list -> Prim.var -> entry_block
 
-  val cond: ?label:Prim.label -> ?instrs:core_instr list ->
-    Prim.value -> Prim.label -> Prim.label -> entry_block
+  val cond: ?label:label -> ?instrs:core_instr list ->
+    Prim.value -> label -> label -> entry_block
 
-  val tail: ?label:Prim.label -> ?instrs:core_instr list ->
-    Prim.label -> Prim.value list -> Prim.label -> entry_block
+  val tail: ?label:label -> ?instrs:core_instr list ->
+    Prim.var -> Prim.value list -> label -> entry_block
 
-  val goto: ?label:Prim.label ->
-    ?instrs:core_instr list -> Prim.label -> entry_block
+  val goto: ?label:label ->
+    ?instrs:core_instr list -> label -> entry_block
 
 end
 
 module Blocks :sig
 
-  val block: ?label:Prim.label ->
+  val block: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     jump -> block
 
-  val return: ?label:Prim.label ->
+  val return: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     Prim.value -> block
-  val return_void: ?label:Prim.label ->
+  val return_void: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     unit -> block
-  val return_const: ?label:Prim.label ->
+  val return_const: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     int -> block
-  val return_0: ?label:Prim.label ->
+  val return_0: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     unit -> block
-  val return_var: ?label:Prim.label ->
+  val return_var: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
     Prim.var -> block
 
-  val cond: ?label:Prim.label ->
+  val cond: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
-    Prim.value -> Prim.label -> Prim.label -> block
+    Prim.value -> label -> label -> block
 
-  val tail: ?label:Prim.label ->
+  val tail: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
-    Prim.label -> Prim.value list -> Prim.label -> block
+    Prim.var -> Prim.value list -> label -> block
 
-  val goto: ?label:Prim.label ->
+  val goto: ?label:label ->
     ?phis:phi list -> ?instrs:core_instr list ->
-    Prim.label -> block
+    label -> block
 
 end
 
 module Procs : sig
 
-  val proc: name:Prim.label -> ?args:Prim.var list ->
+  val proc: name:Prim.var -> ?args:Prim.var list ->
     entry_block -> block list -> proc
 
-  val entry_block: name:Prim.label -> ?args:Prim.var list -> entry_block -> proc
+  val entry_block: name:Prim.var -> ?args:Prim.var list -> entry_block -> proc
 
   val cond:
-       name:Prim.label
+       name:Prim.var
     -> ?args:Prim.var list
     -> Prim.value -> block -> block
     -> proc
 
   val cond_e:
-       name:Prim.label
+       name:Prim.var
     -> ?args:Prim.var list
     -> Prim.value -> Prim.value -> Prim.value
     -> proc
 
 end
+
+(**/**)
+val reset_idxs: unit -> unit

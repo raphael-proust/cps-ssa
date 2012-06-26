@@ -27,8 +27,6 @@ open PP.Operators
 
 let pp_var v = !^ (Prim.string_of_var v)
 
-let pp_label l = !^ (Prim.string_of_label l)
-
 let rec pp_op ~paren op vs =
   let f op (v1, v2) = PP.op (pp_value ~paren) v1 op v2 in
   if paren then

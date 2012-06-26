@@ -40,7 +40,7 @@ let ident_string = function
 
 let ident i = Prim.var (ident_string i)
 
-let label l = Prim.label (ident_string l)
+let label l = SSA.label (ident_string l)
 
 let var i = Prim.VVar (ident i)
 
@@ -150,7 +150,7 @@ let ident_left = function
 let get_assigns instrs =
   let open LLVM in
   let aux_call (_, fn, args) =
-    (label fn, List.map (fun (_, v) -> value v) args)
+    (ident fn, List.map (fun (_, v) -> value v) args)
   in
   let rec aux accu = function
     (* Those forms are illegal *)
@@ -216,13 +216,13 @@ let get_terminator terminator =
   | TERM_IndirectBr _ -> unsupported_feature "TERM_IndirectBr"
   | TERM_Invoke (_, fn, args, i, _) ->
     let args = List.map (fun (_, v) -> value v) args in
-    SSA.JTail (label fn, args, label i)
+    SSA.JTail (ident fn, args, label i)
   | TERM_Resume _ -> unsupported_feature "TERM_Resume"
   | TERM_Unreachable -> unsupported_feature "TERM_Unreachable"
 
 let get_label = function
   | LLVM.INSTR_Label l :: instrs -> (label l, instrs)
-  | instrs -> (Prim.label ("%" ^ string_of_int (get_running_idx ())), instrs)
+  | instrs -> (SSA.label ("%" ^ string_of_int (get_running_idx ())), instrs)
 
 let get_phis instrs =
   let rec aux accu = function
@@ -279,7 +279,7 @@ let proc {LLVM.df_name; df_args; df_instrs} =
   reset_running_idx ();
   let (p_entry_block, p_blocks) = blocks_of_instrs df_instrs in
   {SSA.
-    p_name = label df_name;
+    p_name = ident df_name;
     p_args = List.map (fun (_, a) -> ident a) df_args;
     p_entry_block;
     p_blocks;
@@ -296,5 +296,6 @@ let tpl = function
 
 let module_ m =
   Prim.reset_idxs ();
+  SSA.reset_idxs ();
   Util.L.map_option tpl m
 

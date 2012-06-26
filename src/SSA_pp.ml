@@ -27,7 +27,9 @@ open PP.Operators
 
 let paren = true (* for ~paren *)
 
-let pp_phi_entry (l, e) = Prim_pp.pp_label l ^^ PP.colon ^^ Prim_pp.pp_value e
+let pp_label l = !^ (SSA.string_of_label l)
+
+let pp_phi_entry (l, e) = pp_label l ^^ PP.colon ^^ Prim_pp.pp_value e
 
 let pp_phi (v, les) =
   Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
@@ -38,7 +40,7 @@ let pp_phi (v, les) =
 let pp_phi_br phi = pp_phi phi ^^ PP.break1
 
 let pp_call (l, es) =
-    Prim_pp.pp_label l ^^ PP.with_paren (
+    Prim_pp.pp_var l ^^ PP.with_paren (
       PP.list ~sep:PP.comma_space Prim_pp.pp_value es
     )
 
@@ -59,32 +61,32 @@ let pp_core_instr = function
 let pp_core_instr_br ci = pp_core_instr ci ^^ PP.break1
 
 let pp_jump = function
-  | SSA.JGoto l -> !^ "goto" ^^ PP.space ^^ Prim_pp.pp_label l
+  | SSA.JGoto l -> !^ "goto" ^^ PP.space ^^ pp_label l
   | SSA.JReturn e -> !^ "return" ^^ PP.space ^^ Prim_pp.pp_value ~paren e
   | SSA.JReturnVoid -> !^ "return"
   | SSA.JTail (l, es, d) ->
-    !^ "tailcall" ^^ PP.space ^^ Prim_pp.pp_label l ^^ PP.with_paren (
+    !^ "tailcall" ^^ PP.space ^^ Prim_pp.pp_var l ^^ PP.with_paren (
       PP.list ~sep:PP.comma_space Prim_pp.pp_value es
-    ) ^^ PP.space ^^ (!^ "to") ^^ PP.space ^^ Prim_pp.pp_label d
+    ) ^^ PP.space ^^ (!^ "to") ^^ PP.space ^^ pp_label d
   | SSA.JCond (e, l1, l2) ->
     !^ "branch" ^^ PP.space ^^ Prim_pp.pp_value ~paren e ^^ PP.space ^^
-    Prim_pp.pp_label l1 ^^ PP.space ^^
-    Prim_pp.pp_label l2
+    pp_label l1 ^^ PP.space ^^
+    pp_label l2
 
 let pp_block {SSA.b_label; b_phis; b_core_instrs; b_jump;} =
-  Prim_pp.pp_label b_label ^^ (!^ ":") ^^ PP.level (PP.break0 ^^
+  pp_label b_label ^^ (!^ ":") ^^ PP.level (PP.break0 ^^
     PP.list ~sep:PP.empty pp_phi_br b_phis ^^
     PP.list ~sep:PP.empty pp_core_instr_br b_core_instrs ^^
     pp_jump b_jump)
 
 let pp_entry_block {SSA.eb_label; eb_core_instrs; eb_jump} =
-  Prim_pp.pp_label eb_label ^^ (!^ ":" ) ^^ PP.level (PP.break0 ^^
+  pp_label eb_label ^^ (!^ ":" ) ^^ PP.level (PP.break0 ^^
     PP.list ~sep:PP.empty pp_core_instr_br eb_core_instrs ^^
     pp_jump eb_jump
   )
 
 let pp_proc {SSA.p_name; p_args; p_entry_block; p_blocks;} =
-  Prim_pp.pp_label p_name ^^ PP.with_paren (
+  Prim_pp.pp_var p_name ^^ PP.with_paren (
     PP.list ~sep:PP.comma_space Prim_pp.pp_var p_args
   ) ^^
   PP.lbrace ^^

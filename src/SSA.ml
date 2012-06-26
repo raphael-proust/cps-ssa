@@ -20,44 +20,64 @@
 
 open Util
 
+(* labels are for jump. Type is abstracted in the interface. *)
+type label = string
+
+let label s = (("l_" ^ s) : label)
+external string_of_label : label -> string = "%identity"
+
+let label_counter = ref (-1)
+
+let reset_idxs () =
+  label_counter := (-1)
+
+let fresh_label =
+  fun () ->
+    incr label_counter;
+    "l__" ^ string_of_int !label_counter
+
+(* Standard conversion for when one translates labels into closure variables. *)
+let var_of_label l = Prim.var l
+let label_of_var v = label (Prim.string_of_var v)
+
 (* SSA terms. We only enforce SSA property dynamically. *)
 
-let label_main = Prim.label "@entry"
+let label_main = "@entry"
 
 
 type core_instr =
   | IAssignExpr   of (Prim.var * Prim.value)
-  | IAssignCall   of (Prim.var * (Prim.label * Prim.value list))
+  | IAssignCall   of (Prim.var * (Prim.var * Prim.value list))
   | IAssignSelect of (Prim.var * Prim.value * Prim.value * Prim.value)
-  | ICall         of (Prim.label * Prim.value list)
+  | ICall         of (Prim.var * Prim.value list)
   | IMemWrite     of (Prim.var * Prim.mem_w)
 
 type jump =
-  | JGoto       of Prim.label
+  | JGoto       of label
   | JReturn     of Prim.value
   | JReturnVoid
-  | JTail       of (Prim.label * Prim.value list * Prim.label)
-  | JCond       of (Prim.value * Prim.label * Prim.label)
+  | JTail       of (Prim.var * Prim.value list * label)
+  | JCond       of (Prim.value * label * label)
 
-type phi = Prim.var * (Prim.label * Prim.value) list
+type phi = Prim.var * (label * Prim.value) list
 
 type entry_block = {
   mutable eb_order      : int;
-  (*   *) eb_label      : Prim.label;
+  (*   *) eb_label      : label;
   (*   *) eb_core_instrs: core_instr list;
   (*   *) eb_jump       : jump;
 }
 
 type block = {
   mutable b_order      : int;
-  (*   *) b_label      : Prim.label;
+  (*   *) b_label      : label;
   (*   *) b_phis       : phi list;
   (*   *) b_core_instrs: core_instr list;
   (*   *) b_jump       : jump;
 }
 
 type proc = {
-  p_name       : Prim.label;
+  p_name       : Prim.var;
   p_args       : Prim.var list;
   p_entry_block: entry_block;
   p_blocks     : block list;
@@ -76,7 +96,7 @@ let labels_of_jump = function
 
 (*TODO? memoize or build a map before use? *)
 let block_of_label proc label =
-  if label = proc.p_name then
+  if label = proc.p_entry_block.eb_label then
     E.Left proc.p_entry_block
   else
     try
@@ -84,10 +104,10 @@ let block_of_label proc label =
     with
     | Not_found as e ->
       Printf.eprintf "Block not found: %s\nAvailable blocks: %s %s\n"
-        (Prim.string_of_label label)
-        (Prim.string_of_label proc.p_name)
+        (string_of_label label)
+        (string_of_label proc.p_entry_block.eb_label)
         (String.concat " "
-          (List.map (fun b -> Prim.string_of_label b.b_label) proc.p_blocks)
+          (List.map (fun b -> string_of_label b.b_label) proc.p_blocks)
         )
         ;
       raise e
@@ -114,10 +134,14 @@ let check_module module_ =
     (* no two labels are identical *)
     assert (L.unique (fun b -> Some b.b_label) proc.p_blocks);
 
-    (* no internal block has procedure name *)
+    (* no internal block has entry block label *)
     assert (
       List.for_all
-        (fun p -> List.for_all (fun b -> b.b_label <> p.p_name) p.p_blocks)
+        (fun p ->
+          List.for_all
+            (fun b -> b.b_label <> p.p_entry_block.eb_label)
+            p.p_blocks
+        )
         module_
     );
 
@@ -144,7 +168,7 @@ let check_prog (main,module_) = check_module (main :: module_)
 module Entry_blocks = struct
 
   let entry_block ?label ?(instrs = []) eb_jump =
-    let eb_label = O.unopt_soft Prim.fresh_label label in
+    let eb_label = O.unopt_soft fresh_label label in
     {
             eb_order = 0;
             eb_label;
@@ -178,7 +202,7 @@ end
 module Blocks = struct
 
   let block ?label ?(phis = []) ?(instrs = []) b_jump =
-    let b_label = O.unopt_soft Prim.fresh_label label in
+    let b_label = O.unopt_soft fresh_label label in
     {
             b_order = 0;
             b_label;

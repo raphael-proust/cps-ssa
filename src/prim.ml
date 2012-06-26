@@ -29,10 +29,8 @@ type const = int
 type var = string
 
 (* creation (note the prefixing) and conversion. *)
-let var s = ("v_" ^ s : var)
+external var : string -> var = "%identity"
 external string_of_var : var -> string = "%identity"
-external var_magic : string -> var = "%identity"
-
 
 (* whoohoo indexes! *)
 let var_counter = ref (-1)
@@ -40,26 +38,7 @@ let var_counter = ref (-1)
 let fresh_var =
   fun () ->
     incr var_counter;
-    "v__" ^ string_of_int !var_counter
-
-(* labels are for jump. This is somehow specific to ssa and might get moved in
- * the corresponding module. Type is abstracted in the interface. *)
-type label = string
-
-let label s = ("l_" ^ s : label)
-external string_of_label : label -> string = "%identity"
-external label_magic : string -> label = "%identity"
-
-let label_counter = ref (-1)
-
-let fresh_label =
-  fun () ->
-    incr label_counter;
-    "l__" ^ string_of_int !label_counter
-
-(* Standard conversion for when one translates labels into closure variables. *)
-let var_of_label l = var l
-let label_of_var v = label v
+    "%v__" ^ string_of_int !var_counter
 
 type value =
   | VVar   of var
@@ -94,5 +73,4 @@ type mem_w =
   | MAlloc
 
 let reset_idxs () =
-  var_counter := (-1);
-  label_counter := (-1)
+  var_counter := (-1)

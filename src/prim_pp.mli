@@ -22,6 +22,5 @@
     *)
 
 val pp_var  : Prim.var   -> Pprint.document
-val pp_label: Prim.label -> Pprint.document
 val pp_value: ?paren:bool -> Prim.value -> Pprint.document
 val pp_mem_w: Prim.mem_w -> Pprint.document

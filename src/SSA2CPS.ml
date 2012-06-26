@@ -32,9 +32,9 @@ let args_of_label proc orig dest =
         with
         | Not_found -> (* default value *)
           Printf.eprintf "Label %s not found\nAvailable labels: %s\n"
-            (Prim.string_of_label orig)
+            (SSA.string_of_label orig)
             (String.concat " "
-              (List.map (fun (l, _) -> Prim.string_of_label l) p)
+              (List.map (fun (l, _) -> SSA.string_of_label l) p)
             );
           raise Not_found
       )
@@ -45,23 +45,23 @@ let core_instrs_and_jump k proc current_l cis j =
   let rec aux = function
   | SSA.IAssignExpr (v, e) :: cis -> MLet (v, e, aux cis)
   | SSA.IAssignCall (v, (l, es)) :: cis ->
-      MApp (Prim.var_of_label l, es, C (v, aux cis))
+      MApp (l, es, C (v, aux cis))
   | SSA.ICall (l, es) :: cis ->
-      MApp (Prim.var_of_label l, es, C (var_unit, aux cis))
+      MApp (l, es, C (var_unit, aux cis))
   | SSA.IAssignSelect (v, c, v1, v2) :: cis ->
       MSel (v, c, v1, v2, aux cis)
   | SSA.IMemWrite (v, w) :: cis -> MSeq (v, w, aux cis)
   | [] -> match j with
     | SSA.JGoto l ->
-        MCont (Prim.var_of_label l, args_of_label proc current_l l)
+        MCont (SSA.var_of_label l, args_of_label proc current_l l)
     | SSA.JReturn e   -> MCont (k, [e])
     | SSA.JReturnVoid -> MCont (k, [])
     | SSA.JTail (l, es, lc) ->
-        MApp (Prim.var_of_label l, es, CVar (Prim.var_of_label lc))
+        MApp (l, es, CVar (SSA.var_of_label lc))
     | SSA.JCond (e, l1, l2) ->
         MCond (e,
-               (Prim.var_of_label l1, args_of_label proc current_l l1),
-               (Prim.var_of_label l2, args_of_label proc current_l l2))
+               (SSA.var_of_label l1, args_of_label proc current_l l1),
+               (SSA.var_of_label l2, args_of_label proc current_l l2))
   in
   aux cis
 
@@ -74,7 +74,7 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
     let l =
       List.map
         (fun domed -> (*terminates bc dominator tree is a DAG*)
-          let lbl = Prim.var_of_label domed.SSA.b_label in
+          let lbl = SSA.var_of_label domed.SSA.b_label in
           let vs = List.map fst domed.SSA.b_phis in
           let lambda = CPS.LJump (vs, tr_block dom k proc domed) in
           (lbl, lambda)
@@ -110,14 +110,14 @@ let tr_proc proc =
 
 let tr_module module_ =
     List.map
-      (fun proc -> (Prim.var_of_label proc.SSA.p_name, tr_proc proc))
+      (fun proc -> (proc.SSA.p_name, tr_proc proc))
       module_
 
 let tr_prog (main, module_) =
   let open CPS in
   MRec
     (tr_module (main :: module_),
-     MApp (Prim.var_of_label main.SSA.p_name,
+     MApp (main.SSA.p_name,
            List.map (fun v -> Prim.VVar v) main.SSA.p_args,
            CVar var_run
           )
