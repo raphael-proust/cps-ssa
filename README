@@ -18,9 +18,9 @@ the program does:
                     opt                                  |
                      |                                   |
 file.c --clang--> file.ll --> LLVM --> SSA --> CPS       |
-                                                |        |
-                                               pp       pp
-                                                |        |
+                     ^                          |        |
+                     |                         pp       pp
+file.hs --ghc--------+                          |        |
                                                 v        v
                                            file.cps   file.opt.cps
                                                 |        |
@@ -33,5 +33,3 @@ file.c --clang--> file.ll --> LLVM --> SSA --> CPS       |
                                                   PROFIT
 ~~~~~~~
 
-Note that we can also use Haskell (`.hs`) files and feed them to ghc to get llvm
-(`.ll`) files.
