@@ -24,3 +24,9 @@ tests/*.cps
 tests/*.ssa
 tests/*.bc
 tests/*.hi
+experiments/*/*.hi
+experiments/*/*.ll
+experiments/*/*.cps
+experiments/*/*.ssa
+experiments/*/*.bc
+experiments/*/*.hi
