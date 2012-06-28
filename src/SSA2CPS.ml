@@ -65,6 +65,19 @@ let core_instrs_and_jump k proc current_l cis j =
   in
   aux cis
 
+let rec fold_lambdas_in lambdas m =
+  (* not tail-rec, not optimal *)
+  let open CPS in
+  match m with
+  | MApp (v, vs, C (cv, m)) -> MApp (v, vs, C (cv, fold_lambdas_in lambdas m))
+  | MLet (v, e, m) -> MLet (v, e, fold_lambdas_in lambdas m)
+  | MSeq (v, w, m) -> MSeq (v, w, fold_lambdas_in lambdas m)
+  | MSel (v, c, e1, e2, m) -> MSel (v, c, e1, e2, fold_lambdas_in lambdas m)
+  | MRec (l, m) -> MRec (l, fold_lambdas_in lambdas m) (* dead code? *)
+  | MCont _
+  | MCond _
+  | MApp (_, _, CVar _) -> MRec (lambdas, m)
+
 let rec tr_abstract_block dom k proc current_l node core_instrs jump =
   let m = core_instrs_and_jump k proc current_l core_instrs jump in
 
@@ -87,9 +100,7 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
           domeds
         )
     in
-    (*FIXME: scoping problem! order should be: assignements, continuations, body
-     * *)
-    CPS.MRec (l, m)
+    fold_lambdas_in l m
 
 
 and tr_block dom k proc block =
