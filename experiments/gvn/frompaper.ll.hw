@@ -1,0 +1,59 @@
+; vim: set ft=llvm:
+define i32 @entry(i32 %a, i32 %b, i32 %c, i32 %d, i32 %l, i32 %m, i32 %s, i32 %t, i32 %flagw, i32 %flagi) nounwind {
+l_entry:
+  br label %l_while_hd
+
+l_while_hd:
+  %flagi.0 = phi i32 [ %flagi, %l_entry ], [ %flagi.1, %l_while_tl ]
+  %flagw.0 = phi i32 [ %flagw, %l_entry ], [ %flagw.1, %l_while_tl ]
+  %t.0 = phi i32 [ %t, %l_entry ], [ %t.1, %l_while_tl ]
+  %s.0 = phi i32 [ %s, %l_entry ], [ %s.1, %l_while_tl ]
+  %m.0 = phi i32 [ %m, %l_entry ], [ %m.1, %l_while_tl ]
+  %l.0 = phi i32 [ %l, %l_entry ], [ %l.1, %l_while_tl ]
+  %d.0 = phi i32 [ %d, %l_entry ], [ %d.1, %l_while_tl ]
+  %x.0 = phi i32 [ 0, %l_entry ], [ %x.1, %l_while_tl ]
+  %y.0 = phi i32 [ 0, %l_entry ], [ %y.1, %l_while_tl ]
+  %a.0 = phi i32 [ %a, %l_entry ], [ %a.1, %l_while_tl ]
+  %cond0 = icmp ne i32 %flagw.0, 0
+  br i1 %cond0, label %l_if_cond, label %l_exit
+
+l_if_cond:
+  %flagi.1 = sub nsw i32 1, %flagi.0
+  %flagw.1 = sub nsw i32 1, %flagw.0
+  %cond1 = icmp ne i32 %flagi.1, 0
+  br i1 %cond1, label %l_if_true, label %l_if_false
+
+l_if_true:
+  %l.2 = mul nsw i32 %c, %b
+  %m.2 = add nsw i32 %l.2, 4
+  br label %l_while_tl
+
+l_if_false:
+  %l.3 = mul nsw i32 %c, %b
+  %s.2 = mul nsw i32 %a.0, %b
+  %t.2 = add nsw i32 %s.2, 1
+  br label %l_while_tl
+
+l_while_tl:
+  %t.1 = phi i32 [ %t.0, %l_if_true ], [ %t.2, %l_if_false ]
+  %s.1 = phi i32 [ %s.0, %l_if_true ], [ %s.2, %l_if_false ]
+  %m.1 = phi i32 [ %m.2, %l_if_true ], [ %m.0, %l_if_false ]
+  %l.1 = phi i32 [ %l.2, %l_if_true ], [ %l.3, %l_if_false ]
+  %d.1 = phi i32 [ %d.0, %l_if_true ], [ %c, %l_if_false ]
+  %a.1 = phi i32 [ %c, %l_if_true ], [ %a.0, %l_if_false ]
+  %x.1 = mul nsw i32 %a.1, %b
+  %y.1 = add nsw i32 %x.1, 1
+  br label %l_while_hd
+
+l_exit:
+  %0 = add nsw i32 %a.0, %b
+  %1 = add nsw i32 %0, %c
+  %2 = add nsw i32 %1, %d.0
+  %3 = add nsw i32 %2, %l.0
+  %4 = add nsw i32 %3, %m.0
+  %5 = add nsw i32 %4, %s.0
+  %6 = add nsw i32 %5, %t.0
+  %7 = add nsw i32 %6, %x.0
+  %8 = add nsw i32 %7, %y.0
+  ret i32 %8
+}

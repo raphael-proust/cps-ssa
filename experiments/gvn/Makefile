@@ -26,9 +26,12 @@ HSS= \
 		mutual_infinite.hs \
 		y.hs \
 
-LLS=$(CS:.c=.ll) $(HSS:.hs=.ll)
-SSAS=$(CS:.c=.ssa) $(HSS:.hs=.ssa)
-CPSS=$(CS:.c=.cps) $(HSS:.hs=.cps)
+HWS= \
+		 frompaper.ll.hw
+
+LLS=$(CS:.c=.ll) $(HSS:.hs=.ll) $(HWS:.ll.hw=.ll)
+SSAS=$(CS:.c=.ssa) $(HSS:.hs=.ssa) $(HWS:.ll.hw=.ssa)
+CPSS=$(CS:.c=.cps) $(HSS:.hs=.cps) $(HWS:.ll.hw=.cps)
 
 OPTS= gvn
 
@@ -58,6 +61,9 @@ clean:
 
 %.ll: %.pre.ll
 	opt -S -mem2reg $< > $@
+
+%.ll: %.ll.hw
+	cp $< $@
 
 %.cps %.ssa: %.ll
 	../src/run.native $<
