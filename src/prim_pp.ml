@@ -46,7 +46,7 @@ and pp_value ?(paren = false) = function
   | Prim.VPlus  vt -> pp_op ~paren Pprint.plus    vt
   | Prim.VMult  vt -> pp_op ~paren Pprint.star    vt
   | Prim.VMinus vt -> pp_op ~paren Pprint.minus   vt
-  | Prim.VDiv   vt -> pp_op ~paren Pprint.bar     vt
+  | Prim.VDiv   vt -> pp_op ~paren (!^ "/")       vt
   | Prim.VRem   vt -> pp_op ~paren Pprint.percent vt
   (* Comparisons *)
   | Prim.VGt vt -> pp_op ~paren (!^ ">" ) vt
