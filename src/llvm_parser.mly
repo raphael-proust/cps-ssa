@@ -449,7 +449,7 @@ instr:
   | KW_BR KW_LABEL o = ident       { INSTR_Terminator (TERM_Br_1 o) }
   | KW_SWITCH t = typ v = value COMMA
               KW_LABEL def = value
-              LSQUARE table = list(switch_table_entry) RSQUARE
+              LSQUARE EOL? table = list(switch_table_entry) RSQUARE
     { INSTR_Terminator (TERM_Switch (t, v, def, table)) }
   | KW_INDIRECTBR { failwith "TERM_IndirectBr" }
   | KW_INVOKE cconv? t = ret_type i = ident
@@ -496,7 +496,7 @@ comma_align:
   | LSQUARE v = value COMMA l = ident RSQUARE { (v, l) }
 
 %inline switch_table_entry:
-  | t = typ o = value COMMA KW_LABEL l = ident { (t, o, l) }
+  | t = typ o = value COMMA KW_LABEL l = ident EOL? { (t, o, l) }
 
 value:
   | i = INTEGER        { VALUE_Integer i  }
