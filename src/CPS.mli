@@ -68,5 +68,7 @@ and lambda =
     as to [SSA.label_main] somehow. *)
 val var_run: Prim.var
 
+val var_return: Prim.var
+
 (** [var_unit] is for assignments of calls that do not return. *)
 val var_unit: Prim.var

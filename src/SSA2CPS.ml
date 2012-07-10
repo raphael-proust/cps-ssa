@@ -115,9 +115,8 @@ let tr_entry_block dom k proc entry_block =
 
 let tr_proc proc =
   let dom = Dom.dom_of_proc proc in
-  let k = Prim.fresh_var () in
-  let m = tr_entry_block dom k proc proc.SSA.p_entry_block in
-  CPS.LProc (proc.SSA.p_args, k, m)
+  let m = tr_entry_block dom CPS.var_return proc proc.SSA.p_entry_block in
+  CPS.LProc (proc.SSA.p_args, CPS.var_return, m)
 
 let tr_module module_ =
     List.map
