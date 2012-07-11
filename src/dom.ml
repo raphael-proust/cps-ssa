@@ -18,13 +18,13 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-open Util (* provides L, O, and E *)
+open Util (* provides L, O, and E for Lists, Options, and Either respectively *)
 
 type node = (SSA.entry_block, SSA.block) E.either
 (*Let's have a persistent graph. We only use labels in the functor argument
   because SSA's hypotheses lets us do it. *)
 module BlockVertex = struct
-  type t = (SSA.entry_block, SSA.block) E.either
+  type t = node
   let compare b1 b2 = match (b1, b2) with
    | E.Left _  , E.Right _  -> -1
    | E.Left e1 , E.Left e2  -> assert (e1 = e2); 0
@@ -79,7 +79,8 @@ module DFS_Traverse = Graph.Traverse.Dfs(G)
 
 let mark_postorder g lentry =
   (* This modifies the b_order field of the blocks. *)
-  (*FIXME: does not work if graph is not connex: entry node is not top node.*)
+  (*FIXME? when graph is not connex, only translates the entry component, is it
+    FIXME? a bug or a feature? *)
   let id = ref 0 in
   let process = ref [] in
   DFS_Traverse.postfix_component

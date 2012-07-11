@@ -68,6 +68,8 @@ and lambda =
     as to [SSA.label_main] somehow. *)
 val var_run: Prim.var
 
+(** [var_return] is used as a default return continuation. All SSA procedures
+    are translated into a CPS lambda whose last argument is [var_return]. *)
 val var_return: Prim.var
 
 (** [var_unit] is for assignments of calls that do not return. *)

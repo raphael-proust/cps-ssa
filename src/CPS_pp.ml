@@ -18,9 +18,12 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-(* This too highlights differences in CPS terms. It actually just pretty prints
- * (with appropriate newline characters and what not), so that diff(1) can take
- * care of it. *)
+(* This module is for highlighting differences in CPS terms. It actually just
+ * pretty prints (with appropriate newline characters and what not), so that
+ * diff(1) can take care of it. Ideally, a structural diff should be done,
+ * thus allowing the detection of alpha-equivalent terms.
+ *)
+
 
 open Util
 

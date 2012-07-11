@@ -41,6 +41,7 @@ and lambda =
 (* This is for monad entry application. *)
 let var_run = Prim.var "run"
 
+(* This is the default return continuation *)
 let var_return = Prim.var "return"
 
 (* This is for sequences of side-effects. *)
