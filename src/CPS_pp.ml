@@ -76,11 +76,10 @@ let rec pp_m = function
       Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
       (pp_lambda l)
     in
-    !^ "letrec " ^^ PP.with_paren (PP.level (PP.break0 ^^
-      PP.list ~sep:PP.break1 vl vls
-    ) ^^ PP.break0) ^^ PP.break0 ^^ !^ "in" ^^ PP.level (PP.break1 ^^
-      pp_m m
-    )
+    let _and = !^ "and " in
+    !^ "let rec " ^^ PP.list ~sep:(PP.break1 ^^ _and) vl vls ^^ PP.break1 ^^
+    (!^ "in") ^^ PP.break1 ^^
+    pp_m m
 
   | CPS.MSeq (v, w, m) ->
     !^ "let " ^^ PP.unit ^^ PP.space ^^ PP.equals ^^ PP.space ^^
