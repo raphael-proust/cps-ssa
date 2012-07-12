@@ -1,7 +1,6 @@
-int entry (int n1, int n2){
-  int res = 0;
+int entry (int res, int n1, int n2){
   if (n1==0) {
-    res = 0;
+    res++;
   } else {
     res--;
   }

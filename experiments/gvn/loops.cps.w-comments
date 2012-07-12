@@ -1,0 +1,288 @@
+@ffor =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+      let %2 = %i.0 < 5 in
+      let rec l_%3 = λj () .(
+        let %4 = %t.0 * %t.0 in
+        let rec l_%5 = λj () .(
+          let %6 = %i.0 + 1 in
+          l_%1 %4 %6)
+        in
+        l_%5 ())
+      and l_%7 = λj () .(
+        return %t.0)
+      in
+      if %2
+        (l_%3 ())
+        (l_%7 ()))
+    in
+    l_%1 2 0)
+@fiffor =
+  λp %f return .(
+    let %1 = %f <> 0 in
+    let rec l_%10 = λj () .(
+      let rec l_%11 = λj %i.1 %t.1 .(
+        let %12 = %i.1 > 0 in
+        let rec l_%13 = λj () .(
+          let %14 = %t.1 / %t.1 in
+          let rec l_%15 = λj () .(
+            let %16 = %i.1 + -1 in
+            l_%11 %16 %14)
+          in
+          l_%15 ())
+        and l_%17 = λj () .(
+          l_%18 %t.1)
+        in
+        if %12
+          (l_%13 ())
+          (l_%17 ()))
+      in
+      l_%11 5 2)
+    and l_%18 = λj %t.2 .(
+      return %t.2)
+    and l_%2 = λj () .(
+      let rec l_%3 = λj %i.0 %t.0 .(
+        let %4 = %i.0 < 5 in
+        let rec l_%5 = λj () .(
+          let %6 = %t.0 * %t.0 in
+          let rec l_%7 = λj () .(
+            let %8 = %i.0 + 1 in
+            l_%3 %8 %6)
+          in
+          l_%7 ())
+        and l_%9 = λj () .(
+          l_%18 %t.0)
+        in
+        if %4
+          (l_%5 ())
+          (l_%9 ()))
+      in
+      l_%3 0 2)
+    in
+    if %1
+      (l_%2 ())
+      (l_%10 ()))
+@fforfor =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %i.0 < 5 in
+      let rec l_%13 = λj () .(                   // outer exit node
+            return %t.0)
+      and l_%3 = λj () .(
+        let rec l_%4 = λj %t.1 %j.0 .(
+                let %5 = %j.0 < 5 in
+          let rec l_%10 = λj () .(           // inner exit node
+            let rec l_%11 = λj () .(
+                        let %12 = %i.0 + 1 in
+                        l_%1 %t.1 %12)       // backedge from inner to outer
+                    in
+                      l_%11 ())
+          and l_%6 = λj () .(
+                    let %7 = %t.1 * %t.1 in
+            let rec l_%8 = λj () .(
+                        let %9 = %j.0 + 1 in
+                        l_%4 %7 %9)           // inner backedge
+                    in
+                      l_%8 ())
+                in
+                  if %5
+                    (l_%6 ())
+                    (l_%10 ()))               // inner exit edge
+            in
+              l_%4 %t.0 0)
+        in
+          if %2
+            (l_%3 ())
+            (l_%13 ()))                         // outer exit edge
+    in
+      l_%1 2 0)
+@fforif =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %i.0 < 5 in
+      let rec l_%13 = λj () .(
+            return %t.0)
+      and l_%3 = λj () .(
+            let %4 = %i.0 % 2 in
+            let %5 = %4 <> 0 in
+        let rec l_%10 = λj %t.1 .(
+          let rec l_%11 = λj () .(
+                    let %12 = %i.0 + 1 in
+                    l_%1 %t.1 %12)
+                in
+                  l_%11 ())
+        and l_%6 = λj () .(
+                let %7 = %t.0 * %t.0 in
+                l_%10 %7)
+        and l_%8 = λj () .(
+          let %9 = %t.0 / %t.0 in
+                l_%10 %9)
+            in
+              if %5
+                (l_%6 ())
+                (l_%8 ()))
+        in
+          if %2
+            (l_%3 ())
+            (l_%13 ()))
+    in
+      l_%1 2 0)
+@fforifcontinue =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %i.0 < 5 in
+      let rec l_%13 = λj () .(
+            return %t.0)
+      and l_%3 = λj () .(
+            let %4 = %i.0 % 2 in
+            let %5 = %4 <> 0 in
+        let rec l_%11 = λj %t.1 .(
+                let %12 = %i.0 + 1 in
+                l_%1 %t.1 %12)
+        and l_%6 = λj () .(
+                let %7 = %t.0 * %t.0 in
+          let rec l_%9 = λj () .(
+                    let %10 = %7 + 1 in
+                    l_%11 %10)
+                in
+                  l_%9 ())
+        and l_%8 = λj () .(
+                l_%11 %t.0)
+            in
+              if %5
+                (l_%6 ())
+                (l_%8 ()))
+        in
+          if %2
+            (l_%3 ())
+            (l_%13 ()))
+    in
+      l_%1 2 0)
+@fforifbreak =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %i.0 < 5 in
+      let rec l_%13 = λj () .(
+            return %t.0)
+      and l_%3 = λj () .(
+            let %4 = %i.0 % 2 in
+            let %5 = %4 <> 0 in
+        let rec l_%6 = λj () .(
+                let %7 = %t.0 * %t.0 in
+          let rec l_%9 = λj () .(
+                    let %10 = %7 + 1 in
+            let rec l_%11 = λj () .(
+                        let %12 = %i.0 + 1 in
+                        l_%1 %10 %12)
+                    in
+                      l_%11 ())
+                in
+                  l_%9 ())
+        and l_%8 = λj () .(
+                l_%13 ())
+            in
+              if %5
+                (l_%6 ())
+                (l_%8 ()))
+        in
+          if %2
+            (l_%3 ())
+            (l_%13 ()))
+    in
+      l_%1 2 0)
+@fwhile =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %t.0 < %i.0 in
+      let rec l_%3 = λj () .(
+            let %4 = %i.0 + 1 in
+            let %5 = %t.0 * %t.0 in
+            l_%1 %5 %4)
+      and l_%6 = λj () .(
+            return %t.0)
+        in
+          if %2
+            (l_%3 ())
+            (l_%6 ()))
+    in
+      l_%1 2 10)
+@fwhileif =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %t.0 < %i.0 in
+      let rec l_%12 = λj () .(
+            return %t.0)
+      and l_%3 = λj () .(
+            let %4 = %i.0 + 1 in
+            let %5 = %4 % 2 in
+            let %6 = %5 <> 0 in
+        let rec l_%11 = λj %t.1 .(
+                l_%1 %t.1 %4)
+        and l_%7 = λj () .(
+                let %8 = %t.0 * %t.0 in
+                l_%11 %8)
+        and l_%9 = λj () .(
+          let %10 = %t.0 / %t.0 in
+                l_%11 %10)
+            in
+              if %6
+                (l_%7 ())
+                (l_%9 ()))
+        in
+          if %2
+            (l_%3 ())
+            (l_%12 ()))
+    in
+      l_%1 2 10)
+@fwhileifbreak =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %i.0 + 1 in
+        let %3 = %2 % 2 in
+        let %4 = %3 <> 0 in
+      let rec l_%5 = λj () .(
+        let rec l_%9 = λj () .(
+                return %t.0)
+            in
+              l_%9 ())
+      and l_%6 = λj () .(
+        let %7 = %t.0 / %t.0 in
+        let rec l_%8 = λj () .(
+                l_%1 %7 %2)
+            in
+              l_%8 ())
+        in
+          if %4
+            (l_%5 ())
+            (l_%6 ()))
+    in
+      l_%1 2 10)
+@fwhileifcontinue =
+  λp return .(
+    let rec l_%1 = λj %t.0 %i.0 .(
+        let %2 = %t.0 < %i.0 in
+      let rec l_%12 = λj () .(
+            return %t.0)
+      and l_%3 = λj () .(
+            let %4 = %i.0 + 1 in
+            let %5 = %4 % 2 in
+            let %6 = %5 <> 0 in
+        let rec l_%7 = λj () .(
+                l_%1 %t.0 %4)
+        and l_%8 = λj () .(
+          let %9 = %t.0 / %t.0 in
+          let rec l_%10 = λj () .(
+                    let %11 = %9 + 1 in
+                    l_%1 %11 %4)
+                in
+                  l_%10 ())
+            in
+              if %6
+                (l_%7 ())
+                (l_%8 ()))
+        in
+          if %2
+            (l_%3 ())
+            (l_%12 ()))
+    in
+      l_%1 2 10)

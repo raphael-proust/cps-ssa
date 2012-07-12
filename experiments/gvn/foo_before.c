@@ -1,5 +1,4 @@
-int entry (int b, int n, int m){
-  int res = 0;
+int entry (int res, int b, int n, int m){
   if(b) {
     res += n;
     res -= m;

@@ -8,6 +8,7 @@ CS= \
 		constflow.c \
 		dead.c \
 		dead2.c \
+		dead3.c \
 		fibonacci.c \
 		foo_after.c \
 		foo_before.c \
@@ -15,7 +16,9 @@ CS= \
 		forloop.c \
 		ifif.c \
 		ifs.c \
-		smallish.c
+		smallish.c \
+		inlinable.c \
+		loops.c
 
 HSS= \
 		fibonacci_pat.hs \
@@ -24,21 +27,24 @@ HSS= \
 		funif.hs \
 		mutual.hs \
 		mutual_infinite.hs \
-		y.hs \
+		y.hs
 
 HWS= \
-		 frompaper.ll.hw
+		 frompaper.ll.hw \
+		 lp.ll.hw \
+		 splitting.ll.hw
+
 
 LLS=$(CS:.c=.ll) $(HSS:.hs=.ll) $(HWS:.ll.hw=.ll)
 SSAS=$(CS:.c=.ssa) $(HSS:.hs=.ssa) $(HWS:.ll.hw=.ssa)
 CPSS=$(CS:.c=.cps) $(HSS:.hs=.cps) $(HWS:.ll.hw=.cps)
 
-OPTS= gvn
+NORMALIZING= -mem2reg -reassociate
 
 all: run
 
 run: lls
-	../../src/run.native $(LLS) -- $(OPTS)
+	../../src/run.native $(LLS)
 
 bcs: $(BCS)
 
@@ -56,11 +62,11 @@ clean:
 
 %.ll: %.hs
 	ghc -keep-llvm-file -O1 -c $<
-	opt -S -mem2reg $@ > $@.pre
+	opt -S $(NORMALIZING) $@ > $@.pre
 	mv $@.pre $@
 
 %.ll: %.pre.ll
-	opt -S -mem2reg $< > $@
+	opt -S $(NORMALIZING) $< > $@
 
 %.ll: %.ll.hw
 	cp $< $@

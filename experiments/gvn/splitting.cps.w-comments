@@ -1,0 +1,29 @@
+@entry =
+  λp %n return .(
+    let rec l_%l0 = λj () .(
+      let %cond0 = %n == 0 in
+      let rec l_%l1 = λj () .(
+        let %foo1 = 42 + 0 in
+        l_%l3 %foo1)                 // This is the additional source
+      and l_%l2 = λj () .(
+        let %foo2 = 24 + 0 in
+        let %cond2 = %n > 0 in
+        let rec l_%l4 = λj () .(
+          let %bar4 = 0 + 0 in
+          l_%l5 %foo2 %bar4)
+        in
+        if %cond0
+          (l_%l3 %foo2)            // This edge needs splitting
+          (l_%l4 ()))              // This is the additional destination
+      and l_%l3 = λj %foo3 .(
+        let %bar3 = 1 + 0 in
+        l_%l5 %foo3 %bar3)
+      and l_%l5 = λj %foo %bar .(
+        sel %result = %bar (%foo) (10000)  in
+        return %result)
+      in
+      if %cond0
+        (l_%l1 ())
+        (l_%l2 ()))
+    in
+    l_%l0 ())
