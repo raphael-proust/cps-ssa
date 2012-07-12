@@ -89,8 +89,7 @@ let rec tr_abstract_block dom k proc current_l node core_instrs jump =
         (fun domed -> (*terminates bc dominator tree is a DAG*)
           let lbl = SSA.var_of_label domed.SSA.b_label in
           let vs = List.map fst domed.SSA.b_phis in
-          let lambda = CPS.LJump (vs, tr_block dom k proc domed) in
-          (lbl, lambda)
+          (lbl, (vs, tr_block dom k proc domed))
         )
         (List.map
           (function
@@ -116,7 +115,7 @@ let tr_entry_block dom k proc entry_block =
 let tr_proc proc =
   let dom = Dom.dom_of_proc proc in
   let m = tr_entry_block dom CPS.var_return proc proc.SSA.p_entry_block in
-  CPS.LProc (proc.SSA.p_args, CPS.var_return, m)
+  (proc.SSA.p_args, CPS.var_return, m)
 
 let tr_module module_ =
     List.map
@@ -125,13 +124,12 @@ let tr_module module_ =
 
 let tr_prog (main, module_) =
   let open CPS in
-  MRec
-    (tr_module (main :: module_),
-     MApp (main.SSA.p_name,
-           List.map (fun v -> Prim.VVar v) main.SSA.p_args,
-           CVar var_run
-          )
-    )
+  (tr_module (main :: module_),
+   MApp (main.SSA.p_name,
+         List.map (fun v -> Prim.VVar v) main.SSA.p_args,
+         CVar var_run
+        )
+  )
 
 let proc    = tr_proc
 let module_ = tr_module

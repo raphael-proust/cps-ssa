@@ -72,9 +72,8 @@ let rec pp_m = function
       pp_m m
 
   | CPS.MRec  (vls, m) ->
-    let vl (v, l) =
-      Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^
-      (pp_lambda l)
+    let vl (v, (vs, m)) =
+      Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.space ^^ pp_l 'j' vs m
     in
     let _and = !^ "and " in
     !^ "let rec " ^^ PP.list ~sep:(PP.break1 ^^ _and) vl vls ^^ PP.break1 ^^
@@ -97,14 +96,10 @@ and pp_cont = function
   | CPS.CVar v   -> Prim_pp.pp_var v
   | CPS.C (v, m) -> PP.with_paren (pp_l 'c' [v] m)
 
-and pp_lambda = function
-  | CPS.LProc (vs, v, m) -> pp_l 'p' (vs @ [v]) m
-  | CPS.LJump (vs, m)    -> pp_l 'j'  vs        m
+and pp_proc (vs, v, m) = pp_l 'p' (vs @ [v]) m
 
-let pp_var_lambda (v, l) =
-  Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.level (PP.break1 ^^
-    pp_lambda l
-  )
+let pp_var_proc (v, l) =
+  Prim_pp.pp_var v ^^ PP.space ^^ PP.equals ^^ PP.level (PP.break1 ^^ pp_proc l)
 
-let pp_module vls = PP.list ~sep:PP.break1 pp_var_lambda vls
+let pp_module vls = PP.list ~sep:PP.break1 pp_var_proc vls
 

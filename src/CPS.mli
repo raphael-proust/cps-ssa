@@ -44,7 +44,7 @@ type m =
       blur the effect of llvm optimisations. *)
   | MSel of (Prim.var * Prim.value * Prim.value * Prim.value * m)
   (** Recursive let-binding. It only binds lambdas. For values, use [Mlet]. *)
-  | MRec  of ((Prim.var * lambda) list * m)
+  | MRec  of ((Prim.var * (Prim.var list * m)) list * m)
   (** Sequences are for memory side-effect operation only. *)
   | MSeq  of (Prim.var * Prim.mem_w * m)
 
@@ -55,14 +55,14 @@ and cont =
     (** Explicit Continuation. For binding the result of a computation. *)
   | C    of Prim.var * m
 
-(* [lambda] are lambdas translated from either join point or procedures. *)
-and lambda =
-  (** Procedures. These are for source program functions/procedures translation.
-      The last [var]iable is for the "return" continuation.
-    *)
-  | LProc of (Prim.var list * Prim.var * m)
-  (** Intra-procedure Jumps. E.g. for join points. *)
-  | LJump of (Prim.var list * m)
+(** [proc] are for source program functions/procedures translation.
+    The last [var]iable is for the "return" continuation.
+  *)
+and proc = Prim.var list * Prim.var * m
+
+(** [prog] are for whole programs. It is a collection of procedure and a term.
+It is similar to an [MRec] constructs with [proc]s substituted in. *)
+and prog = (Prim.var * proc) list * m
 
 (** [var_run] is for the top return continuation. Fulfilling the same purpose
     as to [SSA.label_main] somehow. *)

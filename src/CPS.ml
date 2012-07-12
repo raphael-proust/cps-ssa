@@ -27,16 +27,16 @@ type m =
              )
   | MLet  of (Prim.var * Prim.value * m)
   | MSel  of (Prim.var * Prim.value * Prim.value * Prim.value * m)
-  | MRec  of ((Prim.var * lambda) list * m)
+  | MRec  of ((Prim.var * (Prim.var list * m)) list * m)
   | MSeq  of (Prim.var * Prim.mem_w * m)
 
 and cont =
   | CVar of Prim.var
   | C    of Prim.var * m
 
-and lambda =
-  | LProc of (Prim.var list * Prim.var * m)
-  | LJump of (Prim.var list * m)
+and proc = Prim.var list * Prim.var * m
+
+and prog = (Prim.var * proc) list * m
 
 (* This is for monad entry application. *)
 let var_run = Prim.var "run"

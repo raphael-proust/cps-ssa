@@ -34,7 +34,7 @@ val pp_m     : CPS.m -> Pprint.document
 val pp_cont  : CPS.cont -> Pprint.document
 
 (** pretty-prints CPS lambdas (either merge points or source functions). *)
-val pp_lambda: CPS.lambda -> Pprint.document
+val pp_proc  : CPS.proc -> Pprint.document
 
 (** pretty-prints a collection of CPS lambdas. *)
-val pp_module: (Prim.var * CPS.lambda) list -> Pprint.document
+val pp_module: (Prim.var * CPS.proc) list -> Pprint.document
