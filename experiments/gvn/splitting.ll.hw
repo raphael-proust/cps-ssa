@@ -1,0 +1,45 @@
+; vim: set ft=llvm:
+
+; The program is as follows
+;      l0
+;     /  \
+;   l1    l2
+;     \  /  \
+;      l3    l4
+;        \  /
+;         l5
+;
+; It makes edge splitting a necessary step of gvn
+
+define i32 @entry(i32 %n) nounwind {
+  br label %l0
+
+l0:
+  %cond0 = icmp eq i32 %n, 0
+  br i1 %cond0, label %l1, label %l2
+
+l1:
+  %foo1 = add i32 42, 0
+  br label %l3
+
+l2:
+  %foo2 = add i32 24, 0
+  %cond2 = icmp ugt i32 %n, 0
+  br i1 %cond0, label %l3, label %l4
+
+l3:
+  %foo3 = phi i32 [ %foo1, %l1 ], [ %foo2, %l2 ]
+  %bar3 = add i1 1, 0
+  br label %l5
+
+l4:
+  %bar4 = add i1 0, 0
+  br label %l5
+
+l5:
+  %foo = phi i32 [ %foo3, %l3 ], [ %foo2, %l4 ]
+  %bar = phi i32 [ %bar3, %l3 ], [ %bar4, %l4 ]
+  %result = select i1 %bar, i32 %foo, i32 10000
+  ret i32 %result
+
+}
