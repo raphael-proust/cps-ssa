@@ -1,0 +1,31 @@
+@entry =
+  λp %n return .(
+    let rec l_%l0 = λj () .(
+      let %cond0 = %n > 37 in
+      let rec l_%l1 = λj %foo1pre %bar1 .(
+        let %foo1 = %foo1pre + -1 in
+        let rec l_%l3 = λj () .(       // This is a "loop header"
+          let %bar3 = %bar1 + 1 in
+          let %cond3 = %bar3 > %foo1 in
+          let rec l_%l5 = λj () .(
+            let %result = %bar3 + %foo1 in
+            return %result)
+          in
+          if %cond3
+            (l_%l5 ())
+            (l_%l2 %foo1 %bar3))       // This is a "back-edge"
+        in
+        l_%l3 ())
+      and l_%l2 = λj %foo2 %bar2pre .( // This is a "loop header" too
+        let %bar2 = %bar2pre + -1 in
+        let rec l_%l4 = λj () .(
+          let %foo4 = %foo2 - 1 in
+          l_%l1 %foo4 %bar2)           // This is a "back-edge" too
+        in
+        l_%l4 ())
+      in
+      if %cond0                        // This cond goes to either headers
+        (l_%l1 %n 37)
+        (l_%l2 %n 37))
+    in
+    l_%l0 ())

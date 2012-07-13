@@ -31,8 +31,8 @@ HSS= \
 
 HWS= \
 		 frompaper.ll.hw \
-		 lp.ll.hw \
-		 splitting.ll.hw
+		 splitting.ll.hw \
+		 cross.ll.hw
 
 
 LLS=$(CS:.c=.ll) $(HSS:.hs=.ll) $(HWS:.ll.hw=.ll)
@@ -69,7 +69,7 @@ clean:
 	opt -S $(NORMALIZING) $< > $@
 
 %.ll: %.ll.hw
-	cp $< $@
+	opt -S $(NORMALIZING) $< > $@
 
 %.cps %.ssa: %.ll
 	../src/run.native $<

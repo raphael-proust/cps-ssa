@@ -1,0 +1,52 @@
+; vim: set ft=llvm:
+
+; The program is as follows
+;      l0
+;     /  \
+;    v    v
+;   l1    l2
+;    |^  ^|
+;    | \/ |
+;    | /\ |
+;    v/  \v
+;   l3    l4
+;    v
+;   l5
+;
+; The notion of "loop header" in this cfg is more complicated
+
+define i32 @entry(i32 %n) nounwind {
+  br label %l0
+
+l0:
+  %foo0 = add i32 %n, 0
+  %bar0 = add i32 37, 0
+  %cond0 = icmp ugt i32 %foo0, %bar0
+  br i1 %cond0, label %l1, label %l2
+
+l1:
+  %foo1pre = phi i32 [ %foo0, %l0 ], [ %foo4, %l4 ]
+  %bar1 = phi i32 [ %bar0, %l0 ], [ %bar2, %l4 ]
+  %foo1 = add i32 %foo1pre, -1
+  br label %l3
+
+l2:
+  %foo2 = phi i32 [ %foo0, %l0 ], [ %foo1, %l3 ]
+  %bar2pre = phi i32 [ %bar0, %l0 ], [ %bar3, %l3 ]
+  %bar2 = add i32 %bar2pre, -1
+  br label %l4
+
+l3:
+  %bar3 = add i32 %bar1, 1
+  %cond3 = icmp ugt i32 %bar3, %foo1
+  br i1 %cond3, label %l5, label %l2
+
+l4:
+  %foo4 = sub i32 %foo2, 1
+  br label %l1
+
+l5:
+  %result = add i32 %bar3, %foo1
+  ret i32 %result
+
+}

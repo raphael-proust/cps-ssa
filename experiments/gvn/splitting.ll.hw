@@ -38,7 +38,7 @@ l4:
 
 l5:
   %foo = phi i32 [ %foo3, %l3 ], [ %foo2, %l4 ]
-  %bar = phi i32 [ %bar3, %l3 ], [ %bar4, %l4 ]
+  %bar = phi i1 [ %bar3, %l3 ], [ %bar4, %l4 ]
   %result = select i1 %bar, i32 %foo, i32 10000
   ret i32 %result
 
