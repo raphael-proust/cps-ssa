@@ -15,6 +15,7 @@ MLS= \
 		 llvm_parser.ml \
 		 llvm_lexer.ml \
 		 LLVM2SSA.ml \
+		 CPS_gvn.ml \
 		 driver.ml
 
 CMXS=$(MLS:.ml=.cmx)

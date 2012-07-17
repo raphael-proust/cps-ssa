@@ -64,6 +64,17 @@ and proc = Prim.var list * Prim.var * m
 It is similar to an [MRec] constructs with [proc]s substituted in. *)
 and prog = (Prim.var * proc) list * m
 
+(** [m_map ?var ?value ?mem_w m] maps the components of the term [m] (but not
+    its structure. It applies [var] on all the variables of the term, [value]
+    on values, [mem_w] on memory writes, and itself on subterms. The default
+    values for the optional arguments are all the identity function. *)
+val m_map :
+     ?var:(Prim.var -> Prim.var)
+  -> ?value:(Prim.value -> Prim.value)
+  -> ?mem_w:(Prim.mem_w -> Prim.mem_w)
+  -> m -> m
+
+
 (** [var_run] is for the top return continuation. Fulfilling the same purpose
     as to [SSA.label_main] somehow. *)
 val var_run: Prim.var

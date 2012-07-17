@@ -31,6 +31,7 @@ module L :
     val unique : ('a -> 'b option) -> 'a list -> bool
     val pick_one_such_as : ('a -> bool) -> 'a list -> 'a * 'a list
     val map_option : ('a -> 'b option) -> 'a list -> 'b list
+    val zip : 'a list -> 'b list -> ('a * 'b) list
   end
 module O :
   sig

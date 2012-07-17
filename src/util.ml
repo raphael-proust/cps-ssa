@@ -82,6 +82,10 @@ module L = struct
       | None -> map_option f t
       | Some h -> h :: map_option f t
 
+  let rec zip l1 l2 = match (l1, l2) with
+    | [], [] -> []
+    | h1::t1, h2::t2 -> (h1, h2) :: zip t1 t2
+    | [], _::_ | _::_, [] -> raise (Invalid_argument "Util.L.zip")
 
 end
 

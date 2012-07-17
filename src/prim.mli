@@ -76,6 +76,12 @@ type value =
   | VLShr of (value * value)
   | VAShr of (value * value)
 
+val value_map:
+     ?var:(var -> var)
+  -> ?const:(const -> const)
+  -> ?dummy:(string -> string)
+  -> value -> value
+
 type mem_w =
   | MWrite of value
   | MAlloc

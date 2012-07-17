@@ -68,6 +68,37 @@ type value =
   | VLShr of (value * value)
   | VAShr of (value * value)
 
+let value_map ?(var= fun x -> x) ?(const= fun c -> c) ?(dummy= fun s -> s) v =
+  let rec aux = function
+    | VVar v -> VVar (var v)
+    | VConst c -> VConst (const c)
+    | VNull -> VNull
+    | VUndef -> VUndef
+    | VDummy s -> VDummy (dummy s)
+    | VZero -> VZero
+    | VStruct vs -> VStruct (List.map aux vs)
+    | VPlus (v1, v2) -> VPlus (aux v1, aux v2)
+    | VMult (v1, v2) -> VMult (aux v1, aux v2)
+    | VMinus (v1, v2) -> VMinus (aux v1, aux v2)
+    | VDiv (v1, v2) -> VDiv (aux v1, aux v2)
+    | VRem (v1, v2) -> VRem (aux v1, aux v2)
+    | VGt (v1, v2) -> VGt (aux v1, aux v2)
+    | VGe (v1, v2) -> VGe (aux v1, aux v2)
+    | VLt (v1, v2) -> VLt (aux v1, aux v2)
+    | VLe (v1, v2) -> VLe (aux v1, aux v2)
+    | VEq (v1, v2) -> VEq (aux v1, aux v2)
+    | VNe (v1, v2) -> VNe (aux v1, aux v2)
+    | VAnd (v1, v2) -> VAnd (aux v1, aux v2)
+    | VOr (v1, v2) -> VOr (aux v1, aux v2)
+    | VXor (v1, v2) -> VXor (aux v1, aux v2)
+    | VRead v -> VRead (aux v)
+    | VCast v -> VCast (aux v)
+    | VShl (v1, v2) -> VShl (aux v1, aux v2)
+    | VLShr (v1, v2) -> VLShr (aux v1, aux v2)
+    | VAShr (v1, v2) -> VAShr (aux v1, aux v2)
+  in
+  aux v
+
 type mem_w =
   | MWrite of value
   | MAlloc

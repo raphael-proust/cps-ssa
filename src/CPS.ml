@@ -30,6 +30,16 @@ type m =
   | MRec  of ((Prim.var * (Prim.var list * m)) list * m)
   | MSeq  of (Prim.var * Prim.mem_w * m)
 
+(*
+  | MApp  (v, vs, cont)
+  | MCont (v, vs)
+  | MCond (v, (k1, vs1), (k2, vs2))
+  | MLet  (x, v, m)
+  | MSel  (x, v, v1, v2, m)
+  | MRec  (ls, m)
+  | MSeq  (v, w, m)
+*)
+
 and cont =
   | CVar of Prim.var
   | C    of Prim.var * m
@@ -37,6 +47,26 @@ and cont =
 and proc = Prim.var list * Prim.var * m
 
 and prog = (Prim.var * proc) list * m
+
+let m_map ?(var= fun x -> x) ?(value= fun v -> v) ?(mem_w= fun w -> w) m =
+  let values vs = List.map value vs in
+  let vars vs = List.map var vs in
+  let rec aux = function
+    | MApp  (v, vs, c) -> MApp (var v, values vs, aux_cont c)
+    | MCont (v, vs) -> MCont (var v, values vs)
+    | MCond (v, (k1, vs1), (k2, vs2)) ->
+      MCond (value v, (var k1, values vs1), (var k2, values vs2))
+    | MLet  (x, v, m) -> MLet (var x, value v, aux m)
+    | MSel  (x, v, v1, v2, m) ->
+      MSel (var x, value v, value v1, value v2, aux m)
+    | MRec  (ls, m) ->
+      MRec (List.map (fun (f, (vs, m)) -> (var f, (vars vs, aux m))) ls, aux m)
+    | MSeq  (v, w, m) -> MSeq (var v, mem_w w, aux m)
+  and aux_cont = function
+    | CVar v -> CVar (var v)
+    | C (x, m) -> C (var x, aux m)
+  in
+  aux m
 
 (* This is for monad entry application. *)
 let var_run = Prim.var "run"
