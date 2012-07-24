@@ -215,7 +215,7 @@ Just as with the original GVN algorithm, the code needs to be (automatically)
 modified. The three modifications that we apply are:
 
 - landing lambdas insertion,
-- call splitting, and
+- trivial-call uninlining, and
 - virtual call annotation.
 
 ### Landing Lambdas
@@ -330,4 +330,42 @@ CallTo(f = \lambda \: args \: \cdot m) & = & f \: args \text{ otherwise} \\
 
 <!--TODO: find the meaning of "the union of arguments"-->
 
+
+###Trivial-call Uninlining
+
+In this transformation we add a level of indirection to some calls by
+un-inlining a trivial redirection.
+
+\begin{description}
+\item[Conditional] tests wheter a term is a conditional
+
+\begin{equation}
+\begin{array}{r l}
+Conditional(f \: v_1 \: \dots \: v_n \: k) = & Conditional_k(k) \\
+Conditional(l \: v_1 \: \dots \: v_n) = & False \\
+Conditional(if(\_) \: then \: \_ \: else \: \_) = & True \\
+Conditional(let \: x \: = \: v \: in \: m) = & Conditional(m) \\
+Conditional(letrec \: \_ \: in \: m) = & Conditional(m) \\
+Conditional_k(l) = & False \\
+Conditional_k(\lambda_c \: x \: \cdot \: m) = & Conditional(m) \\
+\end{array}
+\end{equation}
+
+\end{description}
+
+TODO: define what needs to be uninlined
+
+\begin{description}
+\item[Uninline]
+
+\begin{equation}
+\begin{array}{r l}
+Uninline_{left}(if(v) \: then \: l_1 \_ else l_2 \_) = &
+letrec \{ f \: = \: \lambda \: () \: \cdot l_1 \_ \} in if(v) \: then \: f \: () \: else \: l_2 \: \_ \\
+Uninline_{right}(if(v) \: then \: l_1 \_ else l_2 \_) = &
+letrec \{ f \: = \: \lambda \: () \: \cdot l_2 \_ \} in if(v) \: then \: l_1 \: \_ \: else \: f \: () \\
+\end{array}
+\end{equation}
+
+\end{description}
 
