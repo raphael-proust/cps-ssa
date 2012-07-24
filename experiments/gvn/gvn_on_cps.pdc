@@ -19,49 +19,54 @@ The BNF grammar of CPS terms is:
 
 \begin{equation}
 \begin{array}{r l}
-m ::= & | \: f \: v_1 \: \dots \: v_n \: k\\
-      & | \: l \: v_1 \: \dots \: v_n\\
-      & | \: if(v) \: then \:
-               l_1 \: v_1 \: \dots \: v_n \:
-             else \:
-               l_2 \: u_1 \: \dots \: u_n\\
-      & | \: let \: x \: = \: v \: in \: m\\
-      & | \: let \: rec \: f_1 \: = \: \lambda_j \: x_1 \: \dots \: x_{n1} \: . \: m_1 \:
-                    and \: \dots \:
-                    and \: f_n \: = \: \lambda_j \: x_1 \: \dots \: x_{nn} \: . \: m_n \:
-             in \: m\\
-k ::= & | \: l\\
-      & | \: \lambda_c \: x \: . \: m\\
-v ::= & | \: x\\
-      & | \: 0 \: | \: 1 \: | \: \dots\\
-      & | \: v_1 \: + \: v_2\\
-      & | \: v_1 \: \times \: v_2\\
-      & | \: \dots\\
+m ::= & f \: v_1 \: \dots \: v_n \: k\\
+    | & l \: v_1 \: \dots \: v_n\\
+    | & if(v) \: then \:
+          l_1 \: v_1 \: \dots \: v_n \:
+        else \:
+          l_2 \: u_1 \: \dots \: u_n\\
+    | & let \: x \: = \: v \: in \: m\\
+    | & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m\\
+k ::= & l\\
+    | & \lambda_c \: x \: . \: m\\
+\Lambda ::= & f \: = \: \lambda_j \: x_1 \: \dots \: x_{n} \: . \: m\\
+v ::= & x\\
+    | & 0 \: | \: 1 \: | \: \dots\\
+    | & v_1 \: + \: v_2\\
+    | & v_1 \: \times \: v_2\\
+    | & \dots\\
 \end{array}
 \end{equation}
 
-where $f$, $l$, $x$, and $y$ are variables. Also note that $\lambda$s are
-annotated with either $c$ for continuations, $j$ for jumps, and $p$ for
-procedures (not shown here. These annotations are for compilation purpose: TODO:
-explain.
+We use:
+
+- $f$, $l$, $x$, and $y$ for variables,
+- $i$ for indices, and
+- $n$ as arbitrary bounds for indexes.
+
+Also note that $\lambda$s have annotation: either $c$ for continuations, $j$ for
+jumps, or $p$ for procedures (not shown here). These annotations are for
+compilation purpose: TODO: explain.
 
 The corresponding OCaml type is:
 
-    type m =
-      | Mapp  of (var * value list * continuation)
-      | Mcont of (var * value list)
-      | Mif   of (value * (var * var list) * (var * var list))
-      | Mlet  of (var * value * m)
-      | Mrec  of ((var * var list * m) list * m)
-    and continuation =
-      | Cvar of var
-      | C    of (var * m)
-    and value =
-      | Vvar of var
-      | Vcst of int
-      | Vadd of (value * value)
-      | Vmul of (value * value)
-      | ..
+\begin{verbatim}
+type m =
+  | Mapp  of (var * value list * continuation)
+  | Mcont of (var * value list)
+  | Mif   of (value * (var * var list) * (var * var list))
+  | Mlet  of (var * value * m)
+  | Mrec  of ((var * var list * m) list * m)
+and continuation =
+  | Cvar of var
+  | C    of (var * m)
+and value =
+  | Vvar of var
+  | Vcst of int
+  | Vadd of (value * value)
+  | Vmul of (value * value)
+  | ..
+\end{verbatim}
 
 The notion of primitive operators (addition, multiplication) is purposedly left
 unspecified but should be such as no function calls are made.
@@ -70,24 +75,32 @@ unspecified but should be such as no function calls are made.
 
 Here is a correspondence table for SSA to and from CPS translation:
 
-+-------------------------------------+----------------------------------------+
-| SSA                                 | CPS                                    |
-+=====================================+========================================+
-| Procedure                           | Lambda ($\lambda_p$)                   |
-+-------------------------------------+----------------------------------------+
-| Basic Block                         | Lambda ($\lambda_j$)                   |
-+-------------------------------------+----------------------------------------+
-| Jump                                | Call                                   |
-+-------------------------------------+----------------------------------------+
-| Branch                              | If-Then-Else                           |
-+-------------------------------------+----------------------------------------+
-| Return                              | Continuation Call                      |
-+-------------------------------------+----------------------------------------+
++----------------------+-------------------------+-----------------------------+
+| SSA                  | CPS                     | OCaml CPS                   |
++======================+=========================+=============================+
+| Procedure            | Lambda ($\lambda_p$)    | `var * var list * m`        |
++----------------------+-------------------------+-----------------------------+
+| Basic Block          | Lambda ($\lambda_j$)    | `var * var list * m`        |
++----------------------+-------------------------+-----------------------------+
+| Jump                 | Continuation Call       | `Mcont _`                   |
++----------------------+-------------------------+-----------------------------+
+| Procedure Call       | Application w/ Cont     | `Mapp (_, _, C _)`          |
++----------------------+-------------------------+-----------------------------+
+| Procedure Tail Call  | Application w/ Cont Var | `Mapp (_, _, Cvar _)`       |
++----------------------+-------------------------+-----------------------------+
+| Branch               | If-Then-Else            | `Mcond _`                   |
++----------------------+-------------------------+-----------------------------+
+| Return               | Continuation Call       | `Mcont _`                   |
++----------------------+-------------------------+-----------------------------+
 
 Here is are other important things to keep in mind:
 
 - the dominance tree of the SSA CFG is directly reflected in the term structure
-  of the CPS term,
+  of the CPS term, more specifically
+    + when a block $b$ is the immediate dominator of $b_i$
+    + the translation contains $letrec \Lambda_i in m$ where
+    + $m$ is the translation of of $b$, and
+    + $\Lambda_i$ is the translation of $b_i$;
 - $\lambda$s are annotated with either `j`, `c`, or `p` to denote, respectively,
   jumps, continuations, or procedure call.
 
@@ -95,58 +108,103 @@ Here is are other important things to keep in mind:
 
 ##Notions
 
+We always work in the context of a $\lambda_p$; that is,
+\`\`$\exists m \text{ a term}$'' is to be understood as
+\`\`$\exists m \text{ a term in the body of the current }\lambda_p$''
+
 We define the following:
 
-Calls <!-- TODO: rewrite with LAMBDAS -->
-:   the calls that are made in a CPS term
+<!--FIXME: use Direct-Calls and Sub-Terms instead of Calls -->
+\begin{description}
+\item[Subterms]
+the the terms that can be found inside a term
 
-    \begin{equation}
-    \begin{array}{r l}
-    Calls(f \: v_1 \: \dots \: v_n \: k) = & Calls_k(k) \\
-    Calls(l \: v_1 \: \dots \: v_n) = & \{ l \} \\
-    Calls(if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n) = &
-      \{ l1, \: l2 \}\\
-    Calls(let \: x \: = \: v \: in \: m) = & Calls(m) \\
-    Calls(let \: rec \: f_1 \: = \: \lambda_j \: x_1 \: \dots \: x_{n1} \: . \: m_1 \:
-                 and \: \dots \:
-                 and \: f_n \: = \: \lambda_j \: x_1 \: \dots \: x_{nn} \: . \: m_n \:
-          in \: m) = & Calls(m) \cup \bigcup_{1 < i < n} Calls(m_i)\\
-    Calls_k(l) = & \{ l \} \\
-    Calls_k(\lambda_c \: x \: . \: m) = & Calls(m) \\
-    \end{array}
-    \end{equation}
+\begin{equation}
+\begin{array}{r l}
+Subterms(f \: v_1 \: \dots \: v_n \: k) = & Subterms_k(k) \\
+Subterms(l \: v_1 \: \dots \: v_n) = & \{ \} \\
+Subterms(if(\_) \: then \: \_ \: else \: \_) = & \{\}\\
+Subterms(let \: x \: = \: v \: in \: m) = & \{ m \} \cup Subterms(m) \\
+Subterms(letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m) = &
+  Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
+Subterms_k(l) = & \{ \} \\
+Subterms_k(\lambda_c \: x \: . \: m) = & m \cup Subterms(m) \\
+Subterms_{\Lambda}(f \: = \: \lambda_j \: x \: \dots \: x_{n} \: . \: m) = &
+  m \cup Subterms(m)\\
+\end{array}
+\end{equation}
 
-    <!-- foobar -->
+\begin{verbatim}
+let rec subterms t = match t with
+  | Mapp  (_, _, Cvar _     ) -> [t]
+  | Mapp  (_, _, C    (_, m)) -> t :: subterms m
+  | Mcont (_, _) -> [t]
+  | Mif   (_, (_, _), (_, _)) -> [t]
+  | Mlet  (_, _, m) -> t :: subterms m
+  | Mrec  (ls, m) ->
+    t :: subterms m @ List.flatten (List.map (fun (_, _, m) -> subterms m) ls)
+\end{verbatim}
 
-        let rec calls = function
-          | Mapp  (_, _, Cvar k     ) -> [k]
-          | Mapp  (_, _, C    (_, m)) -> calls m
-          | Mcont (k, _) -> [k]
-          | Mif   (_, (k1, _), (k2, _)) -> [k1; k2]
-          | Mlet  (_, _, m) -> calls m
-          | Mrec  (ls, m) -> calls m :: List.map (fun (_, _, m) -> calls m) ls
+\item[Calls]
+the calls that are made in a CPS term
+
+\begin{equation}
+\begin{array}{r l}
+Calls(f \: v_1 \: \dots \: v_n \: k) = & Calls_k(k) \\
+Calls(l \: v_1 \: \dots \: v_n) = & \{ l \} \\
+Calls(if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n) = &
+  \{ l1, \: l2 \}\\
+Calls(let \: x \: = \: v \: in \: m) = & \{ \} \\
+Calls(letrec \: \{ \_ \} \: in \: m) = & \{ \}\\
+Calls_k(l) = & \{ l \} \\
+Calls_k(\lambda_c \: x \: . \: m) = & \{ \} \\
+\end{array}
+\end{equation}
+
+\begin{verbatim}
+let rec calls = function
+  | Mapp  (_, _, Cvar k) -> [k]
+  | Mapp  (_, _, C    _) -> []
+  | Mcont (k, _) -> [k]
+  | Mif   (_, (k1, _), (k2, _)) -> [k1; k2]
+  | Mlet  (_, _, _) -> []
+  | Mrec  (_, _) -> []
+\end{verbatim}
+\end{description}
 
 Note that we assume that names are unique (and thus that a function and its name
 can be associated). This is a cheap assumption because the context ensures that
 functions are named after SSA block labels (which need be unique).
 
+We naturally extend $Calls$ to apply on sets. This is useful for composing
+$Calls$ and $Subterms$ to get all the calls of a term.
 
-$Children$
-:   list all the strict sub-terms of a term
+\begin{description}
+\item[$Siblings$]
+children of the same parent.
 
-        let rec children = function
-          | Mapp  (_, _, Cvar _     ) -> []
-          | Mapp  (_, _, C    (_, m)) -> [m]
-          | Mcont (_, _) -> []
-          | Mif   (_, (_, _), (_, _)) -> []
-          | Mlet  (_, _, m) -> [m]
-          | Mrec  (ls, m) -> m :: List.map (fun (_, _, m) -> m) ls
+$Siblings(\Lambda) = L$ such that
+$letrec \: L \: in \: m'$ is a term and $\Lambda \in L$
 
-$Parent$
-:   TODO
+\item[$Head$]
+is the name of the continuation a term is the body of
 
-$Parents$
-:   TODO
+\begin{equation}
+\begin{array}{l}
+Head(m) = f \Leftrightarrow
+Parent(m) =
+let \: rec \: \dots \:
+       and \: f \: = \: \lambda_j \: \_ \: . \: m \:
+       and \: \dots \:
+in \: \_ \\
+Head(m) \text{ is undefined otherwise}
+\end{array}
+\end{equation}
+\item[$Body$]
+is the inverse of $Head$
+
+$Body(f) = m \Leftrightarrow f = Head(m)$
+\end{description}
 
 
 #GVN on CPS
@@ -166,47 +224,52 @@ GVN introduces landing lambdas at the entrance of each loop. These landing pads
 allow to move code from \`\`after'' the loop to \`\`before'' it. We call the
 corresponding concept in CPS *landing lambdas*.
 
-Simple loop header:
-:   `l` is a simple loop header when it is part of
+\begin{description}
+\item[Simple loop]
+is a term $m$ such as
 
-        let rec simple_loop_headers = function
-          | Mapp  (_, _, Cvar _     ) -> []
-          | Mapp  (_, _, C    (_, m)) -> simple_loop_headers m
-          | Mcont (_, _) -> []
-          | Mif   (_, (_, _), (_, _)) -> []
-          | Mlet  (_, _, m) -> simple_loop_header m
-          | Mrec  (ls, m) ->
-            simple_loop_headers m
-            :: List.fold_left
-                 (fun a (l, _, m) -> if List.mem l (calls m) then l :: a else a)
-                 []
-                 ls
+$Head(m) \in Calls(m)$ and
+$\forall f \in Calls(m), f \neq Head(m) \Rightarrow Head(m) \notin Calls(Body(f))$
+
+\item[Simple loop head:]
+\texttt{l} is a simple loop head when it is part of
+
+\begin{verbatim}
+let rec simple_loop_headers = function
+  | Mapp  (_, _, Cvar _     ) -> []
+  | Mapp  (_, _, C    (_, m)) -> simple_loop_headers m
+  | Mcont (_, _) -> []
+  | Mif   (_, (_, _), (_, _)) -> []
+  | Mlet  (_, _, m) -> simple_loop_header m
+  | Mrec  (ls, m) ->
+    simple_loop_headers m
+    :: List.fold_left
+         (fun a (l, _, m) -> if List.mem l (calls m) then l :: a else a)
+         []
+         ls
+\end{verbatim}
+\end{description}
 
 
 Simple loop headers are the entry nodes of loops that have exactly one entry
-node. Such loops are of two kind: while-loops and other loops. While the former
-is not straightforward, the latter is trivial to equip with a landing lambda:
+node. This, however, is not sufficient to treat all the loop cases.
+(TODO:example with inlined even/odd function pair). We thus define the loops
+using the following.
 
-    let rec add_landing_lambdas = function
-      | Mapp  (_, _ , Cvar _     ) as m -> m
-      | Mapp  (f, vs, C    (x, m))      -> Mapp (f, vs, C (x, add_landing_lambdas m))
-      | Mcont (_, _) as m -> m
-      | Mif   (_, (_, _), (_, _)) as m -> m
-      | Mlet  (x, v, m) -> Mlet  (x, v, add_landing_lambdas m)
-      | Mrec  (ls, Mif (v, (k1, vs1), (k2, vs2))) when is_while_loop ls k1 k2 ->
-        TODO
-      | Mrec  (ls, m) ->
-        Mrec (
-          List.map
-            (fun (l, vs, m) ->
-             if is_other_loop l m then
-               let f = fresh_var () in
-               (l, vs, (Mrec ([(f, vs, subs l f m)], MCont (f, vs))))
-             else
-               (l, vs, m)
-            )
-            ls,
-          add_landing_lambdas m)
+\begin{description}
+\item[Loop]
+$L \subseteq E \subseteq C$ is a \em{loop-entries-conditionals} of $m$ if
 
-Complex loop header set:
-:   $\{$ `l`$_1, \dots,$ `l`$_n \}$ is a complex loop header set
+\begin{equation}
+\begin{array}{l r}
+m = letrec Siblings(L) in m' & \\
+Calls(Subterms(m')) \cap L = E & \\
+\forall \Lambda \in C & Conditional(\Lambda) \\
+                      & Calls(Subterms(\Lambda)) \subset L \\
+                      & Calls(Subterms(\Lambda)) \subset (Siblings(L) - L) \\
+\end{array}
+\end{equation}
+
+\end{description}
+
+
