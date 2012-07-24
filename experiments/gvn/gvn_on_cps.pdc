@@ -258,12 +258,27 @@ using the following.
 
 \begin{description}
 \item[Loop]
-$L \subseteq E \subseteq C$ is a \em{loop-entries-conditionals} of $m$ if
+$(L, E ,C)$ is a \em{loop} of $m$ if $L$, $C$, and $E$ are maximal sets of
+$\Lambda$ such that
 
-\begin{equation}
-\begin{array}{l r}
-m = letrec Siblings(L) in m' & \\
-Calls(Subterms(m')) \cap L = E & \\
+\begin{equation}\label{loopdef:0}
+L \subseteq E \subseteq C
+\end{equation}
+\begin{equation}\label{loopdef:1}
+m = letrec \: Siblings(L) \: in \: m'
+\end{equation}
+\begin{equation}\label{loopdef:2}
+\begin{array}{r l}
+\forall \Lambda, \Lambda' \in L \: \exists \Lambda_0, \dots, \Lambda_n \text{ such that } &
+  \Lambda = \Lambda_0, \: \Lambda' = \Lambda_n, \text{ and} \\
+& \forall i < n \: Calls(Subterms_{\Lambda}(\Lambda_i)) \ni \Lambda_{i+1} \\
+\end{array}
+\end{equation}
+\begin{equation}\label{loopdef:3}
+(Calls(Subterms(m')) \cup Calls(Subterms_{\Lambda}(Siblings(L) - L))) \cap L = E \neq \{\}
+\end{equation}
+\begin{equation}\label{loopdef:4}
+\begin{array}{r l}
 \forall \Lambda \in C & Conditional(\Lambda) \\
                       & Calls(Subterms(\Lambda)) \subset L \\
                       & Calls(Subterms(\Lambda)) \subset (Siblings(L) - L) \\
@@ -271,5 +286,15 @@ Calls(Subterms(m')) \cap L = E & \\
 \end{equation}
 
 \end{description}
+
+<!--TODO: use a notation for (Siblings(L)-L) e.g. \overline(L)-->
+
+Elements of $L$ are all siblings \eqref{loopdef:1} with a complete looping call
+graph \eqref{loopdef:2}. Elements of $E$ are entry points to the loop
+\eqref{loopdef:3}, that is, they are called from the other subterms of $m$.
+Elements of $C$ are entry $\Lambda$ that double as exit $\Lambda$
+\eqref{loopdef:4}, we call them $entry\text{-}exit$ or $conditional$ $\Lambda$s
+
+The maximality condition is important so as to capture the whole loop.
 
 
