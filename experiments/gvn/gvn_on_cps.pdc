@@ -28,8 +28,8 @@ m ::= & f \: v_1 \: \dots \: v_n \: k\\
     | & let \: x \: = \: v \: in \: m\\
     | & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m\\
 k ::= & l\\
-    | & \lambda_c \: x \: . \: m\\
-\Lambda ::= & f \: = \: \lambda_j \: x_1 \: \dots \: x_{n} \: . \: m\\
+    | & \lambda_c \: x \: \cdot \: m\\
+\Lambda ::= & f \: = \: \lambda_j \: x_1 \: \dots \: x_{n} \: \cdot \: m\\
 v ::= & x\\
     | & 0 \: | \: 1 \: | \: \dots\\
     | & v_1 \: + \: v_2\\
@@ -128,8 +128,8 @@ Subterms(let \: x \: = \: v \: in \: m) = & \{ m \} \cup Subterms(m) \\
 Subterms(letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m) = &
   Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
 Subterms_k(l) = & \{ \} \\
-Subterms_k(\lambda_c \: x \: . \: m) = & m \cup Subterms(m) \\
-Subterms_{\Lambda}(f \: = \: \lambda_j \: x \: \dots \: x_{n} \: . \: m) = &
+Subterms_k(\lambda_c \: x \: \cdot \: m) = & m \cup Subterms(m) \\
+Subterms_{\Lambda}(f \: = \: \lambda_j \: x \: \dots \: x_{n} \: \cdot \: m) = &
   m \cup Subterms(m)\\
 \end{array}
 \end{equation}
@@ -157,7 +157,7 @@ Calls(if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots
 Calls(let \: x \: = \: v \: in \: m) = & \{ \} \\
 Calls(letrec \: \{ \_ \} \: in \: m) = & \{ \}\\
 Calls_k(l) = & \{ l \} \\
-Calls_k(\lambda_c \: x \: . \: m) = & \{ \} \\
+Calls_k(\lambda_c \: x \: \cdot \: m) = & \{ \} \\
 \end{array}
 \end{equation}
 
@@ -194,7 +194,7 @@ is the name of the continuation a term is the body of
 Head(m) = f \Leftrightarrow
 Parent(m) =
 let \: rec \: \dots \:
-       and \: f \: = \: \lambda_j \: \_ \: . \: m \:
+       and \: f \: = \: \lambda_j \: \_ \: \cdot \: m \:
        and \: \dots \:
 in \: \_ \\
 Head(m) \text{ is undefined otherwise}
@@ -296,5 +296,37 @@ Elements of $C$ are entry $\Lambda$ that double as exit $\Lambda$
 \eqref{loopdef:4}, we call them $entry\text{-}exit$ or $conditional$ $\Lambda$s
 
 The maximality condition is important so as to capture the whole loop.
+
+
+Introducing Landing Lambdas is achieved by transforming a term in the following
+fashion:
+
+\begin{description}
+\item[Landing-Lambdas]
+if $t = letrec \: L \sqcup M \: in \: m$ has a loop $(L, E ,C)$, then
+
+\begin{equation}
+LandingLambda(t) = letrec \: \{ \Lambda \} \cup M \: in \: m'
+\end{equation}
+
+where
+\begin{equation}
+\begin{array}{r l l}
+\Lambda & = & pad = \lambda \: i \: args \: \cdot \: letrec \: L \cup C' \: in \: m'' \\
+pad & & \text{is a fresh label} \\
+args & & \text{is the union of arguments of elements of } E \\
+C' & = & C[l = \lambda \: args \: \cdot \: m \: / \: l_{cpad} = \lambda \: args \: \cdot m] \\
+m'' & = & if (i = \iota(\Lambda_0)) \: then \: CallTo(\Lambda_0) \: else \: \dots  \\
+\iota & : & l \rightarrow [ 1, Card(E) ] \text{ injective} \\
+\iota & : & \text{undefined if } l \notin E \\
+CallTo(f = \lambda \: args \: \cdot m) & = & f_{cpad} \: args \text{ if } f \in C \\
+CallTo(f = \lambda \: args \: \cdot m) & = & f \: args \text{ otherwise} \\
+                                  m' & = & m[l \: args \: / \: pad \: \iota(l) \: args ]_{l \in E}
+\end{array}
+\end{equation}
+
+\end{description}
+
+<!--TODO: find the meaning of "the union of arguments"-->
 
 
