@@ -316,7 +316,8 @@ where
 pad & & \text{is a fresh label} \\
 args & & \text{is the union of arguments of elements of } E \\
 C' & = & C[l = \lambda \: args \: \cdot \: m \: / \: l_{cpad} = \lambda \: args \: \cdot m] \\
-m'' & = & if (i = \iota(\Lambda_0)) \: then \: CallTo(\Lambda_0) \: else \: \dots  \\
+m'' & = & letrec \: \{ Dispatch_2 \} \: in \: if (i = 1) \: then \: CallTo(\Lambda_1) \: else \: dispatch_2 \: i \\
+Dispatch_i & = & dispatch_i \: = \: \lambda \: j \: \cdot \: letrec \: \{ Dispatch_{i+1} \} \: in if(j=i) \: then CallTo(\Lambda_i) \: else \: dispatch_{i+1} k \\
 \iota & : & l \rightarrow [ 1, Card(E) ] \text{ injective} \\
 \iota & : & \text{undefined if } l \notin E \\
 CallTo(f = \lambda \: args \: \cdot m) & = & f_{cpad} \: args \text{ if } f \in C \\
