@@ -19,6 +19,7 @@
   * }}}                                                                      *)
 
 (*FIXME: avoid exponential complexity *)
+(*FIXME: avoid head-assoc-body "conversion" *)
 (*TODO: simplify some boilerplate code *)
 
 open Util
@@ -26,73 +27,70 @@ open Util
 (*The first part deals with cfg modifications*)
 
 let rec calls_of_m = function
-  (* rec call *)
-  | CPS.MLet  (_, _, m) | CPS.MSel (_, _, _, _, m) | CPS.MSeq (_, _, m) ->
-    calls_of_m m
+  | CPS.MLet _ | CPS.MSel _ | CPS.MSeq _ | CPS.MRec _ -> []
   (* calls *)
   | CPS.MApp  (_, _, c) -> calls_of_cont c
   | CPS.MCont (v, _) -> [v]
   | CPS.MCond (_, (v1, _), (v2, _)) -> [v1; v2]
-  (* rec def *)
-  | CPS.MRec (ls, m) ->
-    List.flatten (calls_of_m m :: List.map (fun (_, (_, m)) -> calls_of_m m) ls)
 
 and calls_of_cont = function
   | CPS.CVar v -> [v]
-  | CPS.C (_, m) -> calls_of_m m
+  | CPS.C    _ -> [ ]
 
+let all_calls_of_m m = List.flatten (List.map calls_of_m (CPS.subterms m))
 
-let rec is_cond = function
-  | CPS.MApp (_,_, CPS.CVar _) | CPS.MCont _ -> false
+let is_cond = function
   | CPS.MCond _ -> true
-  | CPS.MApp (_,_, CPS.C (_, m))
-  | CPS.MLet (_, _, m)
-  | CPS.MSel (_, _, _, _, m)
-  | CPS.MRec (_, m)
-  | CPS.MSeq (_, _, m) -> is_cond m
+  | _ -> false (*FIXME: catch-all case*)
 
-let split_edge (varlist, var, m) =
-  failwith "TODO"
+let rec final_term = function
+  | CPS.MApp  (_, _, CPS.CVar _)
+  | CPS.MCont (_, _)
+  | CPS.MCond (_, _, _) as m -> m
+  | CPS.MApp  (_, _, CPS.C (_, m))
+  | CPS.MLet  (_, _, m)
+  | CPS.MSel  (_, _, _, _, m)
+  | CPS.MSeq  (_, _, m)
+  | CPS.MRec  (_, m) -> final_term m
 
-let rec subs pairs term =
-  let value v =
-    Prim.value_map ~var:(fun x -> try List.assoc x pairs with Not_found -> x) v
+let is_deep_cond m = is_cond (final_term m)
+
+let lambdas_of_m = function
+  | CPS.MLet _ | CPS.MSel _ | CPS.MSeq _ | CPS.MApp  _ | CPS.MCont _
+  | CPS.MCond _ -> []
+  | CPS.MRec (ls, _) -> ls
+
+let head (l, _     ) = l
+let args (_, (a, _)) = a
+let body (_, (_, m)) = m
+
+(* Landing Lambdas *)
+(* Problem: the complexity for finding cliques is too important *)
+
+let call_graph ls =
+  let heads = List.map head ls in
+  List.map
+    (fun l -> (head l, L.inter heads (all_calls_of_m (body l)), l))
+    ls
+
+let get_trans_cliques callgraph ls
+  : (Prim.var * Prim.var list) list -> (Prim.var * CPS.lambda) list -> CPS.lambda list list * CPS.lambda list
+                                                                    (* -------cliques------ * -----other----- *)
+  = failwith "TODO: extract cliques in the transitive closure of the callgraph"
+
+let loop_of_clique clique ls m =
+  let clique_bar = L.minus ls clique in
+  let entries =
+    List.map
+      (fun l ls -> (l, List.assoc l ls))
+      (L.inter
+        (List.map head clique)
+        (List.flatten
+          (   all_calls_of_m m
+           :: List.map (fun l -> all_calls_of_m (body l)) clique_bar))
+      )
   in
-  CPS.m_map ~value term
-
-let is_while_loop l m =
-  is_cond m && failwith "TODO"
-
-let rec insert_landing_lambdas_l (l, (vs, m)) =
-  let mcalls = calls_of_m m in
-  if not (List.mem l mcalls) then
-    (l, (vs, insert_landing_lambdas_m m))
-  else
-    if is_while_loop l m then
-      failwith "TODO"
-    else
-      let fl = Prim.fresh_var () in
-      let fvs = List.map (fun _ -> Prim.fresh_var ()) vs in
-      (l,
-       (vs,
-        CPS.MRec ([(fl, (fvs, subs (L.zip vs fvs) m))],
-                  CPS.MCont (fl, List.map (fun x -> Prim.VVar x) vs))))
-
-and insert_landing_lambdas_m = function
-  (* terminator *)
-  | CPS.MCont _ | CPS.MApp  (_, _, CPS.CVar _) | CPS.MCond _
-    as m -> m
-  (* folding *)
-  | CPS.MApp (v, vs, CPS.C (x, m)) ->
-    CPS.MApp (v, vs, CPS.C (x, insert_landing_lambdas_m m))
-  | CPS.MLet (x, v, m) -> CPS.MLet (x, v, insert_landing_lambdas_m m)
-  | CPS.MSeq (x, w, m) -> CPS.MSeq (x, w, insert_landing_lambdas_m m)
-  | CPS.MSel (x, v, v1, v2, m) ->
-    CPS.MSel (x, v, v1, v2, insert_landing_lambdas_m m)
-  (* folding and recursive calls *)
-  | CPS.MRec (ls, m) ->
-    CPS.MRec (List.map insert_landing_lambdas_l ls, insert_landing_lambdas_m m)
-
-let numbering m =
-  (* How should we do that? Add data to AST-nodes? Build a node<->rk table? *)
-  failwith "TODO"
+  let conds =
+    List.filter (fun l -> is_deep_cond (body l)) clique
+  in
+  (clique, entries, conds)
