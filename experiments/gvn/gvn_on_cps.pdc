@@ -342,30 +342,35 @@ un-inlining a trivial redirection.
 \item[Conditional] tests wheter a term is a conditional
 
 \begin{equation}
-\begin{array}{r l}
-Conditional(f \: v_1 \: \dots \: v_n \: k) = & Conditional_k(k) \\
-Conditional(l \: v_1 \: \dots \: v_n) = & False \\
-Conditional(if(\_) \: then \: \_ \: else \: \_) = & True \\
-Conditional(let \: x \: = \: v \: in \: m) = & Conditional(m) \\
-Conditional(letrec \: \_ \: in \: m) = & Conditional(m) \\
-Conditional_k(l) = & False \\
-Conditional_k(\lambda_c \: x \: \cdot \: m) = & Conditional(m) \\
+\begin{array}{l}
+Conditional(m) = True \text{ if } m = if(\_) \: then \: \_ \: else \: \_ \\
+Conditional(m) = False \text{ otherwise}
 \end{array}
 \end{equation}
 
-\end{description}
-
-TODO: define what needs to be uninlined
-
-\begin{description}
 \item[Uninline]
 
 \begin{equation}
 \begin{array}{r l}
 Uninline_{left}(if(v) \: then \: l_1 \_ else l_2 \_) = &
-letrec \{ f \: = \: \lambda \: () \: \cdot l_1 \_ \} in if(v) \: then \: f \: () \: else \: l_2 \: \_ \\
+letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_1 \: \_ \: \} \: in \: if(v) \: then \: f \: () \: else \: l_2 \: \_ \\
 Uninline_{right}(if(v) \: then \: l_1 \_ else l_2 \_) = &
-letrec \{ f \: = \: \lambda \: () \: \cdot l_2 \_ \} in if(v) \: then \: l_1 \: \_ \: else \: f \: () \\
+letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_2 \: \_ \: \} \: in \: if(v) \: then \: l_1 \: \_ \: else \: f \: () \\
+\end{array}
+\end{equation}
+
+\item[Needs uninlining]
+Considering the term $letrec \: \{ \Lambda_c, \: \Lambda_t \} \cup L \: in \: m$
+
+$c$'s call to $\Lambda_t$ needs uninlining if
+
+\begin{equation}
+\begin{array}{l}
+\begin{array}{r l l}
+c \in Subterms_{\Lambda}(\Lambda_c) & \text{such as} & Conditional(c) \\
+                                    &                & Calls(c) \ni \Lambda_t \\
+\end{array} \\
+Calls(m) \cup Calls_{\Lambda}(L) \ni \Lambda_t
 \end{array}
 \end{equation}
 
