@@ -317,13 +317,13 @@ where
 \Lambda & = & pad = \lambda \: i \: args \: \cdot \: letrec \: L \cup C' \: in \: m'' \\
 pad & & \text{is a fresh label} \\
 args & & \text{is the union of arguments of elements of } E \\
-C' & = & C[l = \lambda \: args \: \cdot \: m \: / \: l_{cpad} = \lambda \: args \: \cdot m] \\
+C' & = & C[l = \lambda \: args \: \cdot \: m \: / \: l_{cpad} = \lambda \: args \: \cdot \: m] \\
 m'' & = & letrec \: \{ Dispatch_2 \} \: in \: if (i = 1) \: then \: CallTo(\Lambda_1) \: else \: dispatch_2 \: i \\
 Dispatch_i & = & dispatch_i \: = \: \lambda \: j \: \cdot \: letrec \: \{ Dispatch_{i+1} \} \: in if(j=i) \: then CallTo(\Lambda_i) \: else \: dispatch_{i+1} k \\
 \iota & : & l \rightarrow [ 1, Card(E) ] \text{ injective} \\
 \iota & : & \text{undefined if } l \notin E \\
-CallTo(f = \lambda \: args \: \cdot m) & = & f_{cpad} \: args \text{ if } f \in C \\
-CallTo(f = \lambda \: args \: \cdot m) & = & f \: args \text{ otherwise} \\
+CallTo(f = \lambda \: args \: \cdot \: m) & = & f_{cpad} \: args \text{ if } f \in C \\
+CallTo(f = \lambda \: args \: \cdot \: m) & = & f \: args \text{ otherwise} \\
                                   m' & = & m[l \: args \: / \: pad \: \iota(l) \: args ]_{l \in E}
 \end{array}
 \end{equation}
