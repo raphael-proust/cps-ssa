@@ -44,8 +44,8 @@ We use:
 - $i$ for indices, and
 - $n$ as arbitrary bounds for indexes.
 
-Also note that $\lambda$s have annotation: either $c$ for continuations, $j$ for
-jumps, or $p$ for procedures (not shown here). These annotations are for
+Also note that $\lambda$s have annotation: either $c$ for continuations, $j$
+for jumps, or $p$ for procedures (not shown here). These annotations are for
 compilation purpose: TODO: explain.
 
 The corresponding OCaml type is:
@@ -68,41 +68,41 @@ and value =
   | ..
 \end{verbatim}
 
-The notion of primitive operators (addition, multiplication) is purposedly left
-unspecified but should be such as no function calls are made.
+The notion of primitive operators (addition, multiplication) is purposedly
+left unspecified but should be such as no function calls are made.
 
 ##About SSA to CPS translation
 
 Here is a correspondence table for SSA to and from CPS translation:
 
-+----------------------+-------------------------+-----------------------------+
-| SSA                  | CPS                     | OCaml CPS                   |
-+======================+=========================+=============================+
-| Procedure            | Lambda ($\lambda_p$)    | `var * var list * m`        |
-+----------------------+-------------------------+-----------------------------+
-| Basic Block          | Lambda ($\lambda_j$)    | `var * var list * m`        |
-+----------------------+-------------------------+-----------------------------+
-| Jump                 | Continuation Call       | `Mcont _`                   |
-+----------------------+-------------------------+-----------------------------+
-| Procedure Call       | Application w/ Cont     | `Mapp (_, _, C _)`          |
-+----------------------+-------------------------+-----------------------------+
-| Procedure Tail Call  | Application w/ Cont Var | `Mapp (_, _, Cvar _)`       |
-+----------------------+-------------------------+-----------------------------+
-| Branch               | If-Then-Else            | `Mcond _`                   |
-+----------------------+-------------------------+-----------------------------+
-| Return               | Continuation Call       | `Mcont _`                   |
-+----------------------+-------------------------+-----------------------------+
++----------------------+-------------------------+---------------------------+
+| SSA                  | CPS                     | OCaml CPS                 |
++======================+=========================+===========================+
+| Procedure            | Lambda ($\lambda_p$)    | `var * var list * m`      |
++----------------------+-------------------------+---------------------------+
+| Basic Block          | Lambda ($\lambda_j$)    | `var * var list * m`      |
++----------------------+-------------------------+---------------------------+
+| Jump                 | Continuation Call       | `Mcont _`                 |
++----------------------+-------------------------+---------------------------+
+| Procedure Call       | Application w/ Cont     | `Mapp (_, _, C _)`        |
++----------------------+-------------------------+---------------------------+
+| Procedure Tail Call  | Application w/ Cont Var | `Mapp (_, _, Cvar _)`     |
++----------------------+-------------------------+---------------------------+
+| Branch               | If-Then-Else            | `Mcond _`                 |
++----------------------+-------------------------+---------------------------+
+| Return               | Continuation Call       | `Mcont _`                 |
++----------------------+-------------------------+---------------------------+
 
 Here is are other important things to keep in mind:
 
-- the dominance tree of the SSA CFG is directly reflected in the term structure
-  of the CPS term, more specifically
+- the dominance tree of the SSA CFG is directly reflected in the term
+  structure of the CPS term, more specifically
     + when a block $b$ is the immediate dominator of $b_i$
     + the translation contains $letrec \Lambda_i in m$ where
     + $m$ is the translation of of $b$, and
     + $\Lambda_i$ is the translation of $b_i$;
-- $\lambda$s are annotated with either `j`, `c`, or `p` to denote, respectively,
-  jumps, continuations, or procedure call.
+- $\lambda$s are annotated with either `j`, `c`, or `p` to denote,
+  respectively, jumps, continuations, or procedure call.
 
 
 
@@ -172,9 +172,10 @@ let rec calls = function
 \end{verbatim}
 \end{description}
 
-Note that we assume that names are unique (and thus that a function and its name
-can be associated). This is a cheap assumption because the context ensures that
-functions are named after SSA block labels (which need be unique).
+Note that we assume that names are unique (and thus that a function and its
+name can be associated). This is a cheap assumption because the context
+ensures that functions are named after SSA block labels (which need be
+unique).
 
 We naturally extend $Calls$ to apply on sets. This is useful for composing
 $Calls$ and $Subterms$ to get all the calls of a term.
@@ -220,9 +221,9 @@ modified. The three modifications that we apply are:
 
 ### Landing Lambdas
 
-GVN introduces landing lambdas at the entrance of each loop. These landing pads
-allow to move code from \`\`after'' the loop to \`\`before'' it. We call the
-corresponding concept in CPS *landing lambdas*.
+GVN introduces landing lambdas at the entrance of each loop. These landing
+pads allow to move code from \`\`after'' the loop to \`\`before'' it. We call
+the corresponding concept in CPS *landing lambdas*.
 
 \begin{description}
 \item[Simple loop]
@@ -289,17 +290,18 @@ m = letrec \: Siblings(L) \: in \: m'
 
 <!--TODO: use a notation for (Siblings(L)-L) e.g. \overline(L)-->
 
-Elements of $L$ are all siblings \eqref{loopdef:1} with a complete looping call
-graph \eqref{loopdef:2}. Elements of $E$ are entry points to the loop
+Elements of $L$ are all siblings \eqref{loopdef:1} with a complete looping
+call graph \eqref{loopdef:2}. Elements of $E$ are entry points to the loop
 \eqref{loopdef:3}, that is, they are called from the other subterms of $m$.
 Elements of $C$ are entry $\Lambda$ that double as exit $\Lambda$
-\eqref{loopdef:4}, we call them $entry\text{-}exit$ or $conditional$ $\Lambda$s
+\eqref{loopdef:4}, we call them $entry\text{-}exit$ or $conditional$
+$\Lambda$s
 
 The maximality condition is important so as to capture the whole loop.
 
 
-Introducing Landing Lambdas is achieved by transforming a term in the following
-fashion:
+Introducing Landing Lambdas is achieved by transforming a term in the
+following fashion:
 
 \begin{description}
 \item[Landing-Lambdas]
