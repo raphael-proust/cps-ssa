@@ -27,7 +27,7 @@ type m =
              )
   | MLet  of (Prim.var * Prim.value * m)
   | MSel  of (Prim.var * Prim.value * Prim.value * Prim.value * m)
-  | MRec  of ((Prim.var * (Prim.var list * m)) list * m)
+  | MRec  of (named_lambda list * m)
   | MSeq  of (Prim.var * Prim.mem_w * m)
 
 (*
@@ -47,6 +47,25 @@ and cont =
 and proc = Prim.var list * Prim.var * m
 
 and prog = (Prim.var * proc) list * m
+
+and lambda = Prim.var list * m
+
+and named_lambda = Prim.var * lambda
+
+
+let rec subterms t = match t with
+  | MApp  (_, _, cont) -> t :: subterms_cont cont
+  | MCont (_, _) -> [t]
+  | MCond (_, _, _) -> [t]
+  | MLet  (_, _, m) -> t :: subterms m
+  | MSel  (_, _, _, _, m) -> t :: subterms m
+  | MSeq  (_, _, m) -> t :: subterms m
+  | MRec  (ls, m) ->
+    t :: subterms m @ List.flatten (List.map (fun (_,(_,m)) -> subterms m) ls)
+
+and subterms_cont = function
+  | CVar _ -> []
+  | C    (_, m) -> subterms m
 
 let m_map ?(var= fun x -> x) ?(value= fun v -> v) ?(mem_w= fun w -> w) m =
   let values vs = List.map value vs in

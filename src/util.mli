@@ -32,6 +32,9 @@ module L :
     val pick_one_such_as : ('a -> bool) -> 'a list -> 'a * 'a list
     val map_option : ('a -> 'b option) -> 'a list -> 'b list
     val zip : 'a list -> 'b list -> ('a * 'b) list
+    val inter : 'a list -> 'a list -> 'a list
+    val minus : 'a list -> 'a list -> 'a list
+    val includes : 'a list -> 'a list -> bool
   end
 module O :
   sig

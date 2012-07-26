@@ -63,34 +63,75 @@ let lambdas_of_m = function
 let head (l, _     ) = l
 let args (_, (a, _)) = a
 let body (_, (_, m)) = m
+let heads = List.map head
+let argss = List.map args
+let bodys = List.map body
 
 (* Landing Lambdas *)
 (* Problem: the complexity for finding cliques is too important *)
 
 let call_graph ls =
-  let heads = List.map head ls in
   List.map
-    (fun l -> (head l, L.inter heads (all_calls_of_m (body l)), l))
+    (fun l -> (head l, L.inter (heads ls) (all_calls_of_m (body l)), l))
     ls
 
-let get_trans_cliques callgraph ls
-  : (Prim.var * Prim.var list) list -> (Prim.var * CPS.lambda) list -> CPS.lambda list list * CPS.lambda list
-                                                                    (* -------cliques------ * -----other----- *)
+let get_trans_cliques callgraph
+  : (Prim.var * Prim.var list) list -> Prim.var list list * Prim.var list
+  (* --head--   ----calls----          -----cliques------   ----other---- *)
   = failwith "TODO: extract cliques in the transitive closure of the callgraph"
 
+let named_lambda_of_name ls l =
+  List.find (fun ll -> l = head ll) ls
+
 let loop_of_clique clique ls m =
+  let clique = List.map (named_lambda_of_name ls) clique in
   let clique_bar = L.minus ls clique in
   let entries =
-    List.map
-      (fun l ls -> (l, List.assoc l ls))
-      (L.inter
-        (List.map head clique)
+    L.inter
+      clique
+      (List.map
+        (named_lambda_of_name ls)
         (List.flatten
           (   all_calls_of_m m
-           :: List.map (fun l -> all_calls_of_m (body l)) clique_bar))
-      )
+           :: List.map (fun l -> all_calls_of_m (body l)) clique_bar)))
   in
   let conds =
     List.filter (fun l -> is_deep_cond (body l)) clique
   in
+  (
   (clique, entries, conds)
+  : (CPS.named_lambda list * CPS.named_lambda list * CPS.named_lambda list))
+
+let dispatch i args ls =
+  let args_value = List.map (fun v -> Prim.VVar v) args in
+  let rec aux k = function
+  | [] -> assert false
+  | [l] -> CPS.MCont (l, args_value)
+  | l::ls ->
+    let d = Prim.fresh_var () in
+    CPS.MRec ([d, (i :: args, aux (k+1) ls)],
+              CPS.MCond (Prim.(VEq (VVar i, VConst k)),
+                         (l, args_value),
+                         (d, (Prim.VConst (k+1) :: args_value))))
+  in
+  aux 1 ls
+
+let loop_substitute (l, e, c) args =
+  assert (L.includes l e);
+  assert (L.includes e c);
+  match (e,c) with
+  | [], _ -> (*dead code*) failwith "TODO: what to do?"
+  | [_], [] -> failwith "TODO"
+  | [_], [_] -> failwith "TODO"
+  | [_], _::_::_ -> assert false
+  | _::_::_, [] -> failwith "TODO"
+  | _::_::_, _::_ ->
+    let f = Prim.fresh_var () in
+    let i = Prim.fresh_var () in
+    let c' =
+      List.map (fun (_, (args, m)) -> (Prim.fresh_var (), (args, m))) c
+    in
+    (f,
+     (i :: args,
+      CPS.MRec (l @ e @ c', dispatch i args (heads (L.minus e c @ c')))))
+

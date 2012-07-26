@@ -23,7 +23,6 @@
      Assignment Form" by Kesley.
    *)
 
-
 (* [m] are CPS terms. *)
 type m =
   (** Application. The [var]iable can only be a procedure/function call. An
@@ -44,7 +43,7 @@ type m =
       blur the effect of llvm optimisations. *)
   | MSel of (Prim.var * Prim.value * Prim.value * Prim.value * m)
   (** Recursive let-binding. It only binds lambdas. For values, use [Mlet]. *)
-  | MRec  of ((Prim.var * (Prim.var list * m)) list * m)
+  | MRec  of (named_lambda list * m)
   (** Sequences are for memory side-effect operation only. *)
   | MSeq  of (Prim.var * Prim.mem_w * m)
 
@@ -63,6 +62,12 @@ and proc = Prim.var list * Prim.var * m
 (** [prog] are for whole programs. It is a collection of procedure and a term.
 It is similar to an [MRec] constructs with [proc]s substituted in. *)
 and prog = (Prim.var * proc) list * m
+
+and lambda = Prim.var list * m
+
+and named_lambda = Prim.var * lambda
+
+val subterms: m -> m list
 
 (** [m_map ?var ?value ?mem_w m] maps the components of the term [m] (but not
     its structure. It applies [var] on all the variables of the term, [value]

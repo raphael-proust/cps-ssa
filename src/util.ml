@@ -87,6 +87,15 @@ module L = struct
     | h1::t1, h2::t2 -> (h1, h2) :: zip t1 t2
     | [], _::_ | _::_, [] -> raise (Invalid_argument "Util.L.zip")
 
+  let inter l1 l2 = (* quite inefficient, prefer *real* sets *)
+    List.filter (fun x -> List.mem x l2) l1
+
+  let minus l1 l2 =
+    List.filter (fun x -> not (List.mem x l2)) l1
+
+  let includes l1 l2 =
+    List.for_all (fun x -> List.mem x l1) l2
+
 end
 
 module O = struct
