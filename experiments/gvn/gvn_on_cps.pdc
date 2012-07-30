@@ -372,7 +372,9 @@ VirtualCalls =
 ###Trivial-call Uninlining
 
 In this transformation we add a level of indirection to some calls by
-un-inlining a trivial redirection.
+un-inlining a trivial redirection. This allows the moving of code to the
+trivial $\lambda$ (that becomes non-trivial) just like edge splitting does in
+SSA.
 
 \begin{description}
 \item[Conditional] tests wheter a term is a conditional
@@ -388,17 +390,17 @@ Conditional(m) = False \text{ otherwise}
 
 \begin{equation}
 \begin{array}{r l}
-Uninline_{left}(if(v) \: then \: l_1 \_ else l_2 \_) = &
+Uninline_{true}(if(v) \: then \: l_1 \_ else l_2 \_) = &
 letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_1 \: \_ \: \} \: in \: if(v) \: then \: f \: () \: else \: l_2 \: \_ \\
-Uninline_{right}(if(v) \: then \: l_1 \_ else l_2 \_) = &
+Uninline_{false}(if(v) \: then \: l_1 \_ else l_2 \_) = &
 letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_2 \: \_ \: \} \: in \: if(v) \: then \: l_1 \: \_ \: else \: f \: () \\
 \end{array}
 \end{equation}
 
 \item[Needs uninlining]
-Considering the term $letrec \: \{ \Lambda_c, \: \Lambda_t \} \cup L \: in \: m$
-
-$c$'s call to $\Lambda_t$ needs uninlining if
+Considering the term
+$letrec \: \{ \Lambda_c, \: \Lambda_t \} \cup L \: in \: m$, $c$ needs
+uninlining if
 
 \begin{equation}
 \begin{array}{l}
@@ -412,3 +414,5 @@ Calls(m) \cup Calls_{\Lambda}(L) \ni \Lambda_t
 
 \end{description}
 
+Once again the call graph is needed in order to detect the terms that need to
+be tampered with.
