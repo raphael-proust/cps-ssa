@@ -253,9 +253,21 @@ let rec simple_loop_headers = function
 
 
 Simple loop headers are the entry nodes of loops that have exactly one entry
-node. This, however, is not sufficient to treat all the loop cases.
-(TODO:example with inlined even/odd function pair). We thus define the loops
-using the following.
+node. This, however, is not sufficient to treat all the loop cases. Consider
+for example the case of mutually recursive functions.
+
+\begin{verbatim}
+let rec even x =
+  x = 0 || not (odd (x - 1))
+and odd x =
+  not (x = 0) && not (even (x - 1))
+\end{verbatim}
+
+In case these recursive functions can be made tail-recursive (as is the case
+here) compiling the functions as $\lambda_j$ rather than $\lambda_p$ will
+yield better results (in term of stack usage).
+
+A more complete definition for loops is as follows.
 
 \begin{description}
 \item[Loop]
@@ -330,7 +342,16 @@ CallTo(f = \lambda \: args \: \cdot \: m) & = & f \: args \text{ otherwise} \\
 
 \end{description}
 
-<!--TODO: find the meaning of "the union of arguments"-->
+Note however that such a definition requires the extraction of maximal cliques
+(which is not easy). Moreover the \`\`union of arguments'' operation is non
+trivial.
+
+The GVN algorithm was specifically designed for SSA programs and direct
+manipulation of the CFG. The CPS equivalent for which is the call graph. It
+can be obtained with a one-pass traversal of a CPS term. This additional
+difficulty—as well as the loop definition incompleteness—shows that the
+algorithm was originally designed for a specific goal.
+
 
 
 ###Trivial-call Uninlining
