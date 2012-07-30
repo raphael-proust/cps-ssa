@@ -213,11 +213,10 @@ $Body(f) = m \Leftrightarrow f = Head(m)$
 ##Code Modifications
 
 Just as with the original GVN algorithm, the code needs to be (automatically)
-modified. The three modifications that we apply are:
+modified. The two modifications that we apply are:
 
-- landing lambdas insertion,
-- trivial-call uninlining, and
-- virtual call annotation.
+- landing lambdas insertion with virtual call annotations, and
+- trivial-call uninlining.
 
 ### Landing Lambdas
 
@@ -352,6 +351,22 @@ can be obtained with a one-pass traversal of a CPS term. This additional
 difficulty—as well as the loop definition incompleteness—shows that the
 algorithm was originally designed for a specific goal.
 
+####Virtual calls annotations
+
+When this transformation is performed, virtual calls can be added to the
+call graph. These additional vertices allow the move of code from \`\`after''
+the loop to \`\`before'' the loop.
+
+The set of virtual edges is
+
+\begin{equation}
+VirtualCalls =
+  \bigcup_{L \in Loops}
+    \{(l, e) |
+      l \text{ is the landing $\lambda$ of $L$} \text{ and }
+      e \in Calls(Subterms_{\Lambda}(L)) - Head(Subterms_{\Lambda}(L))
+    \}
+\end{equation}
 
 
 ###Trivial-call Uninlining
