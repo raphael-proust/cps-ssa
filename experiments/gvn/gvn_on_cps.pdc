@@ -416,3 +416,52 @@ Calls(m) \cup Calls_{\Lambda}(L) \ni \Lambda_t
 
 Once again the call graph is needed in order to detect the terms that need to
 be tampered with.
+
+
+##Values Ranking
+
+Adapting the ranking system from the original GVN algorithm is quite straight
+forward. The main difficulty is for arguments.
+
+
+\begin{description}
+\item[$rank$]
+is defined as follows
+
+\begin{equation}
+\begin{array}{r l}
+rank : & 0 \: \mapsto \: 0, \: 1 \: \mapsto \: 0, \: \dots \\
+       & v_1 \: op \: v_2 \: \mapsto \: 1+max(rank(v_1), rank(v_2)) \\
+       & x \: \mapsto \: 1+max(rank(v_1),\dots,rank(v_n)) \text{ if } f \: v_1 \: \dots \: v_n \: \lambda_c \: x \: \cdot \: \_ \\
+       & x \: \mapsto \: rank(v) \text{ if } let \: x \: = \: v \: in \: \_ \\
+       & v \: \mapsto \: 0 \text{ if $v$ is a $\lambda_p$ parameter} \\
+       & v \: \mapsto \: max(r_1,\dots,r_n) \text{ if $v$ is a $\lambda_j$ parameter called with values of rank $r_i$} \\
+\end{array}
+\end{equation}
+
+\end{description}
+
+Note that ranks are not always well defined. Consider the following term.
+
+\begin{align*}
+&letrec \{ \\
+&\:\: f \: = \: \lambda_j \: x \: o \: \cdot \: test \: o \: (\lambda_c \: b \: \cdot \: if(b) \: then \: g \: (x+1) \: b \: else \: exit \: x) \:, \\
+&\:\: g \: = \: \lambda_j \: y \: p \: \cdot \: f \: (y+1) \: p \\
+&\} \: f \: v \: w \\
+\end{align*}
+
+The ranks for $x$ and $y$ are:
+
+\begin{equation}
+\begin{array}{l}
+rank(x) = max(rank(y), rank(v)) \\
+rank(y) = rank(x) \\
+\end{array}
+\end{equation}
+
+This means that any value grater than $rank(v)$ is okay. In such a case, we
+take the rank to be the minimal acceptable rank.
+
+The original algorithm had the same problem. A notion of \`\`Available rank''
+was introduced for this purpose.
+
