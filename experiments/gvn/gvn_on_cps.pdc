@@ -205,6 +205,19 @@ Head(m) \text{ is undefined otherwise}
 is the inverse of $Head$
 
 $Body(f) = m \Leftrightarrow f = Head(m)$
+
+\item[$Variables$]
+the variables appearing in a value
+
+\begin{equation}
+\begin{array}{r l}
+Variables : & x \mapsto \{ x \}\\
+            & 0 \mapsto \{\}, \: 1 \mapsto \{\}, \: \dots \\
+            & v_1 \: + \: v_2 \mapsto \{v_1, v_2\} \\
+            & v_1 \: \times \: v_2 \mapsto \{v_1, v_2\} \\
+            & \dots\\
+\end{array}
+\end{equation}
 \end{description}
 
 
@@ -465,3 +478,77 @@ take the rank to be the minimal acceptable rank.
 The original algorithm had the same problem. A notion of \`\`Available rank''
 was introduced for this purpose.
 
+
+##Trivial Binding Removing
+
+Removing trivial bindings in CPS code is easier than removing trivial
+assignements in SSA form. Because of the scoping rule, changes are local to a
+term. On the other hand, the term structure is not as nice to work upon as a
+block of—temporarily unordered—assignments because it is more rigid.
+
+Thus we change the $let-in$ construct of our CPS terms. This is only intended
+to be used localy and does not need to be exported outside of this
+optimisation.
+
+\begin{equation}
+\begin{array}{r l}
+m \: -::= & let \: x \: = \: v \: in \: m\\
+m \: +::= & letand \: \{ (x_i, v_i) | 0 < i < n \} \: in \: m\\
+\end{array}
+\end{equation}
+
+Not all $letand-in$ bindings are tolerated:
+
+\begin{description}
+\item[$letand$ well formed-ness]
+
+\begin{equation}
+\begin{array}{c}
+letand \: \{ (x_i, v_i) | 0 < i < n \} \: in \: m \text{ is well formed } \\
+\iff \\
+\forall \: 0 < i, j < n \: x_i \notin Variables(v_j)
+\end{array}
+\end{equation}
+
+\end{description}
+
+It is possible to leverage ranks in order to make maximal (as big as
+possible), well formed (but no bigger) $letand$ constructs. Essentially, in
+each *binding strand* of a term, the variables of identical ranks are
+coalesced together into one $letand$. Those are then sorted by ranks so as to
+guarantee correct scoping.
+
+Two bindings are in the same strand if they are
+in an equivalence class for the reflexive, symmetric, transitive closure of
+the following relation:
+
+$(x_1, m_1) R (x_2, m_2) \iff let \: x_1 \: = \: m_1 \: in \: let \: x_2 \: = \: m_2 \: in \: \_$
+
+There are good reasons not to include application-continuation style bindings
+(those obtained via `Mapp (_, _, C (x, _))`):
+
+- the binding is not to an expression, and
+- function call order should be preserved.
+
+Once this transformation has been performed it is possible to remove trivial
+assignments.
+
+
+\begin{description}
+\item[Trivial Binding Removal]
+
+\begin{equation}
+\begin{array}{r l}
+letand \: \{ (x, y) \} \cup B \: in \: m \: \mapsto & letand \: B[x/y] \: in \: m[x/y] \\
+letand \: \{ (x_1, y_1 \: op \: y_2), (x_2, y_1 \: op \: y_2) \} \cup B \: in \: m \: \mapsto & letand \:  \{ (x_1, y_1 \: op \: y_2), (x_2, x_1) \} \cup B \: in \: m \\
+\end{array}
+\end{equation}
+
+\end{description}
+
+In the original GVN algorithm, trivial $\phi$ assignments
+($v \leftarrow \phi(w, w)$ and $v \leftarrow \phi(v, w)$) are also simplified.
+This translates in CPS as a removal of parameters that are always instantiated
+with the same variables.
+
+TODO: more precise description of constant parameter removal
