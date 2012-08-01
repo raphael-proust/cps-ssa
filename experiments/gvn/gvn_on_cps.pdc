@@ -29,12 +29,12 @@ m ::= & f \: v_1 \: \dots \: v_n \: k\\
     | & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m\\
 k ::= & l\\
     | & \lambda_c \: x \: \cdot \: m\\
-\Lambda ::= & f \: = \: \lambda_j \: x_1 \: \dots \: x_{n} \: \cdot \: m\\
-v ::= & x\\
-    | & 0 \: | \: 1 \: | \: \dots\\
-    | & v_1 \: + \: v_2\\
-    | & v_1 \: \times \: v_2\\
-    | & \dots\\
+\Lambda ::= & f \: = \: \lambda_j \: x_1 \: \dots \: x_n \: \cdot \: m\\
+v, u ::= & x\\
+       | & 0 \: | \: 1 \: | \: \dots\\
+       | & v_1 \: + \: v_2\\
+       | & v_1 \: \times \: v_2\\
+       | & \dots\\
 \end{array}
 \end{equation}
 
@@ -46,9 +46,13 @@ We use:
 
 Also note that $\lambda$s have annotation: either $c$ for continuations, $j$
 for jumps, or $p$ for procedures (not shown here). These annotations are for
-compilation purpose: TODO: explain.
+compilation purpose:
 
-The corresponding OCaml type is:
+- $\lambda_c$ are used as return points for function calls,
+- $\lambda_j$ are to be translated as labels inside the same procedure, and
+- $\lambda_p$ are for complete procedures.
+
+The OCaml type for terms is:
 
 \begin{verbatim}
 type m =
@@ -69,7 +73,7 @@ and value =
 \end{verbatim}
 
 The notion of primitive operators (addition, multiplication) is purposedly
-left unspecified but should be such as no function calls are made.
+left unspecified.
 
 ##About SSA to CPS translation
 
@@ -93,17 +97,11 @@ Here is a correspondence table for SSA to and from CPS translation:
 | Return               | Continuation Call       | `Mcont _`                 |
 +----------------------+-------------------------+---------------------------+
 
-Here is are other important things to keep in mind:
-
-- the dominance tree of the SSA CFG is directly reflected in the term
-  structure of the CPS term, more specifically
-    + when a block $b$ is the immediate dominator of $b_i$
-    + the translation contains $letrec \Lambda_i in m$ where
-    + $m$ is the translation of of $b$, and
-    + $\Lambda_i$ is the translation of $b_i$;
-- $\lambda$s are annotated with either `j`, `c`, or `p` to denote,
-  respectively, jumps, continuations, or procedure call.
-
+It is also important to keep in mind that the dominance tree of the SSA CFG is
+directly reflected in the term structure of the CPS term. More specifically,
+when a block $b$ is the immediate dominator of $b_i$, the translation contains
+$letrec \: \{ \Lambda_i \} \cup \_ \: in \: m$, where $m$ is the translation
+of of $b$, and $\Lambda_i$ is the translation of $b_i$,
 
 
 ##Notions
@@ -114,23 +112,21 @@ We always work in the context of a $\lambda_p$; that is,
 
 We define the following:
 
-<!--FIXME: use Direct-Calls and Sub-Terms instead of Calls -->
 \begin{description}
-\item[Subterms]
-the the terms that can be found inside a term
+
+\item[Subterms]: the the terms that can be found inside a term
 
 \begin{equation}
-\begin{array}{r l}
-Subterms(f \: v_1 \: \dots \: v_n \: k) = & Subterms_k(k) \\
-Subterms(l \: v_1 \: \dots \: v_n) = & \{ \} \\
-Subterms(if(\_) \: then \: \_ \: else \: \_) = & \{\}\\
-Subterms(let \: x \: = \: v \: in \: m) = & \{ m \} \cup Subterms(m) \\
-Subterms(letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m) = &
-  Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
-Subterms_k(l) = & \{ \} \\
-Subterms_k(\lambda_c \: x \: \cdot \: m) = & m \cup Subterms(m) \\
-Subterms_{\Lambda}(f \: = \: \lambda_j \: x \: \dots \: x_{n} \: \cdot \: m) = &
-  m \cup Subterms(m)\\
+\begin{array}{r r l}
+Subterms: & m \: \mapsto & \{ m \} \cup StrictSubterms(m) \\
+StrictSubterms: & f \: v_1 \: \dots \: v_n \: k \: \mapsto & Subterms_k(k) \\
+                & l \: v_1 \: \dots \: v_n \: \mapsto & \{ \} \\
+                & if(\_) \: then \: \_ \: else \: \_ \: \mapsto & \{ \}\\
+                & let \: x \: = \: v \: in \: m \: \mapsto & Subterms(m) \\
+                & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m \: \mapsto & Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
+Subterms_k: & l \: \mapsto & \{ \} \\
+            & \lambda_c \: x \: \cdot \: m \: \mapsto & Subterms(m) \\
+Subterms_{\Lambda}: & f \: = \: \lambda_j \: x \: \dots \: x_{n} \: \cdot \: m \: \mapsto & Subterms(m)\\
 \end{array}
 \end{equation}
 
@@ -145,15 +141,13 @@ let rec subterms t = match t with
     t :: subterms m @ List.flatten (List.map (fun (_, _, m) -> subterms m) ls)
 \end{verbatim}
 
-\item[Calls]
-the calls that are made in a CPS term
+\item[Calls]: the calls that are made in a CPS term
 
 \begin{equation}
 \begin{array}{r l}
 Calls(f \: v_1 \: \dots \: v_n \: k) = & Calls_k(k) \\
 Calls(l \: v_1 \: \dots \: v_n) = & \{ l \} \\
-Calls(if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n) = &
-  \{ l1, \: l2 \}\\
+Calls(if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n) = & \{ l1, \: l2 \}\\
 Calls(let \: x \: = \: v \: in \: m) = & \{ \} \\
 Calls(letrec \: \{ \_ \} \: in \: m) = & \{ \}\\
 Calls_k(l) = & \{ l \} \\
@@ -170,6 +164,7 @@ let rec calls = function
   | Mlet  (_, _, _) -> []
   | Mrec  (_, _) -> []
 \end{verbatim}
+
 \end{description}
 
 Note that we assume that names are unique (and thus that a function and its
@@ -181,14 +176,13 @@ We naturally extend $Calls$ to apply on sets. This is useful for composing
 $Calls$ and $Subterms$ to get all the calls of a term.
 
 \begin{description}
-\item[$Siblings$]
-children of the same parent.
+\item[Siblings]: $\lambda$s of the same parent
 
 $Siblings(\Lambda) = L$ such that
 $letrec \: L \: in \: m'$ is a term and $\Lambda \in L$
 
-\item[$Head$]
-is the name of the continuation a term is the body of
+
+\item[Head]: the name of the continuation a term is the body of
 
 \begin{equation}
 \begin{array}{l}
@@ -201,13 +195,13 @@ in \: \_ \\
 Head(m) \text{ is undefined otherwise}
 \end{array}
 \end{equation}
-\item[$Body$]
-is the inverse of $Head$
+
+
+\item[Body]: the inverse of $Head$
 
 $Body(f) = m \Leftrightarrow f = Head(m)$
 
-\item[$Variables$]
-the variables appearing in a value
+\item[Variables]: all the variables appearing in a value
 
 \begin{equation}
 \begin{array}{r l}
@@ -218,6 +212,7 @@ Variables : & x \mapsto \{ x \}\\
             & \dots\\
 \end{array}
 \end{equation}
+
 \end{description}
 
 
@@ -233,18 +228,27 @@ modified. The two modifications that we apply are:
 
 ### Landing Lambdas
 
-GVN introduces landing lambdas at the entrance of each loop. These landing
-pads allow to move code from \`\`after'' the loop to \`\`before'' it. We call
-the corresponding concept in CPS *landing lambdas*.
+GVN introduces landing pads at the entrance of each loop. These nodes allow to
+move code from \`\`after'' the loop to \`\`before'' it. We call the
+corresponding concept in CPS *landing lambdas*.
 
 \begin{description}
 \item[Simple loop]
-is a term $m$ such as
 
-$Head(m) \in Calls(m)$ and
-$\forall f \in Calls(m), f \neq Head(m) \Rightarrow Head(m) \notin Calls(Body(f))$
+A \em{simple loop} is a term $m$ such as
 
-\item[Simple loop head:]
+\begin{equation}
+\begin{array}{r l}
+Head(m) \in Calls(m) & \\
+\forall f \in Calls(m), & f \in Head(Subterms(m) \text{ or} \\
+                        & Head(m) \notin Calls(Body(f)) \text{ and transitively} \\
+\end{array}
+\end{equation}
+
+\item[Simple loop head]
+
+$f$ is a simple loop head if it is the $Head$ of a loop.
+
 \texttt{l} is a simple loop head when it is part of
 
 \begin{verbatim}
@@ -261,28 +265,32 @@ let rec simple_loop_headers = function
          []
          ls
 \end{verbatim}
+
 \end{description}
 
 
 Simple loop headers are the entry nodes of loops that have exactly one entry
 node. This, however, is not sufficient to treat all the loop cases. Consider
-for example the case of mutually recursive functions.
+for example of mutually recursive functions.
 
 \begin{verbatim}
-let rec even x =
-  x = 0 || not (odd (x - 1))
-and odd x =
-  not (x = 0) && not (even (x - 1))
+let rec even x b =
+  if x = 0 then b else odd (x - 1) (not b)
+and odd x b =
+  if x = 0 then not b else even (x - 1) (not b)
+in ..
 \end{verbatim}
 
-In case these recursive functions can be made tail-recursive (as is the case
+In case these recursive functions are tail-recursive (as is the case
 here) compiling the functions as $\lambda_j$ rather than $\lambda_p$ will
-yield better results (in term of stack usage).
+yield better results (in term of stack usage and execution time). However, the
+call pattern of these $\lambda$ do not fit in the pattern of a simple loop.
 
 A more complete definition for loops is as follows.
 
 \begin{description}
 \item[Loop]
+
 $(L, E ,C)$ is a \em{loop} of $m$ if $L$, $C$, and $E$ are maximal sets of
 $\Lambda$ such that
 
@@ -294,19 +302,19 @@ m = letrec \: Siblings(L) \: in \: m'
 \end{equation}
 \begin{equation}\label{loopdef:2}
 \begin{array}{r l}
-\forall \Lambda, \Lambda' \in L \: \exists \Lambda_0, \dots, \Lambda_n \text{ such that } &
+\forall \Lambda, \Lambda' \in L \: \exists \Lambda_0, \dots, \Lambda_n \in L \text{ such that } &
   \Lambda = \Lambda_0, \: \Lambda' = \Lambda_n, \text{ and} \\
 & \forall i < n \: Calls(Subterms_{\Lambda}(\Lambda_i)) \ni \Lambda_{i+1} \\
 \end{array}
 \end{equation}
 \begin{equation}\label{loopdef:3}
-(Calls(Subterms(m')) \cup Calls(Subterms_{\Lambda}(Siblings(L) - L))) \cap L = E \neq \{\}
+((Calls(Subterms(m')) \cup Calls(Subterms_{\Lambda}(Siblings(L) - L)))) \cap L = E \neq \{\}
 \end{equation}
 \begin{equation}\label{loopdef:4}
 \begin{array}{r l}
 \forall \Lambda \in C & Conditional(\Lambda) \\
-                      & Calls(Subterms(\Lambda)) \subset L \\
-                      & Calls(Subterms(\Lambda)) \subset (Siblings(L) - L) \\
+                      & Calls(Subterms(\Lambda)) \cap L \neq \{\} \\
+                      & Calls(Subterms(\Lambda)) \cap (Siblings(L) - L) \neq \{\} \\
 \end{array}
 \end{equation}
 
