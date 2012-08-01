@@ -454,26 +454,28 @@ rank : & 0 \: \mapsto \: 0, \: 1 \: \mapsto \: 0, \: \dots \\
 
 \end{description}
 
-Note that ranks are not always well defined. Consider the following term.
+Note that ranks are not always well defined. Consider the following term
+(where free variables are supposed to have been defined in the enclosing
+term).
 
 \begin{align*}
 &letrec \{ \\
-&\:\: f \: = \: \lambda_j \: x \: o \: \cdot \: test \: o \: (\lambda_c \: b \: \cdot \: if(b) \: then \: g \: (x+1) \: b \: else \: exit \: x) \:, \\
-&\:\: g \: = \: \lambda_j \: y \: p \: \cdot \: f \: (y+1) \: p \\
-&\} \: f \: v \: w \\
+&\:\: f_1 \: = \: \lambda_j \: x_1 \: o_1 \: \cdot \: test_1 \: o_1 \: (\lambda_c \: b_1 \: \cdot \: if(b_1) \: then \: f_2 \: (x_1+1) \: b_1 \: else \: exit \: x_1) \:, \\
+&\:\: f_2 \: = \: \lambda_j \: x_2 \: o_2 \: \cdot \: test_2 \: o_2 \: (\lambda_c \: b_2 \: \cdot \: if(b_2) \: then \: f_1 \: (x_2+1) \: b_2 \: else \: exit \: x_2) \:, \\
+&\} \: if(b_0) \: then f_1 \: v_1 \: w_1 \: else f_2 \: v_2 \: w_2 \\
 \end{align*}
 
-The ranks for $x$ and $y$ are:
+The ranks for $x_1$ and $x_2$ are:
 
 \begin{equation}
 \begin{array}{l}
-rank(x) = max(rank(y), rank(v)) \\
-rank(y) = rank(x) \\
+rank(x_1) = max(rank(x_2), rank(v_1)) \\
+rank(x_2) = max(rank(x_1), rank(v_2)) \\
 \end{array}
 \end{equation}
 
-This means that any value grater than $rank(v)$ is okay. In such a case, we
-take the rank to be the minimal acceptable rank.
+This means that any value grater than $max(rank(v_1),rank(v_2))$ is okay. In
+such a case, we take the rank to be the minimal acceptable rank.
 
 The original algorithm had the same problem. A notion of \`\`Available rank''
 was introduced for this purpose.
