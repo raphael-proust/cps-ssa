@@ -165,6 +165,32 @@ let rec calls = function
   | Mrec  (_, _) -> []
 \end{verbatim}
 
+\item[Conditional] tests wheter a term is a conditional
+
+\begin{equation}
+\begin{array}{l}
+Conditional(m) = True \text{ if } m = if(\_) \: then \: \_ \: else \: \_ \\
+Conditional(m) = False \text{ otherwise}
+\end{array}
+\end{equation}
+
+\item[Terminator]
+
+\begin{equation}
+\begin{array}{r c c l}
+Terminator: & m & \mapsto & m \text{ if } \left\{
+    \begin{array}{c}
+      m = f \: v_1 \: \dots \: v_n \: l \text{ or} \\
+      m = l \: v_1 \: \dots \: v_n \text{ or} \\
+      m = if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n \\
+    \end{array} \right. \\
+            & f \: v_1 \: \dots \: v_n \: (\lambda_c \: x \: \cdot \: m) & \mapsto & Terminator(m) \\
+            & let \: x \: = \: v \: in \: m & \mapsto & Terminator(m) \\
+            & letrec \: \{ \_ \} \: in \: m & \mapsto & Terminator(m) \\
+\end{array}
+\end{equation}
+
+
 \end{description}
 
 Note that we assume that names are unique (and thus that a function and its
@@ -312,7 +338,7 @@ m = letrec \: Siblings(L) \: in \: m'
 \end{equation}
 \begin{equation}\label{loopdef:4}
 \begin{array}{r l}
-\forall \Lambda \in C & Conditional(\Lambda) \\
+\forall \Lambda \in C & Conditional(Terminator(\Lambda)) \\
                       & Calls(Subterms(\Lambda)) \cap L \neq \{\} \\
                       & Calls(Subterms(\Lambda)) \cap (Siblings(L) - L) \neq \{\} \\
 \end{array}
@@ -398,15 +424,6 @@ trivial $\lambda$ (that becomes non-trivial) just like edge splitting does in
 SSA.
 
 \begin{description}
-\item[Conditional] tests wheter a term is a conditional
-
-\begin{equation}
-\begin{array}{l}
-Conditional(m) = True \text{ if } m = if(\_) \: then \: \_ \: else \: \_ \\
-Conditional(m) = False \text{ otherwise}
-\end{array}
-\end{equation}
-
 \item[Uninline]
 
 \begin{equation}
