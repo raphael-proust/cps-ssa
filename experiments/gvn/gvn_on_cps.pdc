@@ -388,6 +388,8 @@ CallTo(f = \lambda \: args \: \cdot \: m) & = & f \: args \text{ otherwise} \\
 
 \end{description}
 
+<!--TODO: check relation with trampoline -->
+
 Note however that such a definition requires the extraction of maximal cliques
 (which is not easy). Moreover the \`\`union of arguments'' operation is non
 trivial.
@@ -579,3 +581,4 @@ This translates in CPS as a removal of parameters that are always instantiated
 with the same variables.
 
 TODO: more precise description of constant parameter removal
+
