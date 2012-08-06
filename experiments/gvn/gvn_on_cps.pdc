@@ -388,7 +388,11 @@ CallTo(f = \lambda \: args \: \cdot \: m) & = & f \: args \text{ otherwise} \\
 
 \end{description}
 
-<!--TODO: check relation with trampoline -->
+<!--trampolines dispatch calls to the bounced functions over and over again,
+while landing lambdas are only called once at loop entry. Landing lambdas
+isolate muttually recursive code under one common lambda, pushing it down
+under the same term. It does not change the internal structure of calls.
+ -->
 
 Note however that such a definition requires the extraction of maximal cliques
 (which is not easy). Moreover the \`\`union of arguments'' operation is non
