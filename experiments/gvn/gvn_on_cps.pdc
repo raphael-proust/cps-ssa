@@ -593,3 +593,67 @@ with the same variables.
 
 TODO: more precise description of constant parameter removal
 
+A nice property of this transformation is that it is local to a term (and its
+sub-terms). This will help with interleaving.
+
+
+##Folding
+
+The main part of the original algorithm is a nested loop over ranks (starting
+at $0$) and blocks (in top-sort order from the \`\`deepest'' to the
+\`\`shallowest''). Each execution of the body of the loop leads to potential
+trivial assignments. Thus, it is necessary to interleave the trivial
+assignment removal The body of the loop consists in:
+
+(a) moving computations from either
+    (1) the deeper block the current one jumps to, or
+    (2) the two deeper blocks the current one conditionally jumps to, and
+(b) marking movable computations as such
+
+Both actions are handled differently depending on the nature of the node in
+focus: landing-pad, loop header, or normal.
+
+###Traversal
+
+In this CPS version, we can replace top-sort order by:
+
+- do sub-terms before yourself
+- do sub-terms in 'calls' order (that is, start with callees, end with
+  callers)
+
+When the 'calls' order is not defined, we are in a loop. In this particular
+case, the transitive closure of the call graph is a clique and the traversal
+order can be simplified to \`\`sub-terms before self''. Note that these blobs
+of unordered $\Lambda$s are isolated under a landing-$\lambda$.
+
+Thus the traversal is performed as follows:
+
+\begin{verbatim}
+let traverse move mark max_rank whole_term =
+  let rec ranks rank term =
+    if rank < 0 then
+      term
+    else
+      let rec depth rank = function
+        | Mapp  (v, vs, CVar c) -> TODO
+        | Mapp  (v, vs, C (x, m)) -> TODO
+        | Mcont (v, vs) -> TODO
+        | Mif   (v, (v1, vs1), (v2, vs2)) -> TODO
+        | Mland (xs, m) -> TODO
+          do_smthg_w m;
+          move;
+          List.map mark xs;
+          remove_trivial_bindings;
+          return term
+        | Mrec  (ls, m) ->
+          do_smthg_w m;
+          List.map (fun l, vs, m -> do_smthg_w m) m;
+          remove_trivial_bindings;
+          return term
+      in
+      ranks (pred rank) (depth rank term)
+  in
+  ranks max_rank term
+\end{verbatim}
+
+
