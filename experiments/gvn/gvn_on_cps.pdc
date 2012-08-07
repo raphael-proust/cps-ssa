@@ -388,12 +388,6 @@ CallTo(f = \lambda \: args \: \cdot \: m) & = & f \: args \text{ otherwise} \\
 
 \end{description}
 
-<!--trampolines dispatch calls to the bounced functions over and over again,
-while landing lambdas are only called once at loop entry. Landing lambdas
-isolate muttually recursive code under one common lambda, pushing it down
-under the same term. It does not change the internal structure of calls.
- -->
-
 Note however that such a definition requires the extraction of maximal cliques
 (which is not easy). Moreover the \`\`union of arguments'' operation is non
 trivial.
@@ -403,6 +397,19 @@ manipulation of the CFG. The CPS equivalent for which is the call graph. It
 can be obtained with a one-pass traversal of a CPS term. This additional
 difficulty—as well as the loop definition incompleteness—shows that the
 algorithm was originally designed for a specific goal.
+
+####Landing-$\lambda$s and Trampolines
+
+A trampoline is a trick using a high-level calling convention to implement
+tail call optimisation on a low-level target that does not support it. (E.g.
+`ocamljs`, an OCaml compiler targeting Javascript.)
+
+The Landing-$lambda$ transformation:
+
+- can assume calls from one sub-term to another are tail-calls, and
+- only changes calls from outside of the mutually recursive function set
+  (while the trampoline requires change to the mutual calls themselves).
+
 
 ####Virtual calls annotations
 
