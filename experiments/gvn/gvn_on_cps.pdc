@@ -727,11 +727,16 @@ let traverse move mark max_rank whole_term =
   ranks max_rank term
 \end{verbatim}
 
-(Note thtat `mark` returns a (marked but otherwise untouched) term. Read
-further to see details.)
+Note that:
 
-The code above is written in a partially imperative style: the `get_movable`
-and `get_movable_br` functions are supposed to remove the bindings they
-return. This is not compatible with the current type declaration for the
-terms. Also note that the code is incomplete regarding the treatment of
-landing-$\lambda$s and loop headers.
+- `mark` returns a (marked but otherwise untouched) term.
+- the code above is written in a partially imperative style: the `get_movable`
+  and `get_movable_br` functions are supposed to remove the bindings they
+  return.
+- the code is incomplete regarding the treatment of landing-$\lambda$s and
+  loop headers.
+
+While the first remark can be taken care of by maintaining a marking-table
+outside of the term, the other remarks call for a change in the type of terms.
+Using a different constructor for landing-$\lambda$s and other lambdas makes
+sense.
