@@ -141,7 +141,7 @@ let assert_g ~env g =
   aux ~env g
 
 let rec m_of_g g =
-  let lambda (v, (vs, g)) = (v, (vs, m_of_g g)) in
+  let lambdas ls = List.map (fun (v, (vs, g)) -> (v, (vs, m_of_g g))) ls in
   match g with
   | GAppRet (v, vs) -> CPS.MApp (v, vs, CPS.CVar CPS.var_return)
   | GAppCont (v, vs, k) -> CPS.MApp (v, vs, CPS.CVar k)
@@ -156,9 +156,9 @@ let rec m_of_g g =
       bs
       (m_of_g g)
   | GLoop (v, vs, ls, g1, g2) ->
-    CPS.MRec ([v, (vs, CPS.MRec (List.map lambda ls, m_of_g g1))], m_of_g g2)
+    CPS.MRec ([v, (vs, CPS.MRec (lambdas ls, m_of_g g1))], m_of_g g2)
   | GLambda (ls, g) ->
-    CPS.MRec (List.map lambda ls, m_of_g g)
+    CPS.MRec (lambdas ls, m_of_g g)
 
 
 (* Landing Lambdas *)
