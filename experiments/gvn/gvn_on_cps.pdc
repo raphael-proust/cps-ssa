@@ -747,3 +747,30 @@ While the first remark can be taken care of by maintaining a marking-table
 outside of the term, the other remarks call for a change in the type of terms.
 Using a different constructor for landing-$\lambda$s and other lambdas makes
 sense.
+
+###Post folding operations
+
+After folding, it is necessary to come back to the original CPS term
+representation. This is acheived by replacing `Mbind` constructors with `Mlet`
+ones. The invariant property of ranks makes it an easy task. TODO: a little
+more details.
+
+The algorithm can introduce \`\`empty'' terms. E.g. landing-$lambda$s might
+not have received any bindings from nodes that are \`\`after'' the loop. In
+this case the offending nodes can simply be removed.
+
+
+\begin{description}
+\item[Empty nodes removal]
+
+\begin{equation}
+\begin{array}{r l}
+letrec \: \{ f = \lambda_j \: \_ \cdot l \_ \} \cup L \: in \: m \: \mapsto &
+  (letrec \: L \: in \: m)[f \: \_ / \: l \_] \\
+letrec \: \{\} \: in \: m \mapsto & m
+\end{array}
+\end{equation}
+
+\end{description}
+
+
