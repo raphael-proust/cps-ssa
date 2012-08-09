@@ -67,17 +67,32 @@ and lambda = Prim.var list * m
 
 and named_lambda = Prim.var * lambda
 
-val subterms: m -> m list
 
-(** [m_map ?var ?value ?mem_w m] maps the components of the term [m] (but not
-    its structure. It applies [var] on all the variables of the term, [value]
-    on values, [mem_w] on memory writes, and itself on subterms. The default
-    values for the optional arguments are all the identity function. *)
-val m_map :
-     ?var:(Prim.var -> Prim.var)
-  -> ?value:(Prim.value -> Prim.value)
-  -> ?mem_w:(Prim.mem_w -> Prim.mem_w)
-  -> m -> m
+(* Functions for probing and tampering with terms *)
+module Prop : sig
+
+  val subterms: m -> m list
+
+  val calls: m -> Prim.var list
+  val deep_calls: m -> Prim.var list
+
+  val is_terminator: m -> bool
+  val terminator: m -> m
+
+  val is_cond: m -> bool
+  val is_deep_cond: m -> bool
+
+  val lambdas: m -> named_lambda list
+
+  val head: named_lambda -> Prim.var
+  val args: named_lambda -> Prim.var list
+  val body: named_lambda -> m
+
+  val heads: named_lambda list -> Prim.var list
+  val argss: named_lambda list -> Prim.var list list
+  val bodys: named_lambda list -> m list
+
+end
 
 
 (** [var_run] is for the top return continuation. Fulfilling the same purpose

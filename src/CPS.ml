@@ -53,39 +53,59 @@ and lambda = Prim.var list * m
 and named_lambda = Prim.var * lambda
 
 
-let rec subterms t = match t with
-  | MApp  (_, _, cont) -> t :: subterms_cont cont
-  | MCont (_, _) -> [t]
-  | MCond (_, _, _) -> [t]
-  | MLet  (_, _, m) -> t :: subterms m
-  | MSel  (_, _, _, _, m) -> t :: subterms m
-  | MSeq  (_, _, m) -> t :: subterms m
-  | MRec  (ls, m) ->
-    t :: subterms m @ List.flatten (List.map (fun (_,(_,m)) -> subterms m) ls)
+module Prop = struct
 
-and subterms_cont = function
-  | CVar _ -> []
-  | C    (_, m) -> subterms m
+  let rec subterms t = match t with
+    | MApp  (_, _, cont)    -> t :: subterms_cont cont
+    | MCont (_, _)
+    | MCond (_, _, _)       -> [t]
+    | MLet  (_, _, m)
+    | MSel  (_, _, _, _, m)
+    | MSeq  (_, _, m)       -> t :: subterms m
+    | MRec  (ls, m)         ->
+      t :: subterms m @ List.flatten (List.map (fun (_,(_,m)) -> subterms m) ls)
 
-let m_map ?(var= fun x -> x) ?(value= fun v -> v) ?(mem_w= fun w -> w) m =
-  let values vs = List.map value vs in
-  let vars vs = List.map var vs in
-  let rec aux = function
-    | MApp  (v, vs, c) -> MApp (var v, values vs, aux_cont c)
-    | MCont (v, vs) -> MCont (var v, values vs)
-    | MCond (v, (k1, vs1), (k2, vs2)) ->
-      MCond (value v, (var k1, values vs1), (var k2, values vs2))
-    | MLet  (x, v, m) -> MLet (var x, value v, aux m)
-    | MSel  (x, v, v1, v2, m) ->
-      MSel (var x, value v, value v1, value v2, aux m)
-    | MRec  (ls, m) ->
-      MRec (List.map (fun (f, (vs, m)) -> (var f, (vars vs, aux m))) ls, aux m)
-    | MSeq  (v, w, m) -> MSeq (var v, mem_w w, aux m)
-  and aux_cont = function
-    | CVar v -> CVar (var v)
-    | C (x, m) -> C (var x, aux m)
-  in
-  aux m
+  and subterms_cont = function
+    | CVar _      -> []
+    | C    (_, m) -> subterms m
+
+  let rec calls = function
+    | MApp  (_, _, C _) | MLet _ | MSel _ | MSeq _ | MRec _ -> []
+    | MApp  (_, _, CVar v) | MCont (v, _)                   -> [v]
+    | MCond (_, (v1, _), (v2, _))                           -> [v1; v2]
+
+  let deep_calls m = List.flatten (List.map calls (subterms m))
+
+  let is_cond = function
+    | MCond _ -> true
+    | MApp  _ | MCont _ | MLet  _ | MSel  _ | MSeq  _ | MRec  _ -> false
+
+  let is_terminator = function
+    | MApp  (_, _, CVar _) | MCont _ | MCond _ -> true
+    | MApp  (_, _, C _) | MLet  _ | MSel  _ | MSeq  _ | MRec  _ -> false
+
+  let rec terminator = function
+    | MApp  (_, _, CVar _) | MCont _ | MCond _ as m -> m
+    | MApp  (_, _, C (_, m))
+    | MLet  (_, _, m)
+    | MSel  (_, _, _, _, m)
+    | MSeq  (_, _, m)
+    | MRec  (_, m) -> terminator m
+
+  let is_deep_cond m = is_cond (terminator m)
+
+  let lambdas = function
+    | MLet _ | MSel _ | MSeq _ | MApp  _ | MCont _ | MCond _ -> []
+    | MRec (ls, _) -> ls
+
+  let head (l, _     ) = l
+  let args (_, (a, _)) = a
+  let body (_, (_, m)) = m
+  let heads = List.map head
+  let argss = List.map args
+  let bodys = List.map body
+
+end
 
 (* This is for monad entry application. *)
 let var_run = Prim.var "run"
