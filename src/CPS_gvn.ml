@@ -24,6 +24,121 @@
 
 open Util
 
+(*NOTICE: this is a prototype, it is known not to be:
+  - feature complete
+  - bug free
+*)
+
+(*We use a custom representation *)
+type g =
+  | GAppRet  of (Prim.var * Prim.value list)
+  | GAppCont  of (Prim.var * Prim.value list * Prim.var)
+  | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
+  | GCont of (Prim.var * Prim.value list)
+  | GCond of (  Prim.value
+              * (Prim.var * Prim.value list)
+              * (Prim.var * Prim.value list)
+             )
+  | GBind of ((int * (Prim.var * Prim.value) list ) list * g)
+  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g)
+  | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
+
+
+let assert_value ~env value =
+  let open Prim in
+  let rec aux = function
+    | VVar v -> assert (List.mem v env)
+    | VConst _ | VNull | VUndef | VDummy _ | VZero -> ()
+    | VStruct vs -> List.iter aux vs
+    | VPlus  (v1, v2) -> aux v1; aux v2
+    | VMult  (v1, v2) -> aux v1; aux v2
+    | VMinus (v1, v2) -> aux v1; aux v2
+    | VDiv   (v1, v2) -> aux v1; aux v2
+    | VRem   (v1, v2) -> aux v1; aux v2
+    | VGt (v1, v2) -> aux v1; aux v2
+    | VGe (v1, v2) -> aux v1; aux v2
+    | VLt (v1, v2) -> aux v1; aux v2
+    | VLe (v1, v2) -> aux v1; aux v2
+    | VEq (v1, v2) -> aux v1; aux v2
+    | VNe (v1, v2) -> aux v1; aux v2
+    | VAnd (v1, v2) -> aux v1; aux v2
+    | VOr  (v1, v2) -> aux v1; aux v2
+    | VXor (v1, v2) -> aux v1; aux v2
+    | VRead v -> aux v
+    | VCast v -> aux v
+    | VShl  (v1, v2) -> aux v1; aux v2
+    | VLShr (v1, v2) -> aux v1; aux v2
+    | VAShr (v1, v2) -> aux v1; aux v2
+  in
+  aux value
+
+let assert_values ~env vs = List.iter (assert_value ~env) vs
+
+let has ~env v = assert (List.mem v env)
+let hasnt ~env v = assert (not (List.mem v env))
+let ext1 ~env v = hasnt ~env v; v :: env
+let ext ~env vs = List.iter (hasnt ~env) vs; vs @ env
+
+(*TODO: rewrite with better env *)
+let assert_g ~env g =
+  let rec aux ~env g =
+    match g with
+    | GAppRet (v, vs) ->
+      has ~env v;
+      assert_values ~env vs
+    | GAppCont (v, vs, k) ->
+      has ~env v;
+      assert_values ~env vs;
+      has ~env k
+    | GAppBind (v, vs, (x, g)) ->
+      has ~env v;
+      assert_values ~env vs;
+      aux ~env:(ext1 ~env x) g
+    | GCont (k, vs) ->
+      has ~env k;
+      assert_values ~env vs
+    | GCond (v, (k1, vs1), (k2, vs2)) ->
+      assert_value env v;
+      has ~env k1; assert_values ~env vs1;
+      has ~env k2; assert_values ~env vs2
+    | GBind (bs, g) ->
+      let (env, _) =
+        List.fold_left
+          (fun (env, r) (rank, bs) ->
+            assert (r < rank);
+            let (vars, values) = L.unzip bs in
+            List.iter (assert_value ~env) values;
+            (ext ~env vars, rank)
+          )
+          (env, -1)
+          bs
+      in
+      aux ~env g
+    | GLoop (v, vs, ls, g) ->
+      (*TODO: check ls's call graph*)
+      let (names, lambdas) = L.unzip ls in
+      (*DONT: add v to the environment *)
+      let env = ext ~env vs in
+      let env = ext ~env names in
+      aux ~env g;
+      List.iter (fun (vs, g) -> aux ~env:(ext ~env vs) g) lambdas
+    | GLambda (ls, g) ->
+      let env =
+        List.fold_left
+          (fun env (v, (vs, g)) ->
+            hasnt ~env v;
+            (*DONT add v to g's env, (it's not under a GLoop!)*)
+            aux ~env:(ext ~env vs) g;
+            ext1 ~env v
+          )
+          env
+          ls
+      in
+      aux ~env g
+  in
+  aux ~env g
+
+
 (*The first part deals with cfg modifications*)
 
 let rec calls_of_m = function
