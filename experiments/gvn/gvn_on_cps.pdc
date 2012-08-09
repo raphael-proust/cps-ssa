@@ -722,7 +722,14 @@ let traverse move mark max_rank whole_term =
         | Mbind (rbs, m) -> Mbind (rbs, depth rank m)
       in
 
-      ranks (pred rank) (depth rank term)
+      let term' =
+        remove_trivial_binds rank
+          (remove_dup_expressions rank
+            (update_ranks rank
+              (depth rank term)))
+      in
+
+      ranks (pred rank) term'
   in
   ranks max_rank term
 \end{verbatim}
