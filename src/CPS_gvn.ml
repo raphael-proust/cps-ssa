@@ -40,7 +40,7 @@ type g =
               * (Prim.var * Prim.value list)
              )
   | GBind of ((int * (Prim.var * Prim.value) list ) list * g)
-  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g)
+  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
   | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
 
 
@@ -87,6 +87,7 @@ let assert_g ~env g =
       has ~env v;
       assert_values ~env vs
     | GAppCont (v, vs, k) ->
+      assert (not (k = CPS.var_return));
       has ~env v;
       assert_values ~env vs;
       has ~env k
@@ -114,13 +115,14 @@ let assert_g ~env g =
           bs
       in
       aux ~env g
-    | GLoop (v, vs, ls, g) ->
+    | GLoop (v, vs, ls, g1, g2) ->
       (*TODO: check ls's call graph*)
       let (names, lambdas) = L.unzip ls in
-      (*DONT: add v to the environment *)
+      aux ~env:(ext1 ~env v) g2;
+      (*DONT: add v to g1's environment environment *)
       let env = ext ~env vs in
       let env = ext ~env names in
-      aux ~env g;
+      aux ~env g1;
       List.iter (fun (vs, g) -> aux ~env:(ext ~env vs) g) lambdas
     | GLambda (ls, g) ->
       let env =
@@ -137,6 +139,27 @@ let assert_g ~env g =
       aux ~env g
   in
   aux ~env g
+
+let rec m_of_g g =
+  let lambda (v, (vs, g)) = (v, (vs, m_of_g g)) in
+  match g with
+  | GAppRet (v, vs) -> CPS.MApp (v, vs, CPS.CVar CPS.var_return)
+  | GAppCont (v, vs, k) -> CPS.MApp (v, vs, CPS.CVar k)
+  | GAppBind (v, vs, (x, g)) -> CPS.MApp (v, vs, CPS.C (x, m_of_g g))
+  | GCont (k, vs) -> CPS.MCont (k, vs)
+  | GCond (v, (k1, vs1), (k2, vs2)) -> CPS.MCond (v, (k1, vs1), (k2, vs2))
+  | GBind (bs, g) ->
+    List.fold_right
+      (fun (_, bs) term ->
+        List.fold_left (fun term (x, v) -> CPS.MLet (x, v, term)) term bs
+      )
+      bs
+      (m_of_g g)
+  | GLoop (v, vs, ls, g1, g2) ->
+    CPS.MRec ([v, (vs, CPS.MRec (List.map lambda ls, m_of_g g1))], m_of_g g2)
+  | GLambda (ls, g) ->
+    CPS.MRec (List.map lambda ls, m_of_g g)
+
 
 
 (*The first part deals with cfg modifications*)
