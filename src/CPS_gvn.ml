@@ -233,19 +233,51 @@ let call_graph (ls : (Prim.var * (Prim.var list * g)) list)
     (fun l -> (GP.head l, L.inter (GP.heads ls) (GP.deep_calls (GP.body l))))
     ls
 
+type clique_or_not =
+  | Clique of Prim.var list
+  | NotClique of Prim.var list
+
 let get_trans_cliques (callgraph : (Prim.var * Prim.var list) list)
-  : Prim.var list list * Prim.var list
-  (*-----cliques------   ----other----*)
+  : clique_or_not list
   = failwith "TODO: extract cliques in the transitive closure of the callgraph"
+  (*TODO: sort elements in reverse callee-before-caller order*)
+  (*TODO? use blobs of independant NotCliques together*)
 
-let named_lambda_of_name ls l = List.find (fun ll -> l = MP.head ll) ls
+let lambda_of_name ls n = List.find (fun l -> n = GP.head l) ls
+let lambdas_of_names ls ns = List.map (lambda_of_name ls) ns
 
-let g_of_m m =
-(*   let lambdas ls = List.map (fun (v, (vs, g)) -> (v, (vs, m_of_g g))) ls in
-*   *)
-  failwith "TODO"
+let rec g_of_m m =
+  let lambdas ls = List.map (fun (v, (vs, m)) -> (v, (vs, g_of_m m))) ls in
+  match m with
+  | CPS.MApp  (v, vs, CPS.C (x, m)) -> GAppBind (v, vs, (x, g_of_m m))
+  | CPS.MApp  (v, vs, CPS.CVar k) ->
+    if k = CPS.var_return then
+      GAppRet (v, vs)
+    else
+      GAppCont (v, vs, k)
+  | CPS.MCont (v, vs) -> GCont (v, vs)
+  | CPS.MCond (v, (k1, vs1), (k2, vs2)) -> GCond (v, (k1, vs1), (k2, vs2))
+  | CPS.MLet  (x, v, m) -> strand [x,v] m
+  | CPS.MRec  (ls, m) ->
+    let ls = lambdas ls in
+    let cg = call_graph ls in
+    let cliqs = get_trans_cliques cg in
+    List.fold_right
+      (fun c g -> match c with
+        | Clique c -> gloop (lambdas_of_names ls c) g
+        | NotClique nc -> GLambda (lambdas_of_names ls nc, g)
+      )
+      cliqs
+      (g_of_m m)
+  | CPS.MSel  _ -> failwith "Unsupported MSel constructor"
+  | CPS.MSeq  _ -> failwith "Unsupported MSeq constructor"
+
+and strand bs m = failwith "TODO"
+
+and gloop ls g = failwith "TODO"
 
 
+(*
 let loop_of_clique clique ls m =
   let clique = List.map (named_lambda_of_name ls) clique in
   let clique_bar = L.minus ls clique in
@@ -298,3 +330,4 @@ let loop_substitute (l, e, c) args =
      (i :: args,
       CPS.MRec (l @ e @ c', dispatch i args (MP.heads (L.minus e c @ c')))))
 
+*)
