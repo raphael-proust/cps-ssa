@@ -272,62 +272,44 @@ let rec g_of_m m =
   | CPS.MSel  _ -> failwith "Unsupported MSel constructor"
   | CPS.MSeq  _ -> failwith "Unsupported MSeq constructor"
 
-and strand bs m = failwith "TODO"
+and strand bs m = match m with
+  | CPS.MLet (x, v, m) -> strand ((x,v)::bs) m
+  | m -> GBind ([-1, bs], g_of_m m) (* needs ranking *)
 
-and gloop ls g = failwith "TODO"
+and gloop ls g =
 
-
-(*
-let loop_of_clique clique ls m =
-  let clique = List.map (named_lambda_of_name ls) clique in
-  let clique_bar = L.minus ls clique in
-  let entries =
-    L.inter
-      clique
-      (List.map
-        (named_lambda_of_name ls)
-        (List.flatten
-          (   MP.deep_calls m
-           :: List.map (fun l -> MP.deep_calls (MP.body l)) clique_bar)))
-  in
-  let conds =
-    List.filter (fun l -> MP.is_deep_cond (MP.body l)) clique
-  in
-  (
-  (clique, entries, conds)
-  : (CPS.named_lambda list * CPS.named_lambda list * CPS.named_lambda list))
-
-let dispatch i args ls =
-  let args_value = List.map (fun v -> Prim.VVar v) args in
-  let rec aux k = function
-  | [] -> assert false
-  | [l] -> CPS.MCont (l, args_value)
-  | l::ls ->
-    let d = Prim.fresh_var () in
-    CPS.MRec ([d, (i :: args, aux (k+1) ls)],
-              CPS.MCond (Prim.(VEq (VVar i, VConst k)),
-                         (l, args_value),
-                         (d, (Prim.VConst (k+1) :: args_value))))
-  in
-  aux 1 ls
-
-let loop_substitute (l, e, c) args =
-  assert (L.includes l e);
-  assert (L.includes e c);
-  match (e,c) with
-  | [], _ -> (*dead code*) failwith "TODO: what to do?"
-  | [_], [] -> failwith "TODO"
-  | [_], [_] -> failwith "TODO"
-  | [_], _::_::_ -> assert false
-  | _::_::_, [] -> failwith "TODO"
-  | _::_::_, _::_ ->
-    let f = Prim.fresh_var () in
-    let i = Prim.fresh_var () in
-    let c' =
-      List.map (fun (_, (args, m)) -> (Prim.fresh_var (), (args, m))) c
+  let dispatch d ls =
+    let rec aux i = function
+      | [] -> assert false
+      | [l] -> GCont (GP.head l, failwith "TODO: parameters")
+      | [l1;l2] ->
+        GCond (Prim.(VEq (VVar d, VConst i)),
+               (GP.head l1, failwith "TODO: parameters"),
+               (GP.head l2, failwith "TODO: parameters")
+              )
+      | l :: ls ->
+        let more = Prim.fresh_var () in
+        GLambda (
+          [more, ([], aux (succ i) ls)],
+          GCond (
+            Prim.(VEq (VVar d, VConst i)),
+            (GP.head l, failwith "TODO: parameters"),
+            (more, [])
+          )
+        )
     in
-    (f,
-     (i :: args,
-      CPS.MRec (l @ e @ c', dispatch i args (MP.heads (L.minus e c @ c')))))
+    aux 0 ls
+  in
 
-*)
+  let substitute_landing l ls g = failwith "TODO" in
+
+  let landing = Prim.fresh_var () in
+  let parameters = failwith "TODO!" in
+  let dispatch_param = Prim.fresh_var () in
+  GLoop (landing,
+         dispatch_param :: parameters,
+         ls,
+         dispatch dispatch_param ls,
+         substitute_landing landing ls g
+  )
+
