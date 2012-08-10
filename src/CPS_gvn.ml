@@ -242,35 +242,38 @@ let get_trans_cliques (callgraph : (Prim.var * Prim.var list) list)
 let lambda_of_name ls n = List.find (fun l -> n = GP.head l) ls
 let lambdas_of_names ls ns = List.map (lambda_of_name ls) ns
 
-let rec g_of_m m =
-  let lambdas ls = List.map (fun (v, (vs, m)) -> (v, (vs, g_of_m m))) ls in
-  match m with
-  | CPS.MApp  (v, vs, CPS.C (x, m)) -> GAppBind (v, vs, (x, g_of_m m))
-  | CPS.MApp  (v, vs, CPS.CVar k) ->
-    if k = CPS.var_return then
-      GAppRet (v, vs)
-    else
-      GAppCont (v, vs, k)
-  | CPS.MCont (v, vs) -> GCont (v, vs)
-  | CPS.MCond (v, (k1, vs1), (k2, vs2)) -> GCond (v, (k1, vs1), (k2, vs2))
-  | CPS.MLet  (x, v, m) -> strand [x,v] m
-  | CPS.MRec  (ls, m) ->
-    let ls = lambdas ls in
-    let cg = call_graph ls in
-    let cliqs = get_trans_cliques cg in
-    List.fold_right
-      (fun c g -> match c with
-        | Clique c -> gloop (lambdas_of_names ls c) g
-        | NotClique nc -> GLambda (lambdas_of_names ls nc, g)
-      )
-      cliqs
-      (g_of_m m)
-  | CPS.MSel  _ -> failwith "Unsupported MSel constructor"
-  | CPS.MSeq  _ -> failwith "Unsupported MSeq constructor"
+let rec unranked_g_of_m m =
+  let rec aux m =
+    let lambdas ls = List.map (fun (v, (vs, m)) -> (v, (vs, aux m))) ls in
+    match m with
+    | CPS.MApp  (v, vs, CPS.C (x, m)) -> GAppBind (v, vs, (x, aux m))
+    | CPS.MApp  (v, vs, CPS.CVar k) ->
+      if k = CPS.var_return then
+        GAppRet (v, vs)
+      else
+        GAppCont (v, vs, k)
+    | CPS.MCont (v, vs) -> GCont (v, vs)
+    | CPS.MCond (v, (k1, vs1), (k2, vs2)) -> GCond (v, (k1, vs1), (k2, vs2))
+    | CPS.MLet  (x, v, m) -> strand [x,v] m
+    | CPS.MRec  (ls, m) ->
+      let ls = lambdas ls in
+      let cg = call_graph ls in
+      let cliqs = get_trans_cliques cg in
+      List.fold_right
+        (fun c g -> match c with
+          | Clique c -> gloop (lambdas_of_names ls c) g
+          | NotClique nc -> GLambda (lambdas_of_names ls nc, g)
+        )
+        cliqs
+        (aux m)
+    | CPS.MSel  _ -> failwith "Unsupported MSel constructor"
+    | CPS.MSeq  _ -> failwith "Unsupported MSeq constructor"
+  in
+  aux m
 
 and strand bs m = match m with
   | CPS.MLet (x, v, m) -> strand ((x,v)::bs) m
-  | m -> GBind ([-1, bs], g_of_m m) (* needs ranking *)
+  | m -> GBind ([-1, bs], unranked_g_of_m m) (* needs ranking *)
 
 and gloop ls g =
 
@@ -308,4 +311,49 @@ and gloop ls g =
          dispatch dispatch_param ls,
          substitute_landing landing ls g
   )
+
+let rec vars_of_value v =
+  let open Prim in
+  let rec aux acc = function
+    | VVar v -> v :: acc
+    | VConst _ | VNull | VUndef | VDummy _ | VZero -> acc
+    | VStruct vs -> List.fold_left aux acc vs
+    | VRead v | VCast v -> failwith "Unsupported memops"
+    | VPlus  (v1, v2)
+    | VMult  (v1, v2)
+    | VMinus (v1, v2)
+    | VDiv   (v1, v2)
+    | VRem   (v1, v2)
+    | VGt (v1, v2)
+    | VGe (v1, v2)
+    | VLt (v1, v2)
+    | VLe (v1, v2)
+    | VEq (v1, v2)
+    | VNe (v1, v2)
+    | VAnd (v1, v2)
+    | VOr  (v1, v2)
+    | VXor (v1, v2)
+    | VShl  (v1, v2)
+    | VLShr (v1, v2)
+    | VAShr (v1, v2)
+    -> aux (aux acc v1) v2
+  in
+  aux [] v
+
+let rank g =
+  let rec aux env = function
+    | GAppRet _ | GAppCont _ | GCont _ | GCond _ as g -> g
+    | GAppBind (v, vs, (x, g)) ->
+      let vars = List.flatten (List.map vars_of_value vs) in
+      let rk = succ (List.fold_left max 0 (List.map (Env.get ~env) vars)) in
+      GAppBind (v, vs, (x, aux (Env.add1 ~env x rk) g))
+    | GBind (bs, g) -> failwith "TODO"
+    | GLoop (v, vs, ls, g1, g2) -> failwith "TODO"
+    | GLambda (ls, g) ->
+      (*all the calls the lambdas of ls are in g*)
+      failwith "TODO"
+  in
+  aux Env.empty g (*TODO: allow the passing of the "proc param" in the env*)
+
+let g_of_m m = rank (unranked_g_of_m m)
 
