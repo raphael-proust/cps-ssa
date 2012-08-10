@@ -102,6 +102,9 @@ module L = struct
   let includes l1 l2 =
     List.for_all (fun x -> List.mem x l1) l2
 
+  let disjoint l1 l2 =
+    List.for_all (fun x -> not (List.mem x l1)) l2
+
   let cat_uniq l1 l2 =
     List.iter (fun x -> assert (not (List.mem x l2))) l1;
     l1 @ l2

@@ -37,6 +37,7 @@ module L :
     val inter : 'a list -> 'a list -> 'a list
     val minus : 'a list -> 'a list -> 'a list
     val includes : 'a list -> 'a list -> bool
+    val disjoint : 'a list -> 'a list -> bool
     val cat_uniq : 'a list -> 'a list -> 'a list
   end
 module O :

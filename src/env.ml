@@ -18,20 +18,20 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type g =
-  | GAppRet  of (Prim.var * Prim.value list)
-  | GAppCont  of (Prim.var * Prim.value list * Prim.var)
-  | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
-  | GCont of (Prim.var * Prim.value list)
-  | GCond of (  Prim.value
-              * (Prim.var * Prim.value list)
-              * (Prim.var * Prim.value list)
-             )
-  | GBind of ((int * (Prim.var * Prim.value) list ) list * g)
-  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
-  | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
+open Util
 
-val assert_g: env:((Prim.var, unit) Env.t) -> g -> unit
+type ('a, 'b) t = ('a * 'b) list
 
-val m_of_g: g -> CPS.m
-val g_of_m: CPS.m -> g
+let empty = []
+
+let disjoint e1 e2 = L.disjoint e1 e2
+
+let add1 ~env v d = (v, d) :: env
+let add  ~env vds = vds @ env
+let merge e1 e2 = e1 @ e2
+
+let has ~env v = List.exists (fun vd -> fst vd = v) env
+let hasnt ~env v = not (has ~env v)
+
+let get ~env v = List.assoc v env
+

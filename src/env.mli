@@ -18,20 +18,17 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-type g =
-  | GAppRet  of (Prim.var * Prim.value list)
-  | GAppCont  of (Prim.var * Prim.value list * Prim.var)
-  | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
-  | GCont of (Prim.var * Prim.value list)
-  | GCond of (  Prim.value
-              * (Prim.var * Prim.value list)
-              * (Prim.var * Prim.value list)
-             )
-  | GBind of ((int * (Prim.var * Prim.value) list ) list * g)
-  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
-  | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
 
-val assert_g: env:((Prim.var, unit) Env.t) -> g -> unit
+type ('a, 'b) t
 
-val m_of_g: g -> CPS.m
-val g_of_m: CPS.m -> g
+val empty : ('a, 'b) t
+
+val disjoint: ('a, 'b) t -> ('a, 'b) t -> bool
+
+val add1 : env:(('a, 'b) t) -> 'a -> 'b -> ('a, 'b) t
+val add  : env:(('a, 'b) t) -> ('a * 'b) list -> ('a, 'b) t
+
+val has : env:(('a, 'b) t) -> 'a -> bool
+val hasnt : env:(('a, 'b) t) -> 'a -> bool
+
+val get : env:(('a, 'b) t) -> 'a -> 'b
