@@ -55,7 +55,7 @@ type g =
    *)
 
 
-let assert_value ~env value =
+let assert_value env value =
   let open Prim in
   let rec aux = function
     | VVar v -> assert (Env.has ~env v)
@@ -83,69 +83,69 @@ let assert_value ~env value =
   in
   aux value
 
-let assert_values ~env vs = List.iter (assert_value ~env) vs
+let assert_values env vs = List.iter (assert_value env) vs
 
 let nits xs = List.map (fun x -> (x, ())) xs
 
-let assert_g ~env g =
-  let rec aux ~env g =
+let assert_g env g =
+  let rec aux env g =
     match g with
     | GAppRet (v, vs) ->
       assert (Env.has ~env v);
-      assert_values ~env vs
+      assert_values env vs
     | GAppCont (v, vs, k) ->
       assert (not (k = CPS.var_return));
       assert (Env.has env v);
-      assert_values ~env vs;
+      assert_values env vs;
       assert (Env.has ~env k)
     | GAppBind (v, vs, (x, g)) ->
       assert (Env.has env v);
-      assert_values ~env vs;
-      aux ~env:(Env.add1 ~env x ()) g
+      assert_values env vs;
+      aux (Env.add1 ~env x ()) g
     | GCont (k, vs) ->
       assert (Env.has env k);
-      assert_values ~env vs
+      assert_values env vs
     | GCond (v, (k1, vs1), (k2, vs2)) ->
       assert_value env v;
-      assert (Env.has env k1); assert_values ~env vs1;
-      assert (Env.has env k2); assert_values ~env vs2
+      assert (Env.has env k1); assert_values env vs1;
+      assert (Env.has env k2); assert_values env vs2
     | GBind (bs, g) ->
       let (env, _) =
         List.fold_left
           (fun (env, r) (rank, bs) ->
             assert (r < rank);
             let (vars, values) = L.unzip bs in
-            List.iter (assert_value ~env) values;
+            List.iter (assert_value env) values;
             (Env.add ~env (nits vars), rank)
           )
           (env, -1)
           bs
       in
-      aux ~env g
+      aux env g
     | GLoop (v, vs, ls, g1, g2) ->
       (*TODO: check ls's call graph*)
       let (names, lambdas) = L.unzip ls in
-      aux ~env:(Env.add1 ~env v ()) g2;
+      aux (Env.add1 ~env v ()) g2;
       (*DONT: add v to g1's environment environment *)
       let env = Env.add ~env (nits vs) in
       let env = Env.add ~env (nits names) in
-      aux ~env g1;
-      List.iter (fun (vs, g) -> aux ~env:(Env.add ~env (nits vs)) g) lambdas
+      aux env g1;
+      List.iter (fun (vs, g) -> aux (Env.add ~env (nits vs)) g) lambdas
     | GLambda (ls, g) ->
       let env =
         List.fold_left
           (fun env (v, (vs, g)) ->
             assert (Env.hasnt ~env v);
             (*DONT add v to g's env, (it's not under a GLoop!)*)
-            aux ~env:(Env.add ~env (nits vs)) g;
+            aux (Env.add ~env (nits vs)) g;
             Env.add1 ~env v ()
           )
           env
           ls
       in
-      aux ~env g
+      aux env g
   in
-  aux ~env g
+  aux env g
 
 let rec m_of_g g =
   let lambdas ls = List.map (fun (v, (vs, g)) -> (v, (vs, m_of_g g))) ls in
