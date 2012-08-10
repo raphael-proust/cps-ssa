@@ -55,6 +55,13 @@ and named_lambda = Prim.var * lambda
 
 module Prop = struct
 
+  let head (l, _     ) = l
+  let args (_, (a, _)) = a
+  let body (_, (_, m)) = m
+  let heads = List.map head
+  let argss = List.map args
+  let bodys = List.map body
+
   let rec subterms t = match t with
     | MApp  (_, _, cont)    -> t :: subterms_cont cont
     | MCont (_, _)
@@ -63,7 +70,7 @@ module Prop = struct
     | MSel  (_, _, _, _, m)
     | MSeq  (_, _, m)       -> t :: subterms m
     | MRec  (ls, m)         ->
-      t :: subterms m @ List.flatten (List.map (fun (_,(_,m)) -> subterms m) ls)
+      t :: subterms m @ List.flatten (List.map subterms (bodys ls))
 
   and subterms_cont = function
     | CVar _      -> []
@@ -97,13 +104,6 @@ module Prop = struct
   let lambdas = function
     | MLet _ | MSel _ | MSeq _ | MApp  _ | MCont _ | MCond _ -> []
     | MRec (ls, _) -> ls
-
-  let head (l, _     ) = l
-  let args (_, (a, _)) = a
-  let body (_, (_, m)) = m
-  let heads = List.map head
-  let argss = List.map args
-  let bodys = List.map body
 
 end
 

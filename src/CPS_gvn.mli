@@ -18,3 +18,20 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+type g =
+  | GAppRet  of (Prim.var * Prim.value list)
+  | GAppCont  of (Prim.var * Prim.value list * Prim.var)
+  | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
+  | GCont of (Prim.var * Prim.value list)
+  | GCond of (  Prim.value
+              * (Prim.var * Prim.value list)
+              * (Prim.var * Prim.value list)
+             )
+  | GBind of ((int * (Prim.var * Prim.value) list ) list * g)
+  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
+  | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
+
+val assert_g: env:(Prim.var list) -> g -> unit
+
+val m_of_g: g -> CPS.m
+val g_of_m: CPS.m -> g

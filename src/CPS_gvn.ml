@@ -43,6 +43,17 @@ type g =
   | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
   | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
 
+  (*
+  | GAppRet (v, vs)
+  | GAppCont (v, vs, k)
+  | GAppBind (v, vs, (x, g))
+  | GCont (k, vs)
+  | GCond (v, (k1, vs1), (k2, vs2))
+  | GBind (bs, g)
+  | GLoop (v, vs, ls, g1, g2)
+  | GLambda (ls, g)
+   *)
+
 
 let assert_value ~env value =
   let open Prim in
@@ -164,19 +175,76 @@ let rec m_of_g g =
 (* Landing Lambdas *)
 (* Problem: the complexity for finding cliques is too important *)
 
-module TP = CPS.Prop (*Term Properties*)
+module MP = CPS.Prop (* CPS Term Properties*)
+module GP = struct (* CPS_gvn Term Properties*)
 
-let call_graph ls =
+  let head (l, _     ) = l
+  let args (_, (a, _)) = a
+  let body (_, (_, m)) = m
+  let heads = List.map head
+  let argss = List.map args
+  let bodys = List.map body
+
+  let rec subterms t =
+    let lambdas ls = List.flatten (List.map subterms (bodys ls)) in
+    match t with
+    | GAppRet _ | GAppCont _ | GCont _ | GCond _ -> [t]
+    | GAppBind (_, _, (_, g)) | GBind (_, g) -> t :: subterms g
+    | GLoop (_, _, ls, g1, g2) -> t :: subterms g1 @ subterms g2 @ lambdas ls
+    | GLambda (ls, g) -> t :: subterms g @ lambdas ls
+
+  let rec calls = function
+    | GAppRet _ | GAppBind _ | GBind _ | GLoop _ | GLambda _ -> []
+    | GAppCont (_, _, k) | GCont (k, _)                      -> [k]
+    | GCond (_, (k1, _), (k2, _))                            -> [k1; k2]
+
+  let deep_calls m = List.flatten (List.map calls (subterms m))
+
+  let is_cond = function
+    | GCond _ -> true
+    | GAppRet _ | GAppCont _ | GAppBind _ | GCont _ | GBind _ | GLoop _
+    | GLambda _ -> false
+
+  let is_terminator = function
+    | GAppRet _ | GAppCont _ | GCont _ | GCond _ -> true
+    | GAppBind _ | GBind _ | GLoop _ | GLambda _ -> false
+
+  let rec terminator = function
+    | GAppRet _ | GAppCont _ | GCont _ | GCond _ as g -> g
+    | GAppBind (_, _, (_, g))
+    | GBind (_, g)
+    | GLoop (_, _, _, _, g) (*is this correct?*)
+    | GLambda (_, g) -> terminator g
+
+  let is_deep_cond m = is_cond (terminator m)
+
+  let lambdas = function
+    | GAppRet _ | GAppCont _ | GAppBind _ | GCont _ | GCond _ | GBind _ -> []
+    | GLoop (_, _, ls, _, _) | GLambda (ls, _) -> ls
+           (* is ^this^ correct? *)
+
+end
+
+
+let call_graph (ls : (Prim.var * (Prim.var list * g)) list)
+  : (Prim.var * Prim.var list) list
+  =
   List.map
-    (fun l -> (TP.head l, L.inter (TP.heads ls) (TP.deep_calls (TP.body l)), l))
+    (fun l -> (GP.head l, L.inter (GP.heads ls) (GP.deep_calls (GP.body l))))
     ls
 
-let get_trans_cliques callgraph
-  : (Prim.var * Prim.var list) list -> Prim.var list list * Prim.var list
-  (* --head--   ----calls----          -----cliques------   ----other---- *)
+let get_trans_cliques (callgraph : (Prim.var * Prim.var list) list)
+  : Prim.var list list * Prim.var list
+  (*-----cliques------   ----other----*)
   = failwith "TODO: extract cliques in the transitive closure of the callgraph"
 
-let named_lambda_of_name ls l = List.find (fun ll -> l = TP.head ll) ls
+let named_lambda_of_name ls l = List.find (fun ll -> l = MP.head ll) ls
+
+let g_of_m m =
+(*   let lambdas ls = List.map (fun (v, (vs, g)) -> (v, (vs, m_of_g g))) ls in
+*   *)
+  failwith "TODO"
+
 
 let loop_of_clique clique ls m =
   let clique = List.map (named_lambda_of_name ls) clique in
@@ -187,11 +255,11 @@ let loop_of_clique clique ls m =
       (List.map
         (named_lambda_of_name ls)
         (List.flatten
-          (   TP.deep_calls m
-           :: List.map (fun l -> TP.deep_calls (TP.body l)) clique_bar)))
+          (   MP.deep_calls m
+           :: List.map (fun l -> MP.deep_calls (MP.body l)) clique_bar)))
   in
   let conds =
-    List.filter (fun l -> TP.is_deep_cond (TP.body l)) clique
+    List.filter (fun l -> MP.is_deep_cond (MP.body l)) clique
   in
   (
   (clique, entries, conds)
@@ -228,5 +296,5 @@ let loop_substitute (l, e, c) args =
     in
     (f,
      (i :: args,
-      CPS.MRec (l @ e @ c', dispatch i args (TP.heads (L.minus e c @ c')))))
+      CPS.MRec (l @ e @ c', dispatch i args (MP.heads (L.minus e c @ c')))))
 
