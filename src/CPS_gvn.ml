@@ -277,14 +277,28 @@ and strand bs m = match m with
 
 and gloop ls g =
 
+  (*TODO: deforest *)
+  let args_num = List.fold_left max 0 (List.map List.length (GP.argss ls)) in
+  let args =
+    I.fold
+      (fun acc _ -> Prim.fresh_var () :: acc)
+      []
+      args_num
+  in
+
   let dispatch d ls =
+    let args l =
+      List.map
+        (fun v -> Prim.VVar v)
+        (List.tl (L.take args (List.length (GP.args l) + 1)))
+    in
     let rec aux i = function
       | [] -> assert false
-      | [l] -> GCont (GP.head l, failwith "TODO: parameters")
+      | [l] -> GCont (GP.head l, args l)
       | [l1;l2] ->
         GCond (Prim.(VEq (VVar d, VConst i)),
-               (GP.head l1, failwith "TODO: parameters"),
-               (GP.head l2, failwith "TODO: parameters")
+               (GP.head l1, args l1),
+               (GP.head l2, args l2)
               )
       | l :: ls ->
         let more = Prim.fresh_var () in
@@ -292,7 +306,7 @@ and gloop ls g =
           [more, ([], aux (succ i) ls)],
           GCond (
             Prim.(VEq (VVar d, VConst i)),
-            (GP.head l, failwith "TODO: parameters"),
+            (GP.head l, args l),
             (more, [])
           )
         )

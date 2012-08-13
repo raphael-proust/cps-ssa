@@ -24,6 +24,10 @@ module E :
     val left: 'a -> ('a, 'b) either
     val right: 'a -> ('b, 'a) either
   end
+module I :
+  sig
+    val fold: ('a -> int -> 'a) -> 'a -> int -> 'a
+  end
 module L :
   sig
     val concat_map : ('a -> 'b list) -> 'a list -> 'b list
@@ -36,6 +40,7 @@ module L :
     val includes : 'a list -> 'a list -> bool
     val disjoint : 'a list -> 'a list -> bool
     val cat_uniq : 'a list -> 'a list -> 'a list
+    val take : 'a list -> int -> 'a list
   end
 module O :
   sig
