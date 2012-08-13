@@ -115,6 +115,7 @@ let assert_g env g =
           (fun (env, r) (rank, bs) ->
             assert (r < rank);
             let (vars, values) = List.split bs in
+            let (vars, values) = L.unzip bs in
             List.iter (assert_value env) values;
             (Env.add ~env (nits vars), rank)
           )
@@ -125,6 +126,7 @@ let assert_g env g =
     | GLoop (v, vs, ls, g1, g2) ->
       (*TODO: check ls's call graph*)
       let (names, lambdas) = List.split ls in
+      let (names, lambdas) = L.unzip ls in
       aux (Env.add1 ~env v ()) g2;
       (*DONT: add v to g1's environment environment *)
       let env = Env.add ~env (nits vs) in
