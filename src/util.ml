@@ -82,17 +82,6 @@ module L = struct
       | None -> map_option f t
       | Some h -> h :: map_option f t
 
-  let rec zip l1 l2 = match (l1, l2) with
-    | [], [] -> []
-    | h1::t1, h2::t2 -> (h1, h2) :: zip t1 t2
-    | [], _::_ | _::_, [] -> raise (Invalid_argument "Util.L.zip")
-
-  let rec unzip_rev l =
-    List.fold_left (fun (l, r) (x, y) -> (x :: l, y :: r)) ([],[]) l
-
-  let rec unzip l =
-    List.fold_right (fun (x, y) (l, r) -> (x :: l, y :: r)) l ([],[])
-
   let inter l1 l2 = (* quite inefficient, prefer *real* sets *)
     List.filter (fun x -> List.mem x l2) l1
 
