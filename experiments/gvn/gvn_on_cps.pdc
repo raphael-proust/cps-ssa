@@ -207,6 +207,11 @@ $Calls$ and $Subterms$ to get all the calls of a term.
 $Siblings(\Lambda) = L$ such that
 $letrec \: L \: in \: m'$ is a term and $\Lambda \in L$
 
+\item[StrictSiblings]:
+
+$StrictSiblings(\Lambda) = Siblings(\Lambda) - \Lambda$
+
+
 
 \item[Head]: the name of the continuation a term is the body of
 
@@ -334,19 +339,17 @@ m = letrec \: Siblings(L) \: in \: m'
 \end{array}
 \end{equation}
 \begin{equation}\label{loopdef:3}
-((Calls(Subterms(m')) \cup Calls(Subterms_{\Lambda}(Siblings(L) - L)))) \cap L = E \neq \{\}
+((Calls(Subterms(m')) \cup Calls(Subterms_{\Lambda}(StrictSiblings(L))))) \cap L = E \neq \{\}
 \end{equation}
 \begin{equation}\label{loopdef:4}
 \begin{array}{r l}
 \forall \Lambda \in C & Conditional(Terminator(\Lambda)) \\
                       & Calls(Subterms(\Lambda)) \cap L \neq \{\} \\
-                      & Calls(Subterms(\Lambda)) \cap (Siblings(L) - L) \neq \{\} \\
+                      & Calls(Subterms(\Lambda)) \cap StrictSiblings(L) \neq \{\} \\
 \end{array}
 \end{equation}
 
 \end{description}
-
-<!--TODO: use a notation for (Siblings(L)-L) e.g. \overline(L)-->
 
 Elements of $L$ are all siblings \eqref{loopdef:1} with a complete looping
 call graph \eqref{loopdef:2}. Elements of $E$ are entry points to the loop
