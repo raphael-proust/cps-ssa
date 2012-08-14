@@ -40,9 +40,6 @@ module L = struct
 
   let concat_map f l = List.concat (List.map f l)
 
-  (* [exists_one p l] tests wheter the predicate [p] is true for exactly one
-   * element of the list [l]. *)
-
   let exists_one predicate l =
     let rec aux flag = function
       | [] -> flag

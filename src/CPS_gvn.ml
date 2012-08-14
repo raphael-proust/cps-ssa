@@ -31,7 +31,6 @@ open Util
 
 (*We use a custom representation *)
 type g =
-  | GAppRet  of (Prim.var * Prim.value list)
   | GAppCont  of (Prim.var * Prim.value list * Prim.var)
   | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
   | GCont of (Prim.var * Prim.value list)
@@ -44,7 +43,6 @@ type g =
   | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
 
   (*
-  | GAppRet (v, vs)
   | GAppCont (v, vs, k)
   | GAppBind (v, vs, (x, g))
   | GCont (k, vs)
@@ -90,9 +88,6 @@ let nits xs = List.map (fun x -> (x, ())) xs
 let assert_g env g =
   let rec aux env g =
     match g with
-    | GAppRet (v, vs) ->
-      assert (Env.has ~env v);
-      assert_values env vs
     | GAppCont (v, vs, k) ->
       assert (not (k = CPS.var_return));
       assert (Env.has env v);
@@ -150,7 +145,6 @@ let assert_g env g =
 let rec m_of_g g =
   let lambdas ls = List.map (fun (v, (vs, g)) -> (v, (vs, m_of_g g))) ls in
   match g with
-  | GAppRet (v, vs) -> CPS.MApp (v, vs, CPS.CVar CPS.var_return)
   | GAppCont (v, vs, k) -> CPS.MApp (v, vs, CPS.CVar k)
   | GAppBind (v, vs, (x, g)) -> CPS.MApp (v, vs, CPS.C (x, m_of_g g))
   | GCont (k, vs) -> CPS.MCont (k, vs)
@@ -181,45 +175,44 @@ module GP = struct (* CPS_gvn Term Properties*)
   let argss = List.map args
   let bodys = List.map body
 
-  let map_bodys f ls =
-    List.map (fun (l, (a, g)) -> (l, (a, f g))) ls
+  let map_argss f ls = List.map (fun (l, (a, g)) -> (l, (f a, g  ))) ls
+  let map_bodys f ls = List.map (fun (l, (a, g)) -> (l, (a,   f g))) ls
 
   let rec subterms t =
     let lambdas ls = List.flatten (List.map subterms (bodys ls)) in
     match t with
-    | GAppRet _ | GAppCont _ | GCont _ | GCond _ -> [t]
+    | GAppCont _ | GCont _ | GCond _ -> [t]
     | GAppBind (_, _, (_, g)) | GBind (_, g) -> t :: subterms g
     | GLoop (_, _, ls, g1, g2) -> t :: subterms g1 @ subterms g2 @ lambdas ls
     | GLambda (ls, g) -> t :: subterms g @ lambdas ls
 
   let rec calls = function
-    | GAppRet _ | GAppBind _ | GBind _ | GLoop _ | GLambda _ -> []
-    | GAppCont (_, _, k) | GCont (k, _)                      -> [k]
-    | GCond (_, (k1, _), (k2, _))                            -> [k1; k2]
+    | GAppBind _ | GBind _ | GLoop _ | GLambda _ -> []
+    | GAppCont (_, _, k) | GCont (k, _)          -> [k]
+    | GCond (_, (k1, _), (k2, _))                -> [k1; k2]
 
   let deep_calls m = List.flatten (List.map calls (subterms m))
 
   let is_cond = function
     | GCond _ -> true
-    | GAppRet _ | GAppCont _ | GAppBind _ | GCont _ | GBind _ | GLoop _
-    | GLambda _ -> false
+    | GAppCont _ | GAppBind _ | GCont _ | GBind _ | GLoop _ | GLambda _ -> false
 
   let is_terminator = function
-    | GAppRet _ | GAppCont _ | GCont _ | GCond _ -> true
+    | GAppCont _ | GCont _ | GCond _             -> true
     | GAppBind _ | GBind _ | GLoop _ | GLambda _ -> false
 
   let rec terminator = function
-    | GAppRet _ | GAppCont _ | GCont _ | GCond _ as g -> g
+    | GAppCont _ | GCont _ | GCond _ as g -> g
     | GAppBind (_, _, (_, g))
     | GBind (_, g)
-    | GLoop (_, _, _, _, g) (*is this correct?*)
+    | GLoop (_, _, _, _, g) (*this is indeed the g we want to recusrse into*)
     | GLambda (_, g) -> terminator g
 
   let is_deep_cond m = is_cond (terminator m)
 
   let lambdas = function
-    | GAppRet _ | GAppCont _ | GAppBind _ | GCont _ | GCond _ | GBind _ -> []
-    | GLoop (_, _, ls, _, _) | GLambda (ls, _) -> ls
+    | GAppCont _ | GAppBind _ | GCont _ | GCond _ | GBind _ -> []
+    | GLoop (_, _, ls, _, _) | GLambda (ls, _)              -> ls
            (* is ^this^ correct? *)
 
 end
@@ -250,11 +243,7 @@ let rec unranked_g_of_m m =
     let lambdas ls = List.map (fun (v, (vs, m)) -> (v, (vs, aux m))) ls in
     match m with
     | CPS.MApp  (v, vs, CPS.C (x, m)) -> GAppBind (v, vs, (x, aux m))
-    | CPS.MApp  (v, vs, CPS.CVar k) ->
-      if k = CPS.var_return then
-        GAppRet (v, vs)
-      else
-        GAppCont (v, vs, k)
+    | CPS.MApp  (v, vs, CPS.CVar k  ) -> GAppCont (v, vs, k         )
     | CPS.MCont (v, vs) -> GCont (v, vs)
     | CPS.MCond (v, (k1, vs1), (k2, vs2)) -> GCond (v, (k1, vs1), (k2, vs2))
     | CPS.MLet  (x, v, m) -> strand [x,v] m
@@ -278,41 +267,56 @@ and strand bs m = match m with
   | CPS.MLet (x, v, m) -> strand ((x,v)::bs) m
   | m -> GBind ([-1, bs], unranked_g_of_m m) (* needs ranking *)
 
-and gloop ls g =
-
+and gloop loop_lambdas gterm =
   (*TODO: deforest *)
-  let args_num = List.fold_left max 0 (List.map List.length (GP.argss ls)) in
-  let args = L.n (fun _ -> Prim.fresh_var ()) args_num in
+  (*TODO: special case when there is only one lambda (no dispatch var)*)
 
-  let dispatch d ls =
-    let args l =
+  (*loop_lambdas is the list of the mutually recusrive lambdas*)
+  (*gterm is the term under the scope of the loop_lambdas*)
+
+  let landing_lambda = Prim.fresh_var () in
+  let number_of_args =
+    List.fold_left max 0 (List.map List.length (GP.argss loop_lambdas))
+  in
+  let args_ = L.n (fun _ -> Prim.fresh_var ()) number_of_args in
+  let dispatch_var = Prim.fresh_var () in
+  let full_args = dispatch_var :: args_ in
+  (*landing_lambda: the continuation variable for the landing lambda*)
+  (*number_of_args: the maximum number of arguments for loop_lambdas*)
+  (*args_: the variables used as arguments for the landing lambda*)
+  (*dispatch_var: the variable used to dispatch over the loop_lambdas*)
+  (*full_args: the dispatch variable and the other variables*)
+
+  let dispatch =
+    let branch_args lambda =
       List.map
         (fun v -> Prim.VVar v)
-        (List.tl (L.take args (List.length (GP.args l) + 1)))
+        (List.tl (L.take args_ (List.length (GP.args lambda) + 1)))
     in
     let rec aux i = function
       | [] -> assert false
-      | [l] -> GCont (GP.head l, args l)
+      | [l] -> GCont (GP.head l, branch_args l)
       | [l1;l2] ->
-        GCond (Prim.(VEq (VVar d, VConst i)),
-               (GP.head l1, args l1),
-               (GP.head l2, args l2)
+        GCond (Prim.(VEq (VVar dispatch_var, VConst i)),
+               (GP.head l1, branch_args l1),
+               (GP.head l2, branch_args l2)
               )
       | l :: ls ->
         let more = Prim.fresh_var () in
         GLambda (
           [more, ([], aux (succ i) ls)],
           GCond (
-            Prim.(VEq (VVar d, VConst i)),
-            (GP.head l, args l),
+            Prim.(VEq (VVar dispatch_var, VConst i)),
+            (GP.head l, branch_args l),
             (more, [])
           )
         )
     in
-    aux 0 ls
+    aux 0 loop_lambdas
   in
+  (*dispatch: the dispatch term. It forwards calls to the correct loop entry*)
 
-  let substitute_landing l ls g =
+  let newgterm =
     (* find the index of a lambda by name (or return None) *)
     let index_or_none x ys =
       let rec aux i = function
@@ -324,17 +328,16 @@ and gloop ls g =
     (*add necessary (null) arguments for padding *)
     let pad n xs =
       (*FIXME? there is probably an off-by-one-bug (oh BOB!) *)
-      xs @ (L.nconst Prim.VNull (args_num - List.length xs))
+      xs @ (L.nconst Prim.VNull (number_of_args - List.length xs))
     in
     (* patches an application *)
-    let app v vs = match index_or_none v ls with
+    let app v vs = match index_or_none v loop_lambdas with
       | None -> (v, vs)
-      | Some i -> (l, Prim.VConst i :: pad args_num vs)
+      | Some i -> (landing_lambda, Prim.VConst i :: pad number_of_args vs)
     in
     let rec aux g = match g with
-      | GAppRet (v, vs) -> GAppRet (app v vs)
       | GAppCont (v, vs, k) ->
-        (* k points to a lambda_p (hence it can*not* be in ls *)
+        (* k points to a lambda_p (hence it can*not* be in loop_lambdas) *)
         let (v, vs) = app v vs in GAppCont (v, vs, k)
       | GAppBind (v, vs, (x, g)) ->
         let (v, vs) = app v vs in GAppBind (v, vs, (x, aux g))
@@ -347,17 +350,12 @@ and gloop ls g =
       | GLambda (ls, g) ->
         GLambda (GP.map_bodys aux ls, aux g)
     in
-    aux g
+    aux gterm
   in
+  (*newgterm: gterm with calls to loop entries have been substituted for calls
+              to the landing lambda*)
 
-  let landing = Prim.fresh_var () in
-  let dispatch_param = Prim.fresh_var () in
-  GLoop (landing,
-         dispatch_param :: args,
-         ls,
-         dispatch dispatch_param ls,
-         substitute_landing landing ls g
-  )
+  GLoop (landing_lambda, full_args, loop_lambdas, dispatch, newgterm)
 
 let rec vars_of_value v =
   let open Prim in
@@ -366,30 +364,20 @@ let rec vars_of_value v =
     | VConst _ | VNull | VUndef | VDummy _ | VZero -> acc
     | VStruct vs -> List.fold_left aux acc vs
     | VRead v | VCast v -> failwith "Unsupported memops"
-    | VPlus  (v1, v2)
-    | VMult  (v1, v2)
-    | VMinus (v1, v2)
-    | VDiv   (v1, v2)
-    | VRem   (v1, v2)
-    | VGt (v1, v2)
-    | VGe (v1, v2)
-    | VLt (v1, v2)
-    | VLe (v1, v2)
-    | VEq (v1, v2)
-    | VNe (v1, v2)
-    | VAnd (v1, v2)
-    | VOr  (v1, v2)
-    | VXor (v1, v2)
-    | VShl  (v1, v2)
-    | VLShr (v1, v2)
-    | VAShr (v1, v2)
+    | VPlus (v1, v2) | VMinus (v1, v2)
+    | VMult (v1, v2) | VDiv (v1, v2) | VRem (v1, v2)
+    | VGt (v1, v2) | VGe (v1, v2)
+    | VLt (v1, v2) | VLe (v1, v2)
+    | VEq (v1, v2) | VNe (v1, v2)
+    | VAnd (v1, v2) | VOr (v1, v2) | VXor (v1, v2)
+    | VShl (v1, v2) | VLShr (v1, v2) | VAShr (v1, v2)
     -> aux (aux acc v1) v2
   in
   aux [] v
 
 let rank g =
   let rec aux env = function
-    | GAppRet _ | GAppCont _ | GCont _ | GCond _ as g -> g
+    | GAppCont _ | GCont _ | GCond _ as g -> g
     | GAppBind (v, vs, (x, g)) ->
       let vars = List.flatten (List.map vars_of_value vs) in
       let rk = succ (List.fold_left max 0 (List.map (Env.get ~env) vars)) in

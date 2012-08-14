@@ -21,12 +21,12 @@
 module E :
   sig
     type ('a, 'b) either = Left of 'a | Right of 'b
-    val left: 'a -> ('a, 'b) either
-    val right: 'a -> ('b, 'a) either
+    val left : 'a -> ('a, 'b) either
+    val right : 'a -> ('b, 'a) either
   end
 module I :
   sig
-    val fold: ('a -> int -> 'a) -> 'a -> int -> 'a
+    val fold : ('a -> int -> 'a) -> 'a -> int -> 'a
   end
 module L :
   sig
