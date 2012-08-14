@@ -21,8 +21,12 @@
 module E :
   sig
     type ('a, 'b) either = Left of 'a | Right of 'b
-    val left: 'a -> ('a, 'b) either
-    val right: 'a -> ('b, 'a) either
+    val left : 'a -> ('a, 'b) either
+    val right : 'a -> ('b, 'a) either
+  end
+module I :
+  sig
+    val fold : ('a -> int -> 'a) -> 'a -> int -> 'a
   end
 module L :
   sig
@@ -36,6 +40,9 @@ module L :
     val includes : 'a list -> 'a list -> bool
     val disjoint : 'a list -> 'a list -> bool
     val cat_uniq : 'a list -> 'a list -> 'a list
+    val take : 'a list -> int -> 'a list
+    val n : (int -> 'a) -> int -> 'a list
+    val nconst : 'a -> int -> 'a list
   end
 module O :
   sig

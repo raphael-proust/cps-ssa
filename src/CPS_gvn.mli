@@ -19,7 +19,6 @@
   * }}}                                                                      *)
 
 type g =
-  | GAppRet  of (Prim.var * Prim.value list)
   | GAppCont  of (Prim.var * Prim.value list * Prim.var)
   | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
   | GCont of (Prim.var * Prim.value list)

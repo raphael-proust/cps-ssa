@@ -26,12 +26,19 @@ module E = struct
 
 end
 
+module I = struct
+
+  let rec fold f acc i =
+    if i <= 0 then
+      acc
+    else
+      fold f (f acc i) (pred i)
+
+end
+
 module L = struct
 
   let concat_map f l = List.concat (List.map f l)
-
-  (* [exists_one p l] tests wheter the predicate [p] is true for exactly one
-   * element of the list [l]. *)
 
   let exists_one predicate l =
     let rec aux flag = function
@@ -97,6 +104,16 @@ module L = struct
   let cat_uniq l1 l2 =
     List.iter (fun x -> assert (not (List.mem x l2))) l1;
     l1 @ l2
+
+  let rec take l n =
+    if n <= 0 then
+      []
+    else
+      List.hd l :: (take (List.tl l) (pred n))
+
+  let n f n = I.fold (fun acc i -> f i :: acc) [] n
+
+  let nconst v i = n (fun _ -> v) i
 
 end
 
