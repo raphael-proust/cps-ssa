@@ -114,6 +114,10 @@ module L = struct
     else
       List.hd l :: (take (List.tl l) (pred n))
 
+  let n f n = I.fold (fun acc i -> f i :: acc) [] n
+
+  let nconst v i = n (fun _ -> v) i
+
 end
 
 module O = struct

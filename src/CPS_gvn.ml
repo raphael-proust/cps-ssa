@@ -181,6 +181,9 @@ module GP = struct (* CPS_gvn Term Properties*)
   let argss = List.map args
   let bodys = List.map body
 
+  let map_bodys f ls =
+    List.map (fun (l, (a, g)) -> (l, (a, f g))) ls
+
   let rec subterms t =
     let lambdas ls = List.flatten (List.map subterms (bodys ls)) in
     match t with
@@ -279,12 +282,7 @@ and gloop ls g =
 
   (*TODO: deforest *)
   let args_num = List.fold_left max 0 (List.map List.length (GP.argss ls)) in
-  let args =
-    I.fold
-      (fun acc _ -> Prim.fresh_var () :: acc)
-      []
-      args_num
-  in
+  let args = L.n (fun _ -> Prim.fresh_var ()) args_num in
 
   let dispatch d ls =
     let args l =
@@ -314,13 +312,48 @@ and gloop ls g =
     aux 0 ls
   in
 
-  let substitute_landing l ls g = failwith "TODO" in
+  let substitute_landing l ls g =
+    (* find the index of a lambda by name (or return None) *)
+    let index_or_none x ys =
+      let rec aux i = function
+        | [] -> None
+        | y::ys -> if x = GP.head y then Some i else aux (succ i) ys
+      in
+      aux 0 ys
+    in
+    (*add necessary (null) arguments for padding *)
+    let pad n xs =
+      (*FIXME? there is probably an off-by-one-bug (oh BOB!) *)
+      xs @ (L.nconst Prim.VNull (args_num - List.length xs))
+    in
+    (* patches an application *)
+    let app v vs = match index_or_none v ls with
+      | None -> (v, vs)
+      | Some i -> (l, Prim.VConst i :: pad args_num vs)
+    in
+    let rec aux g = match g with
+      | GAppRet (v, vs) -> GAppRet (app v vs)
+      | GAppCont (v, vs, k) ->
+        (* k points to a lambda_p (hence it can*not* be in ls *)
+        let (v, vs) = app v vs in GAppCont (v, vs, k)
+      | GAppBind (v, vs, (x, g)) ->
+        let (v, vs) = app v vs in GAppBind (v, vs, (x, aux g))
+      | GCont (k, vs) -> GCont (app k vs)
+      | GCond (v, (k1, vs1), (k2, vs2)) ->
+        GCond (v, (app k1  vs1), (app k2  vs2))
+      | GBind (bs, g) -> GBind (bs, aux g)
+      | GLoop (v, vs, ls, g1, g2) ->
+        GLoop (v, vs, GP.map_bodys aux ls, aux g1, aux g2)
+      | GLambda (ls, g) ->
+        GLambda (GP.map_bodys aux ls, aux g)
+    in
+    aux g
+  in
 
   let landing = Prim.fresh_var () in
-  let parameters = failwith "TODO!" in
   let dispatch_param = Prim.fresh_var () in
   GLoop (landing,
-         dispatch_param :: parameters,
+         dispatch_param :: args,
          ls,
          dispatch dispatch_param ls,
          substitute_landing landing ls g

@@ -41,6 +41,8 @@ module L :
     val disjoint : 'a list -> 'a list -> bool
     val cat_uniq : 'a list -> 'a list -> 'a list
     val take : 'a list -> int -> 'a list
+    val n : (int -> 'a) -> int -> 'a list
+    val nconst : 'a -> int -> 'a list
   end
 module O :
   sig
