@@ -111,7 +111,7 @@ module L = struct
     else
       List.hd l :: (take (List.tl l) (pred n))
 
-  let n f n = I.fold (fun acc i -> f i :: acc) [] n
+  let n f i = I.fold (fun acc i -> f i :: acc) [] i
 
   let nconst v i = n (fun _ -> v) i
 

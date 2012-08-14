@@ -24,14 +24,14 @@
 
 open Util
 
-(*NOTICE: this is a prototype, it is known not to be:
+(*NOTICE: this is a prototype, it is known *not* to be:
   - feature complete
   - bug free
 *)
 
 (*We use a custom representation *)
 type g =
-  | GAppCont  of (Prim.var * Prim.value list * Prim.var)
+  | GAppCont of (Prim.var * Prim.value list * Prim.var      )
   | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
   | GCont of (Prim.var * Prim.value list)
   | GCond of (  Prim.value
@@ -39,8 +39,8 @@ type g =
               * (Prim.var * Prim.value list)
              )
   | GBind of ((int * (Prim.var * Prim.value) list ) list * g)
-  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
-  | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
+  | GLoop   of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
+  | GLambda of (                           (Prim.var * (Prim.var list * g)) list     * g)
 
   (*
   | GAppCont (v, vs, k)
@@ -51,119 +51,6 @@ type g =
   | GLoop (v, vs, ls, g1, g2)
   | GLambda (ls, g)
    *)
-
-
-let assert_value env value =
-  let open Prim in
-  let rec aux = function
-    | VVar v -> assert (Env.has ~env v)
-    | VConst _ | VNull | VUndef | VDummy _ | VZero -> ()
-    | VStruct vs -> List.iter aux vs
-    | VPlus  (v1, v2) -> aux v1; aux v2
-    | VMult  (v1, v2) -> aux v1; aux v2
-    | VMinus (v1, v2) -> aux v1; aux v2
-    | VDiv   (v1, v2) -> aux v1; aux v2
-    | VRem   (v1, v2) -> aux v1; aux v2
-    | VGt (v1, v2) -> aux v1; aux v2
-    | VGe (v1, v2) -> aux v1; aux v2
-    | VLt (v1, v2) -> aux v1; aux v2
-    | VLe (v1, v2) -> aux v1; aux v2
-    | VEq (v1, v2) -> aux v1; aux v2
-    | VNe (v1, v2) -> aux v1; aux v2
-    | VAnd (v1, v2) -> aux v1; aux v2
-    | VOr  (v1, v2) -> aux v1; aux v2
-    | VXor (v1, v2) -> aux v1; aux v2
-    | VRead v -> aux v
-    | VCast v -> aux v
-    | VShl  (v1, v2) -> aux v1; aux v2
-    | VLShr (v1, v2) -> aux v1; aux v2
-    | VAShr (v1, v2) -> aux v1; aux v2
-  in
-  aux value
-
-let assert_values env vs = List.iter (assert_value env) vs
-
-let nits xs = List.map (fun x -> (x, ())) xs
-
-let assert_g env g =
-  let rec aux env g =
-    match g with
-    | GAppCont (v, vs, k) ->
-      assert (not (k = CPS.var_return));
-      assert (Env.has env v);
-      assert_values env vs;
-      assert (Env.has ~env k)
-    | GAppBind (v, vs, (x, g)) ->
-      assert (Env.has env v);
-      assert_values env vs;
-      aux (Env.add1 ~env x ()) g
-    | GCont (k, vs) ->
-      assert (Env.has env k);
-      assert_values env vs
-    | GCond (v, (k1, vs1), (k2, vs2)) ->
-      assert_value env v;
-      assert (Env.has env k1); assert_values env vs1;
-      assert (Env.has env k2); assert_values env vs2
-    | GBind (bs, g) ->
-      let (env, _) =
-        List.fold_left
-          (fun (env, r) (rank, bs) ->
-            assert (r < rank);
-            let (vars, values) = List.split bs in
-            List.iter (assert_value env) values;
-            (Env.add ~env (nits vars), rank)
-          )
-          (env, -1)
-          bs
-      in
-      aux env g
-    | GLoop (v, vs, ls, g1, g2) ->
-      (*TODO: check ls's call graph*)
-      let (names, lambdas) = List.split ls in
-      aux (Env.add1 ~env v ()) g2;
-      (*DONT: add v to g1's environment environment *)
-      let env = Env.add ~env (nits vs) in
-      let env = Env.add ~env (nits names) in
-      aux env g1;
-      List.iter (fun (vs, g) -> aux (Env.add ~env (nits vs)) g) lambdas
-    | GLambda (ls, g) ->
-      let env =
-        List.fold_left
-          (fun env (v, (vs, g)) ->
-            assert (Env.hasnt ~env v);
-            (*DONT add v to g's env, (it's not under a GLoop!)*)
-            aux (Env.add ~env (nits vs)) g;
-            Env.add1 ~env v ()
-          )
-          env
-          ls
-      in
-      aux env g
-  in
-  aux env g
-
-let rec m_of_g g =
-  let lambdas ls = List.map (fun (v, (vs, g)) -> (v, (vs, m_of_g g))) ls in
-  match g with
-  | GAppCont (v, vs, k) -> CPS.MApp (v, vs, CPS.CVar k)
-  | GAppBind (v, vs, (x, g)) -> CPS.MApp (v, vs, CPS.C (x, m_of_g g))
-  | GCont (k, vs) -> CPS.MCont (k, vs)
-  | GCond (v, (k1, vs1), (k2, vs2)) -> CPS.MCond (v, (k1, vs1), (k2, vs2))
-  | GBind (bs, g) ->
-    List.fold_right
-      (fun (_, bs) term ->
-        List.fold_left (fun term (x, v) -> CPS.MLet (x, v, term)) term bs
-      )
-      bs
-      (m_of_g g)
-  | GLoop (v, vs, ls, g1, g2) ->
-    CPS.MRec ([v, (vs, CPS.MRec (lambdas ls, m_of_g g1))], m_of_g g2)
-  | GLambda (ls, g) ->
-    CPS.MRec (lambdas ls, m_of_g g)
-
-
-(* Landing Lambdas *)
-(* Problem: the complexity for finding cliques is too important *)
 
 module MP = CPS.Prop (* CPS Term Properties*)
 module GP = struct (* CPS_gvn Term Properties*)
@@ -217,6 +104,92 @@ module GP = struct (* CPS_gvn Term Properties*)
 
 end
 
+let assert_value env v = assert (Prim.closed env v)
+
+let assert_values env vs = List.iter (assert_value env) vs
+
+let nits xs = List.map (fun x -> (x, ())) xs
+
+let assert_g env g =
+  let rec aux env g =
+    match g with
+    | GAppCont (v, vs, k) ->
+      assert (not (k = CPS.var_return));
+      assert (Env.has env v);
+      assert_values env vs;
+      assert (Env.has ~env k)
+    | GAppBind (v, vs, (x, g)) ->
+      assert (Env.has env v);
+      assert_values env vs;
+      aux (Env.add1 ~env x ()) g
+    | GCont (k, vs) ->
+      assert (Env.has env k);
+      assert_values env vs
+    | GCond (v, (k1, vs1), (k2, vs2)) ->
+      assert_value env v;
+      assert (Env.has env k1); assert_values env vs1;
+      assert (Env.has env k2); assert_values env vs2
+    | GBind (bs, g) ->
+      let (env, _) =
+        List.fold_left
+          (fun (env, r) (rank, bs) ->
+            assert (r < rank);
+            let (vars, values) = List.split bs in
+            List.iter (assert_value env) values;
+            (Env.add ~env (nits vars), rank)
+          )
+          (env, -1)
+          bs
+      in
+      aux env g
+    | GLoop (v, vs, ls, g1, g2) ->
+      (*TODO: check ls's call graph*)
+      let (names, lambdas) = List.split ls in
+      (*DO NOT: add ls to g2's environment (calls should go through v) *)
+      aux (Env.add1 ~env v ()) g2;
+      (*DO NOT: add v to g1's environment (g1 should dispatch to ls) *)
+      let env = Env.add ~env (nits names) in
+      aux (Env.add env (nits vs)) g1;
+      List.iter (fun (vs, g) -> aux (Env.add ~env (nits vs)) g) lambdas
+    | GLambda (ls, g) ->
+      let env =
+        List.fold_left
+          (fun env (v, (vs, g)) ->
+            assert (Env.hasnt ~env v);
+            (*DONT add v to g's env, (it's not under a GLoop!)*)
+            aux (Env.add ~env (nits vs)) g;
+            Env.add1 ~env v ()
+          )
+          env
+          ls
+      in
+      aux env g
+  in
+  aux env g
+
+let rec m_of_g g =
+  match g with
+  | GAppCont (v, vs, k) -> CPS.MApp (v, vs, CPS.CVar k)
+  | GAppBind (v, vs, (x, g)) -> CPS.MApp (v, vs, CPS.C (x, m_of_g g))
+  | GCont (k, vs) -> CPS.MCont (k, vs)
+  | GCond (v, (k1, vs1), (k2, vs2)) -> CPS.MCond (v, (k1, vs1), (k2, vs2))
+  | GBind (bs, g) ->
+    List.fold_right
+      (fun (_, bs) term ->
+        List.fold_left (fun term (x, v) -> CPS.MLet (x, v, term)) term bs
+      )
+      bs
+      (m_of_g g)
+  | GLoop (v, vs, ls, g1, g2) ->
+    CPS.MRec ([v, (vs, CPS.MRec (GP.map_bodys m_of_g ls, m_of_g g1))],
+              m_of_g g2)
+  | GLambda (ls, g) ->
+    CPS.MRec (GP.map_bodys m_of_g ls, m_of_g g)
+
+
+(* Landing Lambdas *)
+(* Problem: the complexity for finding cliques is too important *)
+
 
 let call_graph (ls : (Prim.var * (Prim.var list * g)) list)
   : (Prim.var * Prim.var list) list
@@ -240,7 +213,6 @@ let lambdas_of_names ls ns = List.map (lambda_of_name ls) ns
 
 let rec unranked_g_of_m m =
   let rec aux m =
-    let lambdas ls = List.map (fun (v, (vs, m)) -> (v, (vs, aux m))) ls in
     match m with
     | CPS.MApp  (v, vs, CPS.C (x, m)) -> GAppBind (v, vs, (x, aux m))
     | CPS.MApp  (v, vs, CPS.CVar k  ) -> GAppCont (v, vs, k         )
@@ -248,7 +220,7 @@ let rec unranked_g_of_m m =
     | CPS.MCond (v, (k1, vs1), (k2, vs2)) -> GCond (v, (k1, vs1), (k2, vs2))
     | CPS.MLet  (x, v, m) -> strand [x,v] m
     | CPS.MRec  (ls, m) ->
-      let ls = lambdas ls in
+      let ls = GP.map_bodys aux ls in
       let cg = call_graph ls in
       let cliqs = get_trans_cliques cg in
       List.fold_right

@@ -3,6 +3,7 @@ MLS= \
 		 options.ml \
 		 pprint.ml \
 		 util.ml \
+		 env.ml \
 		 prim.ml \
 		 prim_pp.ml \
 		 SSA.ml \
@@ -15,7 +16,6 @@ MLS= \
 		 llvm_parser.ml \
 		 llvm_lexer.ml \
 		 LLVM2SSA.ml \
-		 env.ml \
 		 CPS_gvn.ml \
 		 driver.ml
 
