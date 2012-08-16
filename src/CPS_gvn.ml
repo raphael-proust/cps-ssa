@@ -152,18 +152,15 @@ let assert_g env g =
       aux (Env.add env (nits vs)) g1;
       List.iter (fun (vs, g) -> aux (Env.add ~env (nits vs)) g) lambdas
     | GLambda (ls, g) ->
-      let env =
-        List.fold_left
-          (fun env (v, (vs, g)) ->
-            assert (Env.hasnt ~env v);
-            (*DONT add v to g's env, (it's not under a GLoop!)*)
-            aux (Env.add ~env (nits vs)) g;
-            Env.add1 ~env v ()
-          )
-          env
-          ls
-      in
-      aux env g
+      List.iter
+        (fun (v, (vs, g)) ->
+          assert (Env.hasnt ~env v);
+          (*DONT add v to g's env, (it's not under a GLoop!)*)
+          (*DONT add v to the environment to force splitting of lambdas*)
+          aux (Env.add ~env (nits vs)) g
+        )
+        ls ;
+      aux (Env.add ~env (nits (GP.heads ls))) g
   in
   aux env g
 
@@ -206,7 +203,7 @@ let get_trans_cliques (callgraph : (Prim.var * Prim.var list) list)
   : clique_or_not list
   = failwith "TODO: extract cliques in the transitive closure of the callgraph"
   (*TODO: sort elements in reverse callee-before-caller order*)
-  (*TODO? use blobs of independant NotCliques together*)
+  (*TODO: use blobs of independant NotCliques *)
 
 let lambda_of_name ls n = List.find (fun l -> n = GP.head l) ls
 let lambdas_of_names ls ns = List.map (lambda_of_name ls) ns
