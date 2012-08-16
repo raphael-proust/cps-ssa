@@ -347,22 +347,85 @@ let rec vars_of_value v =
 let rank g =
 
   let rank_value env v =
+    (* the succ of the maximum of the rank of all the variables used in v *)
     succ (List.fold_left max 0 (List.map (Env.get ~env) (vars_of_value v)))
   in
+  let rank_values env vs = List.map (rank_value env) vs in
 
-  let rec rank_g env = function
-    | GAppCont _ | GCont _ | GCond _ as g -> g
+  let update_callenv env k rs =
+    (* update or add the rank of the k's call-site arguments*)
+    Env.add1 ~env k (
+      if Env.has ~env k then
+        List.map2 max rs (Env.get ~env k)
+      else
+        rs
+    )
+  in
+
+  let rec rank_g env cenv = function
+    (* env: (variable, rank) environment
+     * cenv: (function, arguments' ramks) environment
+     *)
+    (* App: external call, nothing to do *)
+    | GAppCont _ as g -> (cenv, g)
+
+    (* Continuations: update cenv for superterms (return a new cenv) *)
+    | GCont (k, vs) as g ->
+      (update_callenv cenv k (rank_values env vs), g)
+    | GCond (v, (k1, vs1), (k2, vs2)) as g ->
+      let cenv = update_callenv cenv k1 (rank_values env vs1) in
+      let cenv = update_callenv cenv k2 (rank_values env vs2) in
+      (cenv, g)
+
+    (* Binds: fix update env for subterms *)
     | GAppBind (v, vs, (x, g)) ->
-      let rk = List.fold_left max 0 (List.map (rank_value env) vs) in
-      GAppBind (v, vs, (x, rank_g (Env.add1 ~env x rk) g))
-    | GBind ([-1, bs], g) -> rank_gbind env bs g
+      let rk = List.fold_left max 0 (rank_values env vs) in
+      let (cenv, g) = rank_g (Env.add1 ~env x rk) cenv g in
+      (cenv, GAppBind (v, vs, (x, g)))
+    | GBind (_, GBind _) -> assert false
+    | GBind ([-1, bs], g) -> rank_gbind env cenv bs g
     | GBind _ -> assert false
-    | GLoop (v, vs, ls, g1, g2) -> failwith "TODO"
-    | GLambda (ls, g) ->
-      (*all the calls the lambdas of ls are in g*)
-      failwith "TODO"
 
-  and rank_gbind env bs g =
+    (* Lambdas: fix subterm and then bodies, do not send env 'up', only cenv *)
+    | GLoop (v, vs, ls, g1, g2) ->
+      let (cenv, g2) = rank_g env cenv g2 in
+      let (cenv, g1) = rank_g env cenv g1 in
+      let (cenv, ls) =
+        List.fold_left
+          (fun (cenv, ls) (l, (vs, g)) ->
+            let (ncenv, nl) =
+              let env = Env.add ~env (List.combine vs (Env.get ~env:cenv l)) in
+              (*TODO: don't add ls's calls to cenv*)
+              let (ncenv, g) = rank_g env cenv g in
+              (ncenv, (l, (vs, g)))
+            in
+            (Env.merge ncenv cenv, nl :: ls)
+          )
+          (cenv, [])
+          ls
+      in
+      (cenv, GLoop (v, vs, ls, g1, g2))
+    | GLambda (ls, g) ->
+      (*all the calls to the lambdas of ls are in g*)
+      (* we start by fixing ranks in g*)
+      let (cenv, g) = rank_g env cenv g in
+      (* we then go in each of the lambdas bodies *)
+      let (cenv, ls) =
+        List.fold_left
+          (fun (cenv, ls) (l, (vs, g)) ->
+            let (ncenv, nl) =
+              let env = Env.add ~env (List.combine vs (Env.get ~env:cenv l)) in
+              let (ncenv, g) = rank_g env cenv g in
+              (ncenv, (l, (vs, g)))
+            in
+            (Env.merge ncenv cenv, nl :: ls)
+          )
+          (cenv, [])
+          ls
+      in
+      (cenv, GLambda (ls, g))
+
+  and rank_gbind env cenv bs g =
     let rec aux env ranked nonranked = match nonranked with
       | [] -> (env, ranked)
       | _::_ ->
@@ -384,10 +447,11 @@ let rank g =
         aux env ranked nonrankable
     in
     let (env, ranked) = aux env [] bs in
-    GBind (L.classes ranked, rank_g env g)
+    let (cenv, g) = rank_g env cenv g in
+    (cenv, GBind (L.classes ranked, g))
   in
 
-  rank_g Env.empty g (*TODO: allow the passing of the "proc param" in the env*)
+  rank_g Env.empty Env.empty g
 
-let g_of_m m = rank (unranked_g_of_m m)
+let g_of_m m = snd (rank (unranked_g_of_m m))
 

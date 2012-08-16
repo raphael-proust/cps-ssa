@@ -27,6 +27,7 @@ val disjoint: ('a, 'b) t -> ('a, 'b) t -> bool
 
 val add1 : env:(('a, 'b) t) -> 'a -> 'b -> ('a, 'b) t
 val add  : env:(('a, 'b) t) -> ('a * 'b) list -> ('a, 'b) t
+val merge: ('a, 'b) t -> ('a, 'b) t -> ('a, 'b) t
 
 val has : env:(('a, 'b) t) -> 'a -> bool
 val hasnt : env:(('a, 'b) t) -> 'a -> bool
