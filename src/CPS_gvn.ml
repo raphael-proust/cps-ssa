@@ -348,19 +348,49 @@ let rec vars_of_value v =
   aux [] v
 
 let rank g =
-  let rec aux env = function
+
+  let rank_value env v =
+    succ (List.fold_left max 0 (List.map (Env.get ~env) (vars_of_value v)))
+  in
+
+  let rec rank_g env = function
     | GAppCont _ | GCont _ | GCond _ as g -> g
     | GAppBind (v, vs, (x, g)) ->
-      let vars = List.flatten (List.map vars_of_value vs) in
-      let rk = succ (List.fold_left max 0 (List.map (Env.get ~env) vars)) in
-      GAppBind (v, vs, (x, aux (Env.add1 ~env x rk) g))
-    | GBind (bs, g) -> failwith "TODO"
+      let rk = List.fold_left max 0 (List.map (rank_value env) vs) in
+      GAppBind (v, vs, (x, rank_g (Env.add1 ~env x rk) g))
+    | GBind ([-1, bs], g) -> rank_gbind env bs g
+    | GBind _ -> assert false
     | GLoop (v, vs, ls, g1, g2) -> failwith "TODO"
     | GLambda (ls, g) ->
       (*all the calls the lambdas of ls are in g*)
       failwith "TODO"
+
+  and rank_gbind env bs g =
+    let rec aux env ranked nonranked = match nonranked with
+      | [] -> (env, ranked)
+      | _::_ ->
+        let (rankable, nonrankable) =
+          List.partition
+            (fun (x, v) -> List.for_all (Env.has ~env) (vars_of_value v))
+            nonranked
+        in
+        assert (not (rankable = [])); (*replaces stack-overflow*)
+        let (env, ranked) =
+          List.fold_left
+            (fun (env, r) (x, v) ->
+              let rk = rank_value env v in
+              (Env.add1 ~env x rk, (rk, (x, v)) :: ranked)
+            )
+            (env, ranked)
+            rankable
+        in
+        aux env ranked nonrankable
+    in
+    let (env, ranked) = aux env [] bs in
+    GBind (L.classes ranked, rank_g env g)
   in
-  aux Env.empty g (*TODO: allow the passing of the "proc param" in the env*)
+
+  rank_g Env.empty g (*TODO: allow the passing of the "proc param" in the env*)
 
 let g_of_m m = rank (unranked_g_of_m m)
 

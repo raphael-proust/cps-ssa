@@ -115,6 +115,17 @@ module L = struct
 
   let nconst v i = n (fun _ -> v) i
 
+  let classes l =
+    let l = List.sort Pervasives.compare l in
+    List.fold_left
+      (fun acc (c, v) -> match acc with
+        | [] -> [c, [v]]
+        | (cc, cv) :: cs when c = cc -> (cc, v::cv) :: cs
+        | cs -> (c, [v]) :: cs
+      )
+      []
+      l
+
 end
 
 module O = struct

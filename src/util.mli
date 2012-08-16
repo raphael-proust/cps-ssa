@@ -43,6 +43,7 @@ module L :
     val take : 'a list -> int -> 'a list
     val n : (int -> 'a) -> int -> 'a list
     val nconst : 'a -> int -> 'a list
+    val classes : ('a * 'b) list -> ('a * 'b list) list
   end
 module O :
   sig
