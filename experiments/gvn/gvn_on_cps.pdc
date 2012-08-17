@@ -401,6 +401,9 @@ can be obtained with a one-pass traversal of a CPS term. This additional
 difficulty—as well as the loop definition incompleteness—shows that the
 algorithm was originally designed for a specific goal.
 
+TODO: more details about the `\`union of arguments''.
+
+
 ####Landing-$\lambda$s and Trampolines
 
 A trampoline is a trick using a high-level calling convention to implement
@@ -516,10 +519,9 @@ rank(x_2) = max(rank(x_1), rank(v_2)) \\
 \end{equation}
 
 This means that any value grater than $max(rank(v_1),rank(v_2))$ is okay. In
-such a case, we take the rank to be the minimal acceptable rank.
-
-The original algorithm had the same problem. A notion of \`\`Available rank''
-was introduced for this purpose.
+such a case, we take the rank to be the minimal acceptable rank. This is
+equivalent to defaulting unavailable ranks to zero (as was done in the
+original algorithm).
 
 
 ##Trivial Binding Removing
