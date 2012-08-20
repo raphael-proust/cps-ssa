@@ -100,7 +100,35 @@ module GP = struct (* CPS_gvn Term Properties*)
   let lambdas = function
     | GAppCont _ | GAppBind _ | GCont _ | GCond _ | GBind _ -> []
     | GLoop (_, _, ls, _, _) | GLambda (ls, _)              -> ls
-           (* is ^this^ correct? *)
+
+  let rec apply_subs subs = function
+    | GAppCont (v, vs, k) -> GAppCont (v, List.map (Prim.apply_subs subs) vs, k)
+    | GAppBind (v, vs, (x, g)) ->
+      GAppBind (v, List.map (Prim.apply_subs subs) vs, (x, apply_subs subs g))
+    | GCont (k, vs) -> GCont (k, List.map (Prim.apply_subs subs) vs)
+    | GCond (v, (k1, vs1), (k2, vs2)) ->
+      GCond (Prim.apply_subs subs v,
+        (k1, List.map (Prim.apply_subs subs) vs1),
+        (k2, List.map (Prim.apply_subs subs) vs2)
+      )
+    | GBind (bs, g) ->
+      GBind
+        (List.map
+          (fun (r, bs) ->
+            (r,
+             List.map (fun (x, v) -> (x, Prim.apply_subs subs v)) bs
+            )
+          )
+          bs,
+         apply_subs subs g
+        )
+    | GLoop (v, vs, ls, g1, g2) ->
+      GLoop (v, vs, map_bodys (apply_subs subs) ls,
+             apply_subs subs g1,
+             apply_subs subs g2
+            )
+    | GLambda (ls, g) ->
+      GLambda (map_bodys (apply_subs subs) ls, apply_subs subs g)
 
 end
 
@@ -454,4 +482,72 @@ let rank g =
   rank_g Env.empty Env.empty g
 
 let g_of_m m = snd (rank (unranked_g_of_m m))
+
+
+let trivial_bind_removal g =
+  let rec aux = function
+    | GAppCont _
+    | GCont _
+    | GCond _
+    as g -> g
+    | GAppBind (v, vs, (x, g)) -> GAppBind (v, vs, (x, aux g))
+    | GLoop (v, vs, ls, g1, g2) -> GLoop (v, vs, ls, aux g1, aux g2)
+    | GLambda (ls, g) -> GLambda (ls, aux g)
+    | GBind (bs, g) ->
+      (*FIXME: needs to update blocks*)
+      let (subs, _, revbs) =
+        List.fold_left
+          (fun (subs, env, bsacc) (r, bs) ->
+            let (subs, env, bs) =
+              List.fold_left
+                (fun (subs, env, bs) (x,v) ->
+                  let open Prim in
+                  match v with
+                  | VVar _ -> ((x, v) :: subs, env, bs)
+(* This is correct, but we are not here for any kind of constant propagation
+                  | VConst _ -> ((x,v) :: subs, bs)
+*)
+                  | VRead _ -> (subs, env, (x,v) :: bs)
+                  | VConst _
+                  | VNull
+                  | VUndef
+                  | VDummy _
+                  | VZero
+                  | VStruct _
+                  | VPlus _
+                  | VMult _
+                  | VMinus _
+                  | VDiv _
+                  | VRem _
+                  | VGt _
+                  | VGe _
+                  | VLt _
+                  | VLe _
+                  | VEq _
+                  | VNe _
+                  | VAnd _
+                  | VOr _
+                  | VXor _
+                  | VCast _
+                  | VShl _
+                  | VLShr _
+                  | VAShr _ ->
+                    try
+                      let y = Env.teg ~env v in
+                      ((x, VVar y) :: subs, env, bs)
+                    with
+                      | Not_found ->
+                        (subs, Env.add1 ~env x v, (x,v) :: bs)
+                )
+                (subs, env, [])
+                bs
+            in
+            (subs, env, (r, bs) :: bsacc)
+          )
+          ([], Env.empty, [])
+          bs
+      in
+      GBind (List.rev revbs, aux (GP.apply_subs subs g))
+  in
+  aux g
 
