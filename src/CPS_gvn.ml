@@ -139,25 +139,25 @@ let assert_values env vs = List.iter (assert_value env) vs
 
 let nits xs = List.map (fun x -> (x, ())) xs
 
-let assert_g env g =
-  let rec aux env g =
+let assert_g g =
+  let rec aux env lenv g =
     match g with
     | GAppCont (v, vs, k) ->
-      assert (not (k = CPS.var_return));
-      assert (Env.has env v);
+      assert (Env.has ~env v);
       assert_values env vs;
-      assert (Env.has ~env k)
+      assert (Env.has ~env:lenv k)
     | GAppBind (v, vs, (x, g)) ->
-      assert (Env.has env v);
+      assert (Env.has ~env:lenv v);
       assert_values env vs;
-      aux (Env.add1 ~env x ()) g
+      aux (Env.add1 ~env x ()) lenv g
     | GCont (k, vs) ->
-      assert (Env.has env k);
+      assert (Env.has ~env:lenv k);
       assert_values env vs
     | GCond (v, (k1, vs1), (k2, vs2)) ->
       assert_value env v;
-      assert (Env.has env k1); assert_values env vs1;
-      assert (Env.has env k2); assert_values env vs2
+      assert (Env.has ~env:lenv k1); assert_values env vs1;
+      assert (Env.has ~env:lenv k2); assert_values env vs2
+    | GBind (_, GBind _) -> assert false
     | GBind (bs, g) ->
       let (env, _) =
         List.fold_left
@@ -170,28 +170,28 @@ let assert_g env g =
           (env, -1)
           bs
       in
-      aux env g
+      aux env lenv g
     | GLoop (v, vs, ls, g1, g2) ->
       (*TODO: check ls's call graph*)
       let (names, lambdas) = List.split ls in
       (*DO NOT: add ls to g2's environment (calls should go through v) *)
-      aux (Env.add1 ~env v ()) g2;
+      aux env (Env.add1 ~env:lenv v ()) g2;
       (*DO NOT: add v to g1's environment (g1 should dispatch to ls) *)
-      let env = Env.add ~env (nits names) in
-      aux (Env.add env (nits vs)) g1;
-      List.iter (fun (vs, g) -> aux (Env.add ~env (nits vs)) g) lambdas
+      aux (Env.t_of_list (nits vs)) (Env.t_of_list (nits names)) g1;
+      let lenv = Env.add ~env (nits names) in
+      List.iter (fun (vs, g) -> aux (Env.add ~env (nits vs)) lenv g) lambdas
     | GLambda (ls, g) ->
       List.iter
         (fun (v, (vs, g)) ->
-          assert (Env.hasnt ~env v);
+          assert (Env.hasnt ~env:lenv v);
           (*DONT add v to g's env, (it's not under a GLoop!)*)
           (*DONT add v to the environment to force splitting of lambdas*)
-          aux (Env.add ~env (nits vs)) g
+          aux (Env.add ~env (nits vs)) lenv g
         )
         ls ;
-      aux (Env.add ~env (nits (GP.heads ls))) g
+      aux env (Env.add ~env (nits (GP.heads ls))) g
   in
-  aux env g
+  aux Env.empty (Env.one CPS.var_return ()) g
 
 let rec m_of_g g =
   match g with

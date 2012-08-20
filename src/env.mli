@@ -22,6 +22,8 @@
 type ('a, 'b) t
 
 val empty : ('a, 'b) t
+val one : 'a -> 'b -> ('a, 'b) t
+val t_of_list : ('a * 'b) list -> ('a, 'b) t
 
 val disjoint: ('a, 'b) t -> ('a, 'b) t -> bool
 

@@ -30,7 +30,7 @@ type g =
   | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
   | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
 
-val assert_g: (Prim.var, unit) Env.t -> g -> unit
+val assert_g: g -> unit
 
 val m_of_g: g -> CPS.m
 val g_of_m: CPS.m -> g
