@@ -20,6 +20,7 @@
 
 (*FIXME: avoid exponential complexity *)
 (*FIXME: avoid head-assoc-body "conversion" *)
+(*FIXME: there is currently no check for alpha-collisions!*)
 (*TODO: simplify some boilerplate code *)
 
 open Util
@@ -373,6 +374,8 @@ let rec vars_of_value v =
   aux [] v
 
 let rank g =
+
+  (*TODO: clean up environments (based on scope) to improve performance*)
 
   let rank_value env v =
     (* the succ of the maximum of the rank of all the variables used in v *)
