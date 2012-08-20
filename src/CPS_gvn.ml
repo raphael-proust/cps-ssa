@@ -484,6 +484,20 @@ let rank g =
 
   rank_g Env.empty Env.empty g
 
+let max_rank g =
+  let rec aux rk = function
+    | GAppCont _ -> rk
+    | GAppBind (_, _, (_, g)) -> aux rk g
+    | GCont _ -> rk
+    | GCond _ -> rk
+    | GBind (bs, g) -> aux (List.fold_left max 0 (List.map fst bs)) g
+    | GLoop (v, vs, ls, g1, g2) ->
+      aux (aux (List.fold_left (fun rk l -> aux rk (GP.body l)) rk ls) g1) g2
+    | GLambda (ls, g) ->
+      aux (List.fold_left (fun rk l -> aux rk (GP.body l)) rk ls) g
+  in
+  aux 0 g
+
 let g_of_m m = snd (rank (unranked_g_of_m m))
 
 
@@ -553,4 +567,30 @@ let trivial_bind_removal g =
       GBind (List.rev revbs, aux (GP.apply_subs subs g))
   in
   aux g
+
+
+let move g =
+  failwith "TODO"
+
+
+let rec fixpoint f x =
+  let y = f x in
+  if x = y then
+    x
+  else
+    fixpoint f y
+
+let rec npoint f n x =
+  if n <= 0 then
+    x
+  else
+    npoint f (pred n) (f x)
+
+let drive g =
+  npoint
+    (fun g -> fixpoint trivial_bind_removal (move g))
+    (max_rank g)
+    g
+
+
 
