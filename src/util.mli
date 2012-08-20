@@ -26,7 +26,7 @@ module E :
   end
 module I :
   sig
-    val fold : ('a -> int -> 'a) -> 'a -> int -> 'a
+    val fold_inc : ('a -> int -> 'a) -> 'a -> int -> 'a
   end
 module L :
   sig

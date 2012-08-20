@@ -556,17 +556,12 @@ let move g =
   failwith "TODO"
 
 
-let rec npoint f n x =
-  if n <= 0 then
-    x
-  else
-    npoint f (pred n) (f x)
 
 let drive g =
-  npoint
-    (fun g -> trivial_bind_removal (move g))
-    (max_rank g)
+  I.fold_inc
+    (fun g rk -> trivial_bind_removal (move rk g))
     g
+    (max_rank g)
 
 
 
