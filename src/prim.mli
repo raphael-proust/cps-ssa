@@ -82,5 +82,7 @@ type mem_w =
 
 val closed: (var, 'a) Env.t -> value -> bool
 
+val apply_subs: (var * value) list -> value -> value
+
 (**/*)
 val reset_idxs: unit -> unit

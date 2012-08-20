@@ -33,3 +33,4 @@ val has : env:(('a, 'b) t) -> 'a -> bool
 val hasnt : env:(('a, 'b) t) -> 'a -> bool
 
 val get : env:(('a, 'b) t) -> 'a -> 'b
+val teg : env:(('a, 'b) t) -> 'b -> 'a

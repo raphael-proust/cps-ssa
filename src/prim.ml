@@ -86,5 +86,29 @@ let rec closed env = function
   | VShl (v1, v2) | VLShr (v1, v2) | VAShr (v1, v2)
   -> closed env v1 && closed env v2
 
+let rec apply_subs subs = function
+  | VVar v as value -> begin try List.assoc v subs with Not_found -> value end
+  | VConst _ | VNull | VUndef | VDummy _ | VZero as v -> v
+  | VStruct vs -> VStruct (List.map (apply_subs subs) vs)
+  | VPlus (v1, v2) -> VPlus (apply_subs subs v1, apply_subs subs v2)
+  | VMult (v1, v2) -> VMult (apply_subs subs v1, apply_subs subs v2)
+  | VMinus (v1, v2) -> VMinus (apply_subs subs v1, apply_subs subs v2)
+  | VDiv (v1, v2) -> VDiv (apply_subs subs v1, apply_subs subs v2)
+  | VRem (v1, v2) -> VRem (apply_subs subs v1, apply_subs subs v2)
+  | VGt (v1, v2) -> VGt (apply_subs subs v1, apply_subs subs v2)
+  | VGe (v1, v2) -> VGe (apply_subs subs v1, apply_subs subs v2)
+  | VLt (v1, v2) -> VLt (apply_subs subs v1, apply_subs subs v2)
+  | VLe (v1, v2) -> VLe (apply_subs subs v1, apply_subs subs v2)
+  | VEq (v1, v2) -> VEq (apply_subs subs v1, apply_subs subs v2)
+  | VNe (v1, v2) -> VNe (apply_subs subs v1, apply_subs subs v2)
+  | VAnd (v1, v2) -> VAnd (apply_subs subs v1, apply_subs subs v2)
+  | VOr (v1, v2) -> VOr (apply_subs subs v1, apply_subs subs v2)
+  | VXor (v1, v2) -> VXor (apply_subs subs v1, apply_subs subs v2)
+  | VRead v -> VRead (apply_subs subs v)
+  | VCast v -> VCast (apply_subs subs v)
+  | VShl (v1, v2) -> VShl (apply_subs subs v1, apply_subs subs v2)
+  | VLShr (v1, v2) -> VLShr (apply_subs subs v1, apply_subs subs v2)
+  | VAShr (v1, v2) -> VAShr (apply_subs subs v1, apply_subs subs v2)
+
 let reset_idxs () =
   var_counter := (-1)

@@ -20,6 +20,7 @@
 
 (*FIXME: avoid exponential complexity *)
 (*FIXME: avoid head-assoc-body "conversion" *)
+(*FIXME: there is currently no check for alpha-collisions!*)
 (*TODO: simplify some boilerplate code *)
 
 open Util
@@ -100,7 +101,35 @@ module GP = struct (* CPS_gvn Term Properties*)
   let lambdas = function
     | GAppCont _ | GAppBind _ | GCont _ | GCond _ | GBind _ -> []
     | GLoop (_, _, ls, _, _) | GLambda (ls, _)              -> ls
-           (* is ^this^ correct? *)
+
+  let rec apply_subs subs = function
+    | GAppCont (v, vs, k) -> GAppCont (v, List.map (Prim.apply_subs subs) vs, k)
+    | GAppBind (v, vs, (x, g)) ->
+      GAppBind (v, List.map (Prim.apply_subs subs) vs, (x, apply_subs subs g))
+    | GCont (k, vs) -> GCont (k, List.map (Prim.apply_subs subs) vs)
+    | GCond (v, (k1, vs1), (k2, vs2)) ->
+      GCond (Prim.apply_subs subs v,
+        (k1, List.map (Prim.apply_subs subs) vs1),
+        (k2, List.map (Prim.apply_subs subs) vs2)
+      )
+    | GBind (bs, g) ->
+      GBind
+        (List.map
+          (fun (r, bs) ->
+            (r,
+             List.map (fun (x, v) -> (x, Prim.apply_subs subs v)) bs
+            )
+          )
+          bs,
+         apply_subs subs g
+        )
+    | GLoop (v, vs, ls, g1, g2) ->
+      GLoop (v, vs, map_bodys (apply_subs subs) ls,
+             apply_subs subs g1,
+             apply_subs subs g2
+            )
+    | GLambda (ls, g) ->
+      GLambda (map_bodys (apply_subs subs) ls, apply_subs subs g)
 
 end
 
@@ -346,6 +375,8 @@ let rec vars_of_value v =
 
 let rank g =
 
+  (*TODO: clean up environments (based on scope) to improve performance*)
+
   let rank_value env v =
     (* the succ of the maximum of the rank of all the variables used in v *)
     succ (List.fold_left max 0 (List.map (Env.get ~env) (vars_of_value v)))
@@ -453,5 +484,113 @@ let rank g =
 
   rank_g Env.empty Env.empty g
 
+let max_rank g =
+  let rec aux rk = function
+    | GAppCont _ -> rk
+    | GAppBind (_, _, (_, g)) -> aux rk g
+    | GCont _ -> rk
+    | GCond _ -> rk
+    | GBind (bs, g) -> aux (List.fold_left max 0 (List.map fst bs)) g
+    | GLoop (v, vs, ls, g1, g2) ->
+      aux (aux (List.fold_left (fun rk l -> aux rk (GP.body l)) rk ls) g1) g2
+    | GLambda (ls, g) ->
+      aux (List.fold_left (fun rk l -> aux rk (GP.body l)) rk ls) g
+  in
+  aux 0 g
+
 let g_of_m m = snd (rank (unranked_g_of_m m))
+
+
+let trivial_bind_removal g =
+  let rec aux = function
+    | GAppCont _
+    | GCont _
+    | GCond _
+    as g -> g
+    | GAppBind (v, vs, (x, g)) -> GAppBind (v, vs, (x, aux g))
+    | GLoop (v, vs, ls, g1, g2) -> GLoop (v, vs, ls, aux g1, aux g2)
+    | GLambda (ls, g) -> GLambda (ls, aux g)
+    | GBind (bs, g) ->
+      (*FIXME: needs to update blocks*)
+      let (subs, _, revbs) =
+        List.fold_left
+          (fun (subs, env, bsacc) (r, bs) ->
+            let (subs, env, bs) =
+              List.fold_left
+                (fun (subs, env, bs) (x,v) ->
+                  let open Prim in
+                  match v with
+                  | VVar _ -> ((x, v) :: subs, env, bs)
+(* This is correct, but we are not here for any kind of constant propagation
+                  | VConst _ -> ((x,v) :: subs, bs)
+*)
+                  | VRead _ -> (subs, env, (x,v) :: bs)
+                  | VConst _
+                  | VNull
+                  | VUndef
+                  | VDummy _
+                  | VZero
+                  | VStruct _
+                  | VPlus _
+                  | VMult _
+                  | VMinus _
+                  | VDiv _
+                  | VRem _
+                  | VGt _
+                  | VGe _
+                  | VLt _
+                  | VLe _
+                  | VEq _
+                  | VNe _
+                  | VAnd _
+                  | VOr _
+                  | VXor _
+                  | VCast _
+                  | VShl _
+                  | VLShr _
+                  | VAShr _ ->
+                    try
+                      let y = Env.teg ~env v in
+                      ((x, VVar y) :: subs, env, bs)
+                    with
+                      | Not_found ->
+                        (subs, Env.add1 ~env x v, (x,v) :: bs)
+                )
+                (subs, env, [])
+                bs
+            in
+            (subs, env, (r, bs) :: bsacc)
+          )
+          ([], Env.empty, [])
+          bs
+      in
+      GBind (List.rev revbs, aux (GP.apply_subs subs g))
+  in
+  aux g
+
+
+let move g =
+  failwith "TODO"
+
+
+let rec fixpoint f x =
+  let y = f x in
+  if x = y then
+    x
+  else
+    fixpoint f y
+
+let rec npoint f n x =
+  if n <= 0 then
+    x
+  else
+    npoint f (pred n) (f x)
+
+let drive g =
+  npoint
+    (fun g -> fixpoint trivial_bind_removal (move g))
+    (max_rank g)
+    g
+
+
 

@@ -35,3 +35,4 @@ let hasnt ~env v = not (has ~env v)
 
 let get ~env v = List.assoc v env
 
+let teg ~env d = fst (List.find (fun (_, dd) -> d = dd) env)
