@@ -513,45 +513,28 @@ let trivial_bind_removal g =
     | GBind (bs, g) ->
       (*FIXME: needs to update blocks*)
       let (subs, _, revbs) =
-        List.fold_left
+        List.fold_left (* this fold is over the (rank, bindings) list *)
           (fun (subs, env, bsacc) (r, bs) ->
             let (subs, env, bs) =
-              List.fold_left
+              List.fold_left (* this fold is over the bindings *)
                 (fun (subs, env, bs) (x,v) ->
                   let open Prim in
                   match v with
                   | VVar _ -> ((x, v) :: subs, env, bs)
-(* This is correct, but we are not here for any kind of constant propagation
-                  | VConst _ -> ((x,v) :: subs, bs)
-*)
                   | VRead _ -> (subs, env, (x,v) :: bs)
                   | VConst _
-                  | VNull
-                  | VUndef
-                  | VDummy _
-                  | VZero
+                  | VNull | VUndef | VDummy _ | VZero
                   | VStruct _
-                  | VPlus _
-                  | VMult _
-                  | VMinus _
-                  | VDiv _
-                  | VRem _
-                  | VGt _
-                  | VGe _
-                  | VLt _
-                  | VLe _
-                  | VEq _
-                  | VNe _
-                  | VAnd _
-                  | VOr _
-                  | VXor _
+                  | VPlus _ | VMult _ | VMinus _ | VDiv _ | VRem _
+                  | VGt _ | VGe _ | VLt _ | VLe _ | VEq _ | VNe _
+                  | VAnd _ | VOr _ | VXor _
                   | VCast _
-                  | VShl _
-                  | VLShr _
-                  | VAShr _ ->
+                  | VShl _ | VLShr _ | VAShr _ ->
                     try
                       let y = Env.teg ~env v in
                       ((x, VVar y) :: subs, env, bs)
+                      (* because we substitute directly here, there is no need
+                       * for fixpointing this function *)
                     with
                       | Not_found ->
                         (subs, Env.add1 ~env x v, (x,v) :: bs)
@@ -588,7 +571,7 @@ let rec npoint f n x =
 
 let drive g =
   npoint
-    (fun g -> fixpoint trivial_bind_removal (move g))
+    (fun g -> trivial_bind_removal (move g))
     (max_rank g)
     g
 
