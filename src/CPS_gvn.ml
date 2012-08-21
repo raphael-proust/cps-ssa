@@ -552,7 +552,7 @@ let trivial_bind_removal g =
   aux g
 
 
-let move g =
+let move rk g =
   failwith "TODO"
 
 
