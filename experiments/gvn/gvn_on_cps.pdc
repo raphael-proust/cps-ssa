@@ -15,7 +15,7 @@ We here present a translation of the GVN algorithm to CPS.
 
 #Notations
 
-The BNF grammar of CPS terms is:
+A usual BNF grammar of CPS terms is:
 
 \begin{equation}
 \begin{array}{r l}
@@ -38,19 +38,34 @@ v, u ::= & x\\
 \end{array}
 \end{equation}
 
-We use:
+##Different kinds of $\lambda$s
 
-- $f$, $l$, $x$, and $y$ for variables,
-- $i$ for indices, and
-- $n$ as arbitrary bounds for indexes.
+Note that $\lambda$s have annotation: either $c$ for continuations, $j$
+for jumps, or $p$ for procedures. The BNF grammar presented here does not show
+$\lambda_p$. This is because we only perform an intra-procedural optimisation.
+Thus we are interested in terms that are bodies of $\lambda_p$.
 
-Also note that $\lambda$s have annotation: either $c$ for continuations, $j$
-for jumps, or $p$ for procedures (not shown here). These annotations are for
-compilation purpose:
+The annotations are for compilation purpose:
 
 - $\lambda_c$ are used as return points for function calls,
 - $\lambda_j$ are to be translated as labels inside the same procedure, and
 - $\lambda_p$ are for complete procedures.
+
+
+##Lexical conventions
+
+The following lexical convention are used in the document:
+
+- $f$, $l$, $x$, and $y$ are variables, more specifically,
+    + $f$ is used for global function ($\lambda_p$) calls,
+    + $l$ is used for local function ($\lambda_j$) calls, and
+    + $x$ and $y$ are used for non-$\lambda$ variables,
+- $i$ for indices, and
+- $n$ as arbitrary bounds for indexes.
+
+We also consider that alpha-collisions have been taken care of.
+
+##OCaml representation
 
 The OCaml type for terms is:
 
@@ -84,7 +99,7 @@ Here is a correspondence table for SSA to and from CPS translation:
 +======================+=========================+===========================+
 | Procedure            | Lambda ($\lambda_p$)    | `var * var list * m`      |
 +----------------------+-------------------------+---------------------------+
-| Basic Block          | Lambda ($\lambda_j$)    | `var * var list * m`      |
+| Basic Block          | See \ref{sec:about-b-b} | See \ref{sec:about-b-b}   |
 +----------------------+-------------------------+---------------------------+
 | Jump                 | Continuation Call       | `Mcont _`                 |
 +----------------------+-------------------------+---------------------------+
@@ -97,11 +112,50 @@ Here is a correspondence table for SSA to and from CPS translation:
 | Return               | Continuation Call       | `Mcont _`                 |
 +----------------------+-------------------------+---------------------------+
 
+###About dominators
+
 It is also important to keep in mind that the dominance tree of the SSA CFG is
 directly reflected in the term structure of the CPS term. More specifically,
 when a block $b$ is the immediate dominator of $b_i$, the translation contains
-$letrec \: \{ \Lambda_i \} \cup \_ \: in \: m$, where $m$ is the translation
-of of $b$, and $\Lambda_i$ is the translation of $b_i$,
+$letrec \: \{ \Lambda_i \} \cup \_ \: in \: _ m$, where $m$ is the translation
+of of $b$, and $\Lambda_i$ is the translation of $b_i$. (Note that $m$ might
+be nested in another term, e.g. an `Mapp`.)
+
+Note that this correspondance between the term structure and the dominator
+tree is not necessary for terms to be valid (with respect to scoping and
+well-formed-ness). We happen to preserve the dominator information during the
+translation.
+
+
+###About basic blocks
+
+\label{sec:about-b-b}
+
+The original GVN algorithm description did not treat procedure calls. While we
+do account for them, we don't perform any smart optimisation (e.g. reordering)
+with them. This is why we consider function calls as unmovable basic block
+limits.
+
+Hence a basic block ends with any application (be it conditional (`Mcond`),
+direct (`Mcont`), or external (`Mapp`)). This means that basic blocks are
+chunks of terms enclosed between a $\lambda$ and an application.
+
+E.g. there are two basic-blocks in the following $\lambda_p$ (that computes $2
+\times max(foo+1, bar+1)$ where $foo$ and $bar$ are the procedure argument's
+and $max$ is implemented by another $\lambda_p$)
+
+\begin{verbatim}
+(main, [foo, bar],
+  Mlet (x, Vadd(Vvar foo, Vconst 1),   //binding
+  Mlet (y, Vadd(Vvar bar, Vconst 1),   //binding
+  Mapp (max, [Vvar x, Vvar y], C (z,   //end-of-block
+  Mlet (xx, Vmult (Vvar z, Vconst 2),  //binding
+  Mcont (return, [Vvar xx])            //end-of-block
+))))))
+\end{verbatim}
+
+The first block binds $x$, and $y$, the second binds $xx$. The binding of $z$
+is not part of any block's bindings per-se.
 
 
 ##Notions
@@ -118,15 +172,19 @@ We define the following:
 
 \begin{equation}
 \begin{array}{r r l}
-Subterms: & m \: \mapsto & \{ m \} \cup StrictSubterms(m) \\
-StrictSubterms: & f \: v_1 \: \dots \: v_n \: k \: \mapsto & Subterms_k(k) \\
-                & l \: v_1 \: \dots \: v_n \: \mapsto & \{ \} \\
-                & if(\_) \: then \: \_ \: else \: \_ \: \mapsto & \{ \}\\
-                & let \: x \: = \: v \: in \: m \: \mapsto & Subterms(m) \\
-                & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m \: \mapsto & Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
-Subterms_k: & l \: \mapsto & \{ \} \\
-            & \lambda_c \: x \: \cdot \: m \: \mapsto & Subterms(m) \\
-Subterms_{\Lambda}: & f \: = \: \lambda_j \: x \: \dots \: x_{n} \: \cdot \: m \: \mapsto & Subterms(m)\\
+Subterms:
+  & m \: \mapsto & \{ m \} \cup StrictSubterms(m) \\
+StrictSubterms:
+  & f \: v_1 \: \dots \: v_n \: k \: \mapsto & Subterms_k(k) \\
+  & l \: v_1 \: \dots \: v_n \: \mapsto & \{ \} \\
+  & if(\_) \: then \: \_ \: else \: \_ \: \mapsto & \{ \}\\
+  & let \: x \: = \: v \: in \: m \: \mapsto & Subterms(m) \\
+  & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m \: \mapsto & Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
+Subterms_k:
+  & l \: \mapsto & \{ \} \\
+  & \lambda_c \: x \: \cdot \: m \: \mapsto & Subterms(m) \\
+Subterms_{\Lambda}:
+  & f \: = \: \lambda_j \: x \: \dots \: x_{n} \: \cdot \: m \: \mapsto & Subterms(m)\\
 \end{array}
 \end{equation}
 
@@ -165,6 +223,15 @@ let rec calls = function
   | Mrec  (_, _) -> []
 \end{verbatim}
 
+Note that we assume that names are unique (and thus that a function and its
+name can be associated). This is a cheap assumption because the context
+ensures that functions are named after SSA block labels (which need be
+unique).
+
+We naturally extend $Calls$ to apply on sets. This is useful for composing
+$Calls$ and $Subterms$ to get all the calls of a term.
+
+
 \item[Conditional] tests wheter a term is a conditional
 
 \begin{equation}
@@ -178,30 +245,18 @@ Conditional(m) = False \text{ otherwise}
 
 \begin{equation}
 \begin{array}{r c c l}
-Terminator: & m & \mapsto & m \text{ if } \left\{
+Terminator:
+  & m & \mapsto & m \text{ if } \left\{
     \begin{array}{c}
-      m = f \: v_1 \: \dots \: v_n \: l \text{ or} \\
+      m = f \: v_1 \: \dots \: v_n \: \_ \text{ or} \\
       m = l \: v_1 \: \dots \: v_n \text{ or} \\
       m = if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n \\
     \end{array} \right. \\
-            & f \: v_1 \: \dots \: v_n \: (\lambda_c \: x \: \cdot \: m) & \mapsto & Terminator(m) \\
-            & let \: x \: = \: v \: in \: m & \mapsto & Terminator(m) \\
-            & letrec \: \{ \_ \} \: in \: m & \mapsto & Terminator(m) \\
+  & let \: \_ \: = \: \_ \: in \: m & \mapsto & Terminator(m) \\
+  & letrec \: \{ \_ \} \: in \: m & \mapsto & Terminator(m) \\
 \end{array}
 \end{equation}
 
-
-\end{description}
-
-Note that we assume that names are unique (and thus that a function and its
-name can be associated). This is a cheap assumption because the context
-ensures that functions are named after SSA block labels (which need be
-unique).
-
-We naturally extend $Calls$ to apply on sets. This is useful for composing
-$Calls$ and $Subterms$ to get all the calls of a term.
-
-\begin{description}
 \item[Siblings]: $\lambda$s of the same parent
 
 $Siblings(\Lambda) = L$ such that
@@ -218,11 +273,11 @@ $StrictSiblings(\Lambda) = Siblings(\Lambda) - \Lambda$
 \begin{equation}
 \begin{array}{l}
 Head(m) = f \Leftrightarrow
-Parent(m) =
-let \: rec \: \dots \:
-       and \: f \: = \: \lambda_j \: \_ \: \cdot \: m \:
-       and \: \dots \:
-in \: \_ \\
+  Parent(m) =
+    let \: rec \: \dots \:
+           and \: f \: = \: \lambda_j \: \_ \: \cdot \: m \:
+           and \: \dots \:
+    in \: \_ \\
 Head(m) \text{ is undefined otherwise}
 \end{array}
 \end{equation}
@@ -236,11 +291,12 @@ $Body(f) = m \Leftrightarrow f = Head(m)$
 
 \begin{equation}
 \begin{array}{r l}
-Variables : & x \mapsto \{ x \}\\
-            & 0 \mapsto \{\}, \: 1 \mapsto \{\}, \: \dots \\
-            & v_1 \: + \: v_2 \mapsto \{v_1, v_2\} \\
-            & v_1 \: \times \: v_2 \mapsto \{v_1, v_2\} \\
-            & \dots\\
+Variables :
+  & x \mapsto \{ x \}\\
+  & 0 \mapsto \{\}, \: 1 \mapsto \{\}, \: \dots \\
+  & v_1 \: + \: v_2 \mapsto \{v_1, v_2\} \\
+  & v_1 \: \times \: v_2 \mapsto \{v_1, v_2\} \\
+  & \dots\\
 \end{array}
 \end{equation}
 
@@ -278,7 +334,7 @@ Head(m) \in Calls(m) & \\
 
 \item[Simple loop head]
 
-$f$ is a simple loop head if it is the $Head$ of a loop.
+A simple-loop head is the $Head$ of a simple-loop
 
 \texttt{l} is a simple loop head when it is part of
 
@@ -326,27 +382,28 @@ $(L, E ,C)$ is a \em{loop} of $m$ if $L$, $C$, and $E$ are maximal sets of
 $\Lambda$ such that
 
 \begin{equation}\label{loopdef:0}
-L \subseteq E \subseteq C
+  L \supseteq E \supseteq C
 \end{equation}
 \begin{equation}\label{loopdef:1}
-m = letrec \: Siblings(L) \: in \: m'
+  m = letrec \: Siblings(L) \: in \: m'
 \end{equation}
 \begin{equation}\label{loopdef:2}
-\begin{array}{r l}
-\forall \Lambda, \Lambda' \in L \: \exists \Lambda_0, \dots, \Lambda_n \in L \text{ such that } &
-  \Lambda = \Lambda_0, \: \Lambda' = \Lambda_n, \text{ and} \\
-& \forall i < n \: Calls(Subterms_{\Lambda}(\Lambda_i)) \ni \Lambda_{i+1} \\
-\end{array}
+  \begin{array}{r l}
+    \forall \Lambda, \Lambda' \in L \: \exists \Lambda_0, \dots, \Lambda_n \in L \text{ such that } &
+      \Lambda = \Lambda_0, \: \Lambda' = \Lambda_n, \text{ and} \\
+    & \forall i < n \: Calls(Subterms_{\Lambda}(\Lambda_i)) \ni \Lambda_{i+1} \\
+  \end{array}
 \end{equation}
 \begin{equation}\label{loopdef:3}
-((Calls(Subterms(m')) \cup Calls(Subterms_{\Lambda}(StrictSiblings(L))))) \cap L = E \neq \{\}
+  ((Calls(Subterms(m')) \cup Calls(Subterms_{\Lambda}(StrictSiblings(L))))) \cap L = E \neq \{\}
 \end{equation}
 \begin{equation}\label{loopdef:4}
-\begin{array}{r l}
-\forall \Lambda \in C & Conditional(Terminator(\Lambda)) \\
-                      & Calls(Subterms(\Lambda)) \cap L \neq \{\} \\
-                      & Calls(Subterms(\Lambda)) \cap StrictSiblings(L) \neq \{\} \\
-\end{array}
+  \begin{array}{r l}
+    \forall \Lambda \in C
+      & Conditional(Terminator(\Lambda)) \\
+      & Calls(Subterms(\Lambda)) \cap L \neq \{\} \\
+      & Calls(Subterms(\Lambda)) \cap StrictSiblings(L) \neq \{\} \\
+    \end{array}
 \end{equation}
 
 \end{description}
@@ -383,17 +440,22 @@ m'' & = & letrec \: \{ Dispatch_2 \} \: in \: if (i = 1) \: then \: CallTo(\Lamb
 Dispatch_i & = & dispatch_i \: = \: \lambda \: j \: \cdot \: letrec \: \{ Dispatch_{i+1} \} \: in if(j=i) \: then CallTo(\Lambda_i) \: else \: dispatch_{i+1} k \\
 \iota & : & l \rightarrow [ 1, Card(E) ] \text{ injective} \\
 \iota & : & \text{undefined if } l \notin E \\
-CallTo(f = \lambda \: args \: \cdot \: m) & = & f_{cpad} \: args \text{ if } f \in C \\
-CallTo(f = \lambda \: args \: \cdot \: m) & = & f \: args \text{ otherwise} \\
-                                  m' & = & m[l \: args \: / \: pad \: \iota(l) \: args ]_{l \in E}
+CallTo(l = \lambda \: vs \: \cdot \: m) & = & l_{cpad} \: vs \text{ if } l \in C \\
+CallTo(l = \lambda \: vs \: \cdot \: m) & = & l \: vs \text{ otherwise} \\
+m' & = & m[l \: v_1 \: \dots \: v_n \: / \: pad \: \iota(l) \: v_1 \: \dots \: v_n \: 0 \: \dots \: 0 ]_{l \in E}
 \end{array}
 \end{equation}
 
 \end{description}
 
 Note however that such a definition requires the extraction of maximal cliques
-(which is not easy). Moreover the \`\`union of arguments'' operation is non
-trivial.
+(which is not easy).
+
+<!--TODO: better explanation of dispatch terms -->
+
+The \`\`union of arguments'' can be implemented in different ways. The
+prototype uses $max(numberOfArgs(E)$ fresh variables. The $0$s in $m'$ are
+padding to adapt for the potentially higher number of arguments.
 
 The GVN algorithm was specifically designed for SSA programs and direct
 manipulation of the CFG. The CPS equivalent for which is the call graph. It
@@ -401,7 +463,6 @@ can be obtained with a one-pass traversal of a CPS term. This additional
 difficulty—as well as the loop definition incompleteness—shows that the
 algorithm was originally designed for a specific goal.
 
-TODO: more details about the `\`union of arguments''.
 
 
 ####Landing-$\lambda$s and Trampolines
@@ -410,11 +471,9 @@ A trampoline is a trick using a high-level calling convention to implement
 tail call optimisation on a low-level target that does not support it. (E.g.
 `ocamljs`, an OCaml compiler targeting Javascript.)
 
-The Landing-$lambda$ transformation:
-
-- can assume calls from one sub-term to another are tail-calls, and
-- only changes calls from outside of the mutually recursive function set
-  (while the trampoline requires change to the mutual calls themselves).
+The Landing-$lambda$ transformation differs from a trampoline insertion in
+that trampolines require change to every call to the bounced functions, while
+landing-$\lambda$s only affect calls from the outside of the loop.
 
 
 ####Virtual calls annotations
@@ -447,10 +506,12 @@ SSA.
 
 \begin{equation}
 \begin{array}{r l}
-Uninline_{true}(if(v) \: then \: l_1 \_ else l_2 \_) = &
-letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_1 \: \_ \: \} \: in \: if(v) \: then \: f \: () \: else \: l_2 \: \_ \\
-Uninline_{false}(if(v) \: then \: l_1 \_ else l_2 \_) = &
-letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_2 \: \_ \: \} \: in \: if(v) \: then \: l_1 \: \_ \: else \: f \: () \\
+Uninline_{true}(if(v) \: then \: l_1 \: vs \: else \: l_2 \: us ) = &
+  letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_1 \: vs \: \} \: in \:
+    if(v) \: then \: f \: () \: else \: l_2 \: us \\
+Uninline_{false}(if(v) \: then \: l_1 vs \: else \: l_2 \: us) = &
+  letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_2 \: us \: \} \: in \:
+    if(v) \: then \: l_1 \: vs \: else \: f \: () \\
 \end{array}
 \end{equation}
 
@@ -471,6 +532,8 @@ Calls(m) \cup Calls_{\Lambda}(L) \ni \Lambda_t
 
 \end{description}
 
+<!--TODO: treat the case where the other part (m) is the conditional -->
+
 Once again the call graph is needed in order to detect the terms that need to
 be tampered with.
 
@@ -478,7 +541,7 @@ be tampered with.
 ##Values Ranking
 
 Adapting the ranking system from the original GVN algorithm is quite straight
-forward. The main difficulty is for arguments.
+forward.
 
 
 \begin{description}
@@ -487,12 +550,13 @@ is defined as follows
 
 \begin{equation}
 \begin{array}{r l}
-rank : & 0 \: \mapsto \: 0, \: 1 \: \mapsto \: 0, \: \dots \\
-       & v_1 \: op \: v_2 \: \mapsto \: 1+max(rank(v_1), rank(v_2)) \\
-       & x \: \mapsto \: 1+max(rank(v_1),\dots,rank(v_n)) \text{ if } f \: v_1 \: \dots \: v_n \: \lambda_c \: x \: \cdot \: \_ \\
-       & x \: \mapsto \: rank(v) \text{ if } let \: x \: = \: v \: in \: \_ \\
-       & v \: \mapsto \: 0 \text{ if $v$ is a $\lambda_p$ parameter} \\
-       & v \: \mapsto \: max(r_1,\dots,r_n) \text{ if $v$ is a $\lambda_j$ parameter called with values of rank $r_i$} \\
+rank :
+  & 0 \: \mapsto \: 0, \: 1 \: \mapsto \: 0, \: \dots \\
+  & v_1 \: op \: v_2 \: \mapsto \: 1+max(rank(v_1), rank(v_2)) \\
+  & x \: \mapsto \: 1+max(rank(v_1),\dots,rank(v_n)) \text{ if } f \: v_1 \: \dots \: v_n \: \lambda_c \: x \: \cdot \: \_ \\
+  & x \: \mapsto \: rank(v) \text{ if } let \: x \: = \: v \: in \: \_ \\
+  & v \: \mapsto \: 0 \text{ if $v$ is a $\lambda_p$ parameter} \\
+  & v \: \mapsto \: max(r_1,\dots,r_n) \text{ if $v$ is a $\lambda_j$ parameter called with values of rank $r_i$} \\
 \end{array}
 \end{equation}
 
@@ -521,24 +585,27 @@ rank(x_2) = max(rank(x_1), rank(v_2)) \\
 This means that any value grater than $max(rank(v_1),rank(v_2))$ is okay. In
 such a case, we take the rank to be the minimal acceptable rank. This is
 equivalent to defaulting unavailable ranks to zero (as was done in the
-original algorithm).
+original algorithm). Defaulting to zero is essentially the same as not taking
+(mutually) recursive calls into account.
 
 
 ##Trivial Binding Removing
 
-Removing trivial bindings in CPS code is easier than removing trivial
-assignements in SSA form. Because of the scoping rule, changes are local to a
-term. On the other hand, the term structure is not as nice to work upon as a
-block of—temporarily unordered—assignments because it is more rigid.
+Removing some trivial bindings in CPS code is easier than removing the
+corresponding trivial assignements in SSA form. Because of the scoping rule,
+changes are local to a term. On the other hand, the term structure is not as
+nice to work upon as a block of—temporarily unordered—assignments because it
+is more rigid.
 
 Thus we change the $let-in$ construct of our CPS terms. This is only intended
 to be used localy and does not need to be exported outside of this
-optimisation.
+optimisation. (That is, it can be converted back to classic CPS after the
+optimisation is done.)
 
 \begin{equation}
-\begin{array}{r l}
-m \: -::= & let \: x \: = \: v \: in \: m\\
-m \: +::= & letand \: \{ (x_i, v_i) | 0 < i < n \} \: in \: m\\
+\begin{array}{r c l}
+m & -::= & let \: x \: = \: v \: in \: m\\
+m & +::= & letand \: \{ (x_i, v_i) | 0 < i < n \} \: in \: m\\
 \end{array}
 \end{equation}
 
@@ -563,9 +630,8 @@ each *binding strand* of a term, the variables of identical ranks are
 coalesced together into one $letand$. Those are then sorted by ranks so as to
 guarantee correct scoping.
 
-Two bindings are in the same strand if they are
-in an equivalence class for the reflexive, symmetric, transitive closure of
-the following relation:
+Two bindings are in the same strand if they are in an equivalence class for
+the reflexive, symmetric, transitive closure of the following relation:
 
 $(x_1, m_1) R (x_2, m_2) \iff let \: x_1 \: = \: m_1 \: in \: let \: x_2 \: = \: m_2 \: in \: \_$
 
@@ -591,15 +657,18 @@ letand \: \{ (x_1, y_1 \: op \: y_2), (x_2, y_1 \: op \: y_2) \} \cup B \: in \:
 
 \end{description}
 
+Note that both rules can lead to the other rule being applicable. Thus the
+transformation needs to be run until a fix-point is reached. In order to bound
+the complexity of this operation, one can accumulate the substitutions that
+needs to be performed on $m$ while searching for a fix-point on the bindings;
+and apply them in one go after the fix-point has been reached. Substituting on
+$m$ is potentially costly due to unpredictably deep recursion.
+
 In the original GVN algorithm, trivial $\phi$ assignments
 ($v \leftarrow \phi(w, w)$ and $v \leftarrow \phi(v, w)$) are also simplified.
 This translates in CPS as a removal of parameters that are always instantiated
 with the same variables.
 
-TODO: more precise description of constant parameter removal
-
-A nice property of this transformation is that it is local to a term (and its
-sub-terms). This will help with interleaving.
 
 
 ##Folding
@@ -640,7 +709,8 @@ type m =
   | Mcont of (var * value list)
   | Mif   of (value * (var * var list) * (var * var list))
   | Mbind of ((int * (var * value) list) list * m) (* [rank, [binding]] *)
-  | Mrec  of ((var * var list * m) list * m)
+  | Mlambda of ((var * var list * m) list * m)
+  | Mloop   of (var * var list * (var * var list * m) list * m * m)
 and continuation =
   | Cvar of var
   | C    of (var * m)
@@ -652,42 +722,22 @@ and value =
   | ..
 \end{verbatim}
 
-<!--
-\begin{verbatim}
-type m = (*terminator or lambda*)
-  | `Tapp  of (var * value list * var)
-  | `Tcont of (var * value list)
-  | `Tif   of (value * (var * var list) * (var * var list))
-  | `L     of ((var, (var list * m)) map * [`Tapp|`Tcont|`Tif|`L])
-  | `Bval  of ((int, (var, value) map) map * [`Tapp|`Tcont|`Tif|`L|`Bapp])
-  | `Bapp  of (var * value list * (var * [`Tapp|`Tcont|`Tif|`L|`Bval])
-\end{verbatim}
+(`Mloop (v, vs, ls, m1, m2)` is to be understood as `Mrec ([v, vs, Mrec (ls,
+m1)], m2)` where `ls` is a loop.)
 
-Pros:
-
-- enforces some of the invariants
-
-Cons:
-
-- the type is actually way more complicated than that and recursive
-- does not enforce all the invariants
-
-Other invariants to consider:
-
-- either Mrec/L is used for a loop (and Mrec/L lambdas' call graph is a
-  clique) or there are no calls amongst the lambdas of a same Mrec/L (use
-  nested Mrec/Ls to achieve the same purpose). Make two different constructor.
-
--->
 
 The following invariants are to be maintained:
 
-- in `Mrec`, the bindings are sorted in callees-before-callers order
-- in `Mrec` the term (`m`) is a terminator (this avoids rank interleaving)
+- in `Mlambda`, the bindings are sorted in callees-before-callers order
+- in `Mlambda` (resp `Mloop`) the term (`m` (resp. `m2`)) is a terminator
+  (this avoids rank interleaving)
+- in `Mloop (v, vs, ls, dispatch, m)`,
+    + `dispatch` only makes call to elements of `ls`,
+    + `m` does not call `ls` directly, it calls `v` instead,
 - no two `Mbind` can be nested directly
     + i.e. `Mbind (_, Mbind _)` is forbidden (but `Mbind (_, Mapp (_, _, C (_,
       Mbind _)))` is okay)
-- in `Mbind` only one batch of bindings *per rank* is allowed
+- in `Mbind` only one batch of bindings *per rank* is allowed,
 - no `Mbind` is empty (`Mbind ([], _)`) nor is any rank (`Mbind ([…; (r, []);
   …], _)`
 
