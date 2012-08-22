@@ -131,6 +131,12 @@ module L = struct
 
 end
 
+module T2 = struct
+
+  let map1 f (l, r) = (f l, f r)
+
+end
+
 module O = struct
 
   let opt x = Some x

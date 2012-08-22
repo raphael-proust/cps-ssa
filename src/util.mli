@@ -45,6 +45,10 @@ module L :
     val nconst : 'a -> int -> 'a list
     val classes : ('a * 'b) list -> ('a * 'b list) list
   end
+module T2 :
+  sig
+    val map1 : ('a -> 'b) -> ('a * 'a) -> ('b * 'b)
+  end
 module O :
   sig
     val opt : 'a -> 'a option

@@ -66,6 +66,8 @@ module GP = struct (* CPS_gvn Term Properties*)
   let map_argss f ls = List.map (fun (l, (a, g)) -> (l, (f a, g  ))) ls
   let map_bodys f ls = List.map (fun (l, (a, g)) -> (l, (a,   f g))) ls
 
+  let with_body (l, (a, _)) g = (l, (a, g))
+
   let rec subterms t =
     let lambdas ls = List.flatten (List.map subterms (bodys ls)) in
     match t with
@@ -139,6 +141,12 @@ let assert_values env vs = List.iter (assert_value env) vs
 
 let nits xs = List.map (fun x -> (x, ())) xs
 
+let rec assert_dispatch = function
+  | GAppCont _ | GAppBind _ | GBind _ | GLoop _ -> assert false
+  | GCond _ | GCont _ -> ()
+  | GLambda ([l], GCond _) -> assert_dispatch (GP.body l)
+  | GLambda _ -> assert false
+
 let assert_g g =
   let rec aux env lenv g =
     match g with
@@ -172,6 +180,7 @@ let assert_g g =
       in
       aux env lenv g
     | GLoop (v, vs, ls, g1, g2) ->
+      assert_dispatch g1;
       (*TODO: check ls's call graph*)
       let (names, lambdas) = List.split ls in
       (*DO NOT: add ls to g2's environment (calls should go through v) *)
@@ -551,15 +560,95 @@ let trivial_bind_removal g =
   in
   aux g
 
+let merge_binds bs bbs = failwith "TODO"
+let movable rk binds = failwith "TODO"
+(*movable exctract the bindings that can be bubbled up from a set of bindings.
+ *it never includes values that depend on elements of block (if any)
+ *it only inspects values of rank rk
+ *)
 
-let move rk g =
-  failwith "TODO"
+let stop vs bs =
+  (* stops bindings from bs that depends on variables of vs to bubble up *)
+  T2.map1
+    (List.filter (fun (_, l) -> not (l = [])))
+    (List.split (
+      List.map
+        (fun (r, bs) ->
+          let (bs, sbs) =
+            List.partition (fun (_, v) -> L.disjoint (vars_of_value v) vs) bs
+          in
+          ((r, bs),(r,sbs))
+        )
+        bs
+    ))
 
+let move rk marks g =
+  (* do we need to use the 'marks' argument? Scope might give us enough
+   * guarantees to just bubble them up in the return value.. *)
+  let put_marks marks g = match (marks, g) with
+    | ([], g) -> g
+    | (marks, GBind (bs, g)) -> GBind (merge_binds marks bs, g)
+    | bsg -> GBind bsg
+  in
+
+  let rec up = function
+
+    (*terminators*)
+    | GAppCont _ | GCont _ | GCond _ as g -> ([], g)
+    | GAppBind (v, vs, (x, g)) ->
+      let (marks, g) = up g in
+      let (marks, stops) = stop [x] marks in
+      (marks, GAppBind (v, vs, (x, put_marks stops g)))
+
+    (* lambdas: traverse *)
+    | GLoop (v, vs, ls, dispatch, g) ->
+      assert_dispatch dispatch;
+      let (lsmarks, ls) =
+        List.fold_left
+          (fun (lsmarks, ls) l ->
+            let (marks, g) = up (GP.body l) in
+            let (marks, stops) = stop (GP.args l) marks in
+            (merge_binds marks lsmarks,
+             (GP.with_body l (put_marks stops g) :: ls)
+            )
+          )
+          ([], [])
+          ls
+      in
+      let (marks, g) = up g in
+      (merge_binds marks lsmarks, GLoop (v, vs, ls, dispatch, g))
+    | GLambda (ls, g) ->
+      let (lsmarks, ls) =
+        List.fold_left
+          (fun (lsmarks, ls) l ->
+            let (marks, g) = up (GP.body l) in
+            let (marks, stops) = stop (GP.args l) marks in
+            (merge_binds marks lsmarks,
+             (GP.with_body l (put_marks stops g) :: ls)
+            )
+          )
+          ([], [])
+          ls
+      in
+      let (marks, g) = up g in
+      (merge_binds marks lsmarks, GLambda (ls, g))
+
+    (*bind: serious business*)
+    | GBind (_, GBind _) -> assert false
+    | GBind (bs, g) ->
+      let (marks, g) = up g in
+      let (marks, bs) = movable rk (merge_binds bs marks) in (* This is it! *)
+      (marks, GBind (bs, g))
+
+  in
+
+  let (marks, g) = up g in
+  put_marks marks g
 
 
 let drive g =
   I.fold_inc
-    (fun g rk -> trivial_bind_removal (move rk g))
+    (fun g rk -> trivial_bind_removal (move rk [] g))
     g
     (max_rank g)
 
