@@ -569,6 +569,12 @@ let movable rk binds = failwith "TODO"
 
 let stop vs bs =
   (* stops bindings from bs that depends on variables of vs to bubble up *)
+  (* we don't need to fix-point that because only equal-rank var are imported *)
+  ((*the whole of bs is suppose to be from one rank only!*)
+    match bs with
+    | _::[] -> ()
+    | [] | _::_::_ -> assert false
+  );
   T2.map1
     (List.filter (fun (_, l) -> not (l = [])))
     (List.split (
@@ -591,6 +597,14 @@ let move rk marks g =
     | bsg -> GBind bsg
   in
 
+  (* we do not implement the original algorithm. What we do is simpler in that:
+    * it does not need to temper with function parameters
+    * it is easy to check that scope is respected
+    * binding moves are across the dominator tree instead of the cfg
+   *
+   * Note however that it is equivalent for simple patterns. It differs for
+   * join points.
+   *)
   let rec up = function
 
     (*terminators*)
