@@ -140,21 +140,10 @@ let move rk marks g =
 
     (* lambdas: traverse *)
     | GP.GLoop (v, vs, ls, dispatch, g) ->
-      GP.assert_dispatch dispatch;
-      let (lsmarks, ls) =
-        List.fold_left
-          (fun (lsmarks, ls) l ->
-            let (marks, g) = up (GP.body l) in
-            let (marks, stops) = stop (GP.args l) marks in
-            (merge_binds marks lsmarks,
-             (GP.with_body l (put_marks stops g) :: ls)
-            )
-          )
-          ([], [])
-          ls
-      in
+      (*TODO: loop header and landing pad code*)
+      GP.assert_dispatch dispatch; (*need be rm-ed for landing pad opt *)
       let (marks, g) = up g in
-      (merge_binds marks lsmarks, GP.GLoop (v, vs, ls, dispatch, g))
+      (marks, GP.GLoop (v, vs, ls, dispatch, g))
     | GP.GLambda (ls, g) ->
       let (lsmarks, ls) =
         List.fold_left
