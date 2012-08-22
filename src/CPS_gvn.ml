@@ -82,7 +82,20 @@ let trivial_bind_removal g =
   in
   aux g
 
-let merge_binds bs bbs = failwith "TODO"
+let merge_binds bs bbs =
+  let rec aux acc l1 l2 = match (l1,l2) with
+    | ([],l2) -> List.rev_append acc l2
+    | (l1,[]) -> List.rev_append acc l1
+    | (((r1, bs1) as rbs1) :: t1, ((r2,bs2) as rbs2) :: t2) ->
+      if r1 < r2 then
+        aux (rbs1 :: acc) t1 l2
+      else if r2 < r1 then
+        aux (rbs2 :: acc) l1 t2
+      else
+        aux ((r1, bs1 @ bs2) :: acc) t1 t2
+  in
+  aux [] bs bbs
+
 let movable rk binds = failwith "TODO"
 (*movable exctract the bindings that can be bubbled up from a set of bindings.
  *it never includes values that depend on elements of block (if any)
