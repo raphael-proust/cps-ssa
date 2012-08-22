@@ -110,5 +110,23 @@ let rec apply_subs subs = function
   | VLShr (v1, v2) -> VLShr (apply_subs subs v1, apply_subs subs v2)
   | VAShr (v1, v2) -> VAShr (apply_subs subs v1, apply_subs subs v2)
 
+let rec vars_of_value v =
+  let rec aux acc = function
+    | VVar v -> v :: acc
+    | VConst _ | VNull | VUndef | VDummy _ | VZero -> acc
+    | VStruct vs -> List.fold_left aux acc vs
+    | VRead v | VCast v -> failwith "Unsupported memops"
+    | VPlus (v1, v2) | VMinus (v1, v2)
+    | VMult (v1, v2) | VDiv (v1, v2) | VRem (v1, v2)
+    | VGt (v1, v2) | VGe (v1, v2)
+    | VLt (v1, v2) | VLe (v1, v2)
+    | VEq (v1, v2) | VNe (v1, v2)
+    | VAnd (v1, v2) | VOr (v1, v2) | VXor (v1, v2)
+    | VShl (v1, v2) | VLShr (v1, v2) | VAShr (v1, v2)
+    -> aux (aux acc v1) v2
+  in
+  aux [] v
+
+
 let reset_idxs () =
   var_counter := (-1)

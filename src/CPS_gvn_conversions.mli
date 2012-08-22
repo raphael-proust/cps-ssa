@@ -18,4 +18,5 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-val drive: CPS_gvn_terms.g -> CPS_gvn_terms.g
+val m_of_g: CPS_gvn_terms.g -> CPS.m
+val g_of_m: CPS.m -> CPS_gvn_terms.g

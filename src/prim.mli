@@ -84,5 +84,7 @@ val closed: (var, 'a) Env.t -> value -> bool
 
 val apply_subs: (var * value) list -> value -> value
 
+val vars_of_value: value -> var list
+
 (**/*)
 val reset_idxs: unit -> unit
