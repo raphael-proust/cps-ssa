@@ -19,8 +19,6 @@
   * }}}                                                                      *)
 
 (*FIXME: avoid exponential complexity *)
-(*FIXME: avoid head-assoc-body "conversion" *)
-(*FIXME: there is currently no check for alpha-collisions!*)
 (*TODO: simplify some boilerplate code *)
 
 open Util
@@ -42,7 +40,7 @@ let trivial_bind_removal g =
     | GP.GLoop (v, vs, ls, g1, g2) -> GP.GLoop (v, vs, ls, aux g1, aux g2)
     | GP.GLambda (ls, g) -> GP.GLambda (ls, aux g)
     | GP.GBind (bs, g) ->
-      (*FIXME: needs to update blocks*)
+      (*FIXME: sometimes require re-ranking*)
       let (subs, _, revbs) =
         List.fold_left (* this fold is over the (rank, bindings) list *)
           (fun (subs, env, bsacc) (r, bs) ->

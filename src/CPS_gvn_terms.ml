@@ -140,6 +140,7 @@ let assert_g g =
       assert_values env vs;
       assert (Env.has ~env:lenv k)
     | GAppBind (v, vs, (x, g)) ->
+      assert (Env.hasnt ~env:env x);
       assert (Env.has ~env:lenv v);
       assert_values env vs;
       aux (Env.add1 ~env x ()) lenv g
@@ -157,6 +158,7 @@ let assert_g g =
           (fun (env, r) (rank, bs) ->
             assert (r < rank);
             let (vars, values) = List.split bs in
+            List.iter (fun v -> assert (Env.hasnt ~env v)) vars;
             List.iter (assert_value env) values;
             (Env.add ~env (nits vars), rank)
           )
@@ -167,9 +169,18 @@ let assert_g g =
     | GLoop (v, vs, ls, g1, g2) ->
       assert_dispatch g1;
       (*TODO: check ls's call graph*)
-      let (names, lambdas) = List.split ls in
+      assert (Env.hasnt ~env:lenv v);
+      List.iter (fun v -> assert (Env.hasnt ~env v)) vs;
       (*DO NOT: add ls to g2's environment (calls should go through v) *)
       aux env (Env.add1 ~env:lenv v ()) g2;
+      (*TODO: deforest these iter*)
+      List.iter
+        (fun (v, (vs, g)) ->
+          assert (Env.hasnt ~env:lenv v);
+          List.iter (fun v -> assert (Env.hasnt ~env v)) vs;
+        )
+        ls;
+      let (names, lambdas) = List.split ls in
       (*DO NOT: add v to g1's environment (g1 should dispatch to ls) *)
       aux (Env.t_of_list (nits vs)) (Env.t_of_list (nits names)) g1;
       let lenv = Env.add ~env (nits names) in
@@ -178,6 +189,7 @@ let assert_g g =
       List.iter
         (fun (v, (vs, g)) ->
           assert (Env.hasnt ~env:lenv v);
+          List.iter (fun v -> assert (Env.hasnt ~env v)) vs;
           (*DONT add v to g's env, (it's not under a GLoop!)*)
           (*DONT add v to the environment to force splitting of lambdas*)
           aux (Env.add ~env (nits vs)) lenv g

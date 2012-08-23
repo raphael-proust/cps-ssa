@@ -18,6 +18,7 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+(*TODO: optimisations*)
 open Util
 module GP = CPS_gvn_terms
 
@@ -42,7 +43,6 @@ let rec m_of_g g =
 
 
 (* Landing Lambdas *)
-(* Problem: the complexity for finding cliques is too important *)
 
 
 let call_graph (ls : (Prim.var * (Prim.var list * GP.g)) list)
@@ -94,9 +94,6 @@ and strand bs m = match m with
   | m -> GP.GBind ([-1, bs], unranked_g_of_m m) (* needs ranking *)
 
 and gloop loop_lambdas gterm =
-  (*TODO: deforest *)
-  (*TODO: special case when there is only one lambda (no dispatch var)*)
-
   (*loop_lambdas is the list of the mutually recusrive lambdas*)
   (*gterm is the term under the scope of the loop_lambdas*)
 
@@ -153,7 +150,6 @@ and gloop loop_lambdas gterm =
     in
     (*add necessary (null) arguments for padding *)
     let pad n xs =
-      (*FIXME? there is probably an off-by-one-bug (oh BOB!) *)
       xs @ (L.nconst Prim.VNull (number_of_args - List.length xs))
     in
     (* patches an application *)
@@ -206,7 +202,7 @@ let rank g =
 
   let rec rank_g env cenv = function
     (* env: (variable, rank) environment
-     * cenv: (function, arguments' ramks) environment
+     * cenv: (function, arguments' ranks) environment
      *)
     (* App: external call, nothing to do *)
     | GP.GAppCont _ as g -> (cenv, g)
