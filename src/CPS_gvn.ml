@@ -94,11 +94,41 @@ let merge_binds bs bbs =
   in
   aux [] bs bbs
 
-let movable rk binds = failwith "TODO"
-(*movable exctract the bindings that can be bubbled up from a set of bindings.
- *it never includes values that depend on elements of block (if any)
- *it only inspects values of rank rk
- *)
+let movable rk binds =
+  try
+    let (_, bs, revbinds) =
+      List.fold_left (*TODO: optimisation*)
+        (fun (env, bs, binds) ((rrk, bbs) as rbs) ->
+          if rk < rrk then begin (*before rank*)
+            assert (bs = []);
+            (Env.add ~env bbs, bs, rbs :: binds)
+          end else if rk = rrk then begin (*on the rank*)
+            assert (bs = []);
+            let (movables, nonmovables) =
+              List.partition
+                (fun (_, v) ->
+                  List.for_all (Env.hasnt ~env) (Prim.vars_of_value v)
+                )
+                bbs
+            in
+            let binds =
+              if nonmovables = [] then
+                binds
+              else
+                (rrk, nonmovables) :: binds
+            in
+            (Env.empty, movables, binds)
+          end else begin (*after the rank*)
+            assert (env = Env.empty);
+            (env, bs, rbs :: binds)
+          end
+        )
+        (Env.empty, [], binds)
+        binds
+    in
+    ([rk, bs], List.rev revbinds)
+  with
+  | Not_found -> ([], binds)
 
 let stop vs bs =
   (* stops bindings from bs that depends on variables of vs to bubble up *)
