@@ -112,6 +112,21 @@ Here is a correspondence table for SSA to and from CPS translation:
 | Return               | Continuation Call       | `Mcont _`                 |
 +----------------------+-------------------------+---------------------------+
 
+For reasons of scope, a basic block is translated as follows:
+
+\begin{verbatim}
++----------+
+| x1 <- v1 |     let x1 = v1 in
+| x2 <- v2 |     let x2 = v2 in
+|    ..    |     letrec { [dominatees] } in
+|  <jump>  |     [<jump>]
++----------+
+\end{verbatim}
+
+Note in particular that the bindings of variables precede the bindings of
+$\lambda$s.
+
+
 ###About dominators
 
 It is also important to keep in mind that the dominance tree of the SSA CFG is
