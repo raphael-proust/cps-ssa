@@ -26,7 +26,7 @@ module E :
   end
 module I :
   sig
-    val fold : ('a -> int -> 'a) -> 'a -> int -> 'a
+    val fold_inc : ('a -> int -> 'a) -> 'a -> int -> 'a
   end
 module L :
   sig
@@ -44,6 +44,10 @@ module L :
     val n : (int -> 'a) -> int -> 'a list
     val nconst : 'a -> int -> 'a list
     val classes : ('a * 'b) list -> ('a * 'b list) list
+  end
+module T2 :
+  sig
+    val map1 : ('a -> 'b) -> ('a * 'a) -> ('b * 'b)
   end
 module O :
   sig

@@ -16,6 +16,8 @@ MLS= \
 		 llvm_parser.ml \
 		 llvm_lexer.ml \
 		 LLVM2SSA.ml \
+		 CPS_gvn_terms.ml \
+		 CPS_gvn_conversions.ml \
 		 CPS_gvn.ml \
 		 driver.ml
 

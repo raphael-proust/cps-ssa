@@ -18,21 +18,5 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
-
-type ('a, 'b) t
-
-val empty : ('a, 'b) t
-val one : 'a -> 'b -> ('a, 'b) t
-val t_of_list : ('a * 'b) list -> ('a, 'b) t
-
-val disjoint: ('a, 'b) t -> ('a, 'b) t -> bool
-
-val add1 : env:(('a, 'b) t) -> 'a -> 'b -> ('a, 'b) t
-val add  : env:(('a, 'b) t) -> ('a * 'b) list -> ('a, 'b) t
-val merge: ('a, 'b) t -> ('a, 'b) t -> ('a, 'b) t
-
-val has : env:(('a, 'b) t) -> 'a -> bool
-val hasnt : env:(('a, 'b) t) -> 'a -> bool
-
-val get : env:(('a, 'b) t) -> 'a -> 'b
-val teg : env:(('a, 'b) t) -> 'b -> 'a
+val m_of_g: CPS_gvn_terms.g -> CPS.m
+val g_of_m: CPS.m -> CPS_gvn_terms.g

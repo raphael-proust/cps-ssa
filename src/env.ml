@@ -24,6 +24,10 @@ type ('a, 'b) t = ('a * 'b) list
 
 let empty = []
 
+let one x v = [x,v]
+
+let t_of_list t = t
+
 let disjoint e1 e2 = L.disjoint e1 e2
 
 let add1 ~env v d = (v, d) :: env

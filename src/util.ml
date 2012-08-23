@@ -28,11 +28,14 @@ end
 
 module I = struct
 
-  let rec fold f acc i =
-    if i <= 0 then
-      acc
-    else
-      fold f (f acc i) (pred i)
+  let fold_inc f acc i =
+    let rec aux acc j =
+      if j >= i then
+        acc
+      else
+        aux (f acc j) (succ j)
+    in
+    aux acc 0
 
 end
 
@@ -111,7 +114,7 @@ module L = struct
     else
       List.hd l :: (take (List.tl l) (pred n))
 
-  let n f i = I.fold (fun acc i -> f i :: acc) [] i
+  let n f i = I.fold_inc (fun acc i -> f i :: acc) [] i
 
   let nconst v i = n (fun _ -> v) i
 
@@ -125,6 +128,12 @@ module L = struct
       )
       []
       l
+
+end
+
+module T2 = struct
+
+  let map1 f (l, r) = (f l, f r)
 
 end
 

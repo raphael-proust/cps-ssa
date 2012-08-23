@@ -1,4 +1,4 @@
- (* {{{ LICENSE                                                              *
+ (* {{{ LICENSE                                Prim.var                              *
   * vi: set fdm=marker fdl=0:                                                *
   *                                                                          *
   * Copyright (c) 2012 Raphaël Proust <raphlalou@gmail.com>                  *
@@ -18,21 +18,35 @@
   * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
   * }}}                                                                      *)
 
+type g =
+  | GAppCont  of (Prim.var * Prim.value list * Prim.var)
+  | GAppBind of (Prim.var * Prim.value list * (Prim.var * g))
+  | GCont of (Prim.var * Prim.value list)
+  | GCond of (  Prim.value
+              * (Prim.var * Prim.value list)
+              * (Prim.var * Prim.value list)
+             )
+  | GBind of ((int * (Prim.var * Prim.value) list ) list * g)
+  | GLoop of (Prim.var * Prim.var list * (Prim.var * (Prim.var list * g)) list * g * g)
+  | GLambda  of ((Prim.var * (Prim.var list * g)) list * g)
 
-type ('a, 'b) t
+val assert_g: g -> unit
+val assert_dispatch: g -> unit
 
-val empty : ('a, 'b) t
-val one : 'a -> 'b -> ('a, 'b) t
-val t_of_list : ('a * 'b) list -> ('a, 'b) t
+val head: (Prim.var * (Prim.var list * g)) -> Prim.var
+val args: (Prim.var * (Prim.var list * g)) -> Prim.var list
+val body: (Prim.var * (Prim.var list * g)) -> g
 
-val disjoint: ('a, 'b) t -> ('a, 'b) t -> bool
+val heads: (Prim.var * (Prim.var list * g)) list -> Prim.var list
+val argss: (Prim.var * (Prim.var list * g)) list -> Prim.var list list
+val bodys: (Prim.var * (Prim.var list * g)) list -> g list
 
-val add1 : env:(('a, 'b) t) -> 'a -> 'b -> ('a, 'b) t
-val add  : env:(('a, 'b) t) -> ('a * 'b) list -> ('a, 'b) t
-val merge: ('a, 'b) t -> ('a, 'b) t -> ('a, 'b) t
+val map_bodys: ('a -> 'b) -> ('c * ('d * 'a)) list -> ('c * ('d * 'b)) list
 
-val has : env:(('a, 'b) t) -> 'a -> bool
-val hasnt : env:(('a, 'b) t) -> 'a -> bool
+val with_body: (Prim.var * (Prim.var list * g)) -> g -> (Prim.var * (Prim.var list * g))
 
-val get : env:(('a, 'b) t) -> 'a -> 'b
-val teg : env:(('a, 'b) t) -> 'b -> 'a
+val deep_calls: g -> Prim.var list
+
+val apply_subs: (Prim.var * Prim.value) list -> g -> g
+
+val max_rank: g -> int
