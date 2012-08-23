@@ -8,10 +8,11 @@ Global Value Numbering (GVN) is an optimisation algorithm that takes advantage
 of the Single Static Assignment (SSA) form to improve on Value Numbering.
 
 Continuation Passing Style (CPS) is a special form of $\lambda$-calculus where
-functions get a continuation argument to be used instead of returning. As was
-exposed by TODO:cite, SSA and CPS can be translated into each other.
+functions get a continuation argument to be used instead of returning. An
+translation between SSA and CPS (in both directions) is presented in \`\`A
+Correspondance Between CPS and SSA form''.
 
-We here present a translation of the GVN algorithm to CPS.
+We here present an adaptation of the GVN algorithm to CPS.
 
 #Notations
 
@@ -51,6 +52,8 @@ The annotations are for compilation purpose:
 - $\lambda_j$ are to be translated as labels inside the same procedure, and
 - $\lambda_p$ are for complete procedures.
 
+From a semantical point of view, these annotations can be ignored.
+
 
 ##Lexical conventions
 
@@ -63,7 +66,8 @@ The following lexical convention are used in the document:
 - $i$ for indices, and
 - $n$ as arbitrary bounds for indexes.
 
-We also consider that alpha-collisions have been taken care of.
+We also consider that alpha-collisions have been taken care of; that is, we
+consider no two variables have the same name.
 
 ##OCaml representation
 
@@ -99,7 +103,7 @@ Here is a correspondence table for SSA to and from CPS translation:
 +======================+=========================+===========================+
 | Procedure            | Lambda ($\lambda_p$)    | `var * var list * m`      |
 +----------------------+-------------------------+---------------------------+
-| Basic Block          | See \ref{sec:about-b-b} | See \ref{sec:about-b-b}   |
+| Basic Block          | See long explanation    | See long explanation      |
 +----------------------+-------------------------+---------------------------+
 | Jump                 | Continuation Call       | `Mcont _`                 |
 +----------------------+-------------------------+---------------------------+
@@ -116,10 +120,10 @@ For reasons of scope, a basic block is translated as follows:
 
 \begin{verbatim}
 +----------+
-| x1 <- v1 |     let x1 = v1 in
-| x2 <- v2 |     let x2 = v2 in
-|  <jump>  |     letrec { [dominatees] } in
-+----------+     [<jump>]
+| x1 <- v1 |       let x1 = v1 in
+| x2 <- v2 |  -->  let x2 = v2 in
+|  <jump>  |       letrec { [dominatees] } in
++----------+       [<jump>]
 \end{verbatim}
 
 Note in particular that the bindings of variables precede the bindings of
@@ -772,31 +776,76 @@ The last point is worth a few explanations. Consider the following SSA graph:
 
 
 \begin{verbatim}
-        +-------------+
-        | <bindings1> |
-        |   <jump1>   |
-        +-------------+
-             |   |
-             V   V
-+-------------+ +-------------+
-| <bindings2> | | <bindings3> |
-|   <jump2>   | |   <jump3>   |
-+-------------+ +-------------+
-             |   |
-             V   V
-        +-------------+
-        | <bindings4> |
-        |   <jump4>   |
-        +-------------+
+        +---------------+
+        | <assigments1> |
+        |     <jump1>   |
+        +---------------+
+               |   |
+               V   V
++---------------+ +---------------+
+| <assigments2> | | <assigments3> |
+|     <jump2>   | |     <jump3>   |
++---------------+ +---------------+
+               |   |
+               V   V
+        +---------------+
+        | <assigments4> |
+        |     <jump4>   |
+        +---------------+
 \end{verbatim}
 
-The current translation does not allow[^disallow] the moving of bindings from
-`<bindings4>` to either `<bindings2>` or `<bindings3>`. Bindings are moved to
-`<bindings1>` instead. Moved bindings can later be used to simplify redundant
-entries in `<bindings2>` and `<bindings3>`.
+The original algorithm moves assignements from block `4` to blocks `2` and
+`3`. And from blocks `2` and `3` to `1`.
 
-[^disallow]: Allowing such a move would require a much more involved algorithm
-tampering with parameters.
+In CPS world, this example becomes:
+
+\begin{verbatim}
+letand <bindings1> in
+letrec (
+  b4 = lambda _ .
+    letand <bindings4> in
+    <calls4>
+  b2 = lambda _ .
+    letand <bindings2> in
+    <calls2>
+  b3 = lambda _ .
+    letand <bindings3> in
+    <calls3>
+) in
+<calls1>
+\end{verbatim}
+
+Where `<bindings>` are translations of `<assigments>` and `<calls>`
+translations of `<jump>`.
+
+Moving some computations of `b4` into `b2` abd `b3` does not makes sense from
+a scope perspective. (It would require transmitting some information to `b4`
+through parameters.) Our algorithm moves elements of `<bindings4>` into
+`<bindings1>`.
+
+The original behaviour can be obtained by translating the example into the
+following form:
+
+\begin{verbatim}
+letand <bindings1> in
+letrec (
+  b4 = lambda _ .
+    (* MARK *)
+    letrec (
+      b2 = lambda _ .
+        letand <bindings2> in
+        <calls2>
+      b3 = lambda _ .
+        letand <bindings3> in
+        <calls3>
+    ) in
+    letand <bindings4> in
+    <calls4>
+) in
+<calls1>
+\end{verbatim}
+
+and moving bindings from `<bindings4>` to `(* MARK *)`
 
 
 ###Post folding operations
