@@ -747,46 +747,7 @@ however.)
 The traversal is performed as follows:
 
 \begin{verbatim}
-let bind bs m = match bs,m with
-  | [], m -> m
-  | bs, Mbind(bs', m) -> Mbind (merge_binds bs bs', m)
-  | bs, m -> Mbind (bs, m)
-
-let traverse move mark max_rank whole_term =
-  let rec ranks rank term =
-    if rank < 0 then
-      term
-    else
-
-      let rec depth rank = function
-        | Mapp (_, _, CVar _) as t -> t (* inter-proc call *)
-        | Mapp (v, vs, C (x, m)) -> Mapp (v, vs, C (x, depth rank m))
-        | Mrec  (ls, m) ->
-          let m' = depth rank m in
-          let ls' = List.map (fun (_,_, m) -> depth rank m) ls in
-          mark (Mrec (ls', m'))
-        | Mbind (_, Mcont (v, vs)) as m ->
-          mark (bind (get_movable v whole_term) m)
-        | Mcont (v, _) as m ->
-          rank (let t = bind (get_movable v whole_term) m)
-        | Mbind (_, Mif (_, (v1, _), (v2, _))) as m ->
-          rank (let t = bind (get_movable_br v1 v2 whole_term) m)
-        | Mif (_, (v1, _), (v2, _)) as m ->
-          rank (let t = bind (get_movable_br v1 v2 whole_term) m)
-        | Mbind (_, Mbind _) -> assert false
-        | Mbind (rbs, m) -> Mbind (rbs, depth rank m)
-      in
-
-      let term' =
-        remove_trivial_binds rank
-          (remove_dup_expressions rank
-            (update_ranks rank
-              (depth rank term)))
-      in
-
-      ranks (pred rank) term'
-  in
-  ranks max_rank term
+TODO
 \end{verbatim}
 
 Note that:
