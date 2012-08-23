@@ -118,9 +118,8 @@ For reasons of scope, a basic block is translated as follows:
 +----------+
 | x1 <- v1 |     let x1 = v1 in
 | x2 <- v2 |     let x2 = v2 in
-|    ..    |     letrec { [dominatees] } in
-|  <jump>  |     [<jump>]
-+----------+
+|  <jump>  |     letrec { [dominatees] } in
++----------+     [<jump>]
 \end{verbatim}
 
 Note in particular that the bindings of variables precede the bindings of
@@ -759,25 +758,46 @@ The following invariants are to be maintained:
 (Note: these invariants are not necessary. They make the folding easier
 however.)
 
-The traversal is performed as follows:
+For details on the traversal, see the prototype (more specifically
+`src/CPS_gvn_terms.ml` and `src/CPS_gvn.ml` files).
+
+Note that this prototype implementation is:
+
+- incomplete (it cannot run because some primitives are still to be
+  implemented),
+- buggy (even though it is incomplete…),
+- not an exact match to the original algorithm.
+
+The last point is worth a few explanations. Consider the following SSA graph:
+
 
 \begin{verbatim}
-TODO
+        +-------------+
+        | <bindings1> |
+        |   <jump1>   |
+        +-------------+
+             |   |
+             V   V
++-------------+ +-------------+
+| <bindings2> | | <bindings3> |
+|   <jump2>   | |   <jump3>   |
++-------------+ +-------------+
+             |   |
+             V   V
+        +-------------+
+        | <bindings4> |
+        |   <jump4>   |
+        +-------------+
 \end{verbatim}
 
-Note that:
+The current translation does not allow[^disallow] the moving of bindings from
+`<bindings4>` to either `<bindings2>` or `<bindings3>`. Bindings are moved to
+`<bindings1>` instead. Moved bindings can later be used to simplify redundant
+entries in `<bindings2>` and `<bindings3>`.
 
-- `mark` returns a (marked but otherwise untouched) term.
-- the code above is written in a partially imperative style: the `get_movable`
-  and `get_movable_br` functions are supposed to remove the bindings they
-  return.
-- the code is incomplete regarding the treatment of landing-$\lambda$s and
-  loop headers.
+[^disallow]: Allowing such a move would require a much more involved algorithm
+tampering with parameters.
 
-While the first remark can be taken care of by maintaining a marking-table
-outside of the term, the other remarks call for a change in the type of terms.
-Using a different constructor for landing-$\lambda$s and other lambdas makes
-sense.
 
 ###Post folding operations
 
