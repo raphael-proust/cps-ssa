@@ -8,7 +8,7 @@ Global Value Numbering (GVN) is an optimisation algorithm that takes advantage
 of the Single Static Assignment (SSA) form to improve on Value Numbering.
 
 Continuation Passing Style (CPS) is a special form of $\lambda$-calculus where
-functions get a continuation argument to be used instead of returning. An
+functions get a continuation argument to be used instead of returning. A
 translation between SSA and CPS (in both directions) is presented in \`\`A
 Correspondance Between CPS and SSA form''.
 
@@ -19,27 +19,40 @@ We here present an adaptation of the GVN algorithm to CPS.
 A usual BNF grammar of CPS terms is:
 
 \begin{equation}
-\begin{array}{r l}
-m ::= & f \: v_1 \: \dots \: v_n \: k\\
-    | & l \: v_1 \: \dots \: v_n\\
-    | & if(v) \: then \:
-          l_1 \: v_1 \: \dots \: v_n \:
-        else \:
-          l_2 \: u_1 \: \dots \: u_n\\
-    | & let \: x \: = \: v \: in \: m\\
-    | & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m\\
-k ::= & l\\
-    | & \lambda_c \: x \: \cdot \: m\\
-\Lambda ::= & f \: = \: \lambda_j \: x_1 \: \dots \: x_n \: \cdot \: m\\
-v, u ::= & x\\
-       | & 0 \: | \: 1 \: | \: \dots\\
-       | & v_1 \: + \: v_2\\
-       | & v_1 \: \times \: v_2\\
-       | & \dots\\
+\begin{array}{l r l}
+procedure: & p ::= & f = \lambda_p \: x_1 \: \dots \: x_n \: \cdot \: m\\
+terms: & m ::= & f \: v_1 \: \dots \: v_n \: k\\
+       &     | & l \: v_1 \: \dots \: v_n\\
+       &     | & \mathsf{if} \: v \: \mathsf{then} \:
+                   l_1 \: v_1 \: \dots \: v_n \:
+                 \mathsf{else} \:
+                   l_2 \: u_1 \: \dots \: u_n\\
+       &     | & \mathsf{let} \: x \: = \: v \: \mathsf{in} \: m\\
+       &     | & \mathsf{letrec} \: \{ \Lambda_i | 0 < i < n \} \: \mathsf{in} \: m\\
+continuations: & k ::= & l\\
+               &     | & \lambda_c \: x \: \cdot \: m\\
+jump-\lambda: & \Lambda ::= & l \: = \: \lambda_j \: x_1 \: \dots \: x_n \: \cdot \: m\\
+values: & v, u ::= & x\\
+        &        | & n \in \mathbb{N}\\
+        &        | & v_1 \: + \: v_2\\
+        &        | & v_1 \: \times \: v_2\\
+        &        | & \dots\\
 \end{array}
 \end{equation}
 
-##Different kinds of $\lambda$s
+Where the following lexical convention are used (as in the whole document):
+
+- $f$, $l$, $x$, and $y$ are variables, more specifically,
+    + $f$ is used for global function ($\lambda_p$) calls,
+    + $l$ is used for local function ($\lambda_j$) calls, and
+    + $x$ and $y$ are used for non-$\lambda$ variables,
+- $i$ for indices, and
+- $n$ as arbitrary bounds for indexes.
+
+We also consider that alpha-collisions have been taken care of; that is, we
+consider no two variables have the same name.
+
+##Different kinds of lambdas ($\lambda$s)
 
 Note that $\lambda$s have annotation: either $c$ for continuations, $j$
 for jumps, or $p$ for procedures. The BNF grammar presented here does not show
@@ -54,20 +67,6 @@ The annotations are for compilation purpose:
 
 From a semantical point of view, these annotations can be ignored.
 
-
-##Lexical conventions
-
-The following lexical convention are used in the document:
-
-- $f$, $l$, $x$, and $y$ are variables, more specifically,
-    + $f$ is used for global function ($\lambda_p$) calls,
-    + $l$ is used for local function ($\lambda_j$) calls, and
-    + $x$ and $y$ are used for non-$\lambda$ variables,
-- $i$ for indices, and
-- $n$ as arbitrary bounds for indexes.
-
-We also consider that alpha-collisions have been taken care of; that is, we
-consider no two variables have the same name.
 
 ##OCaml representation
 
@@ -98,46 +97,57 @@ left unspecified.
 
 Here is a correspondence table for SSA to and from CPS translation:
 
-+----------------------+-------------------------+---------------------------+
-| SSA                  | CPS                     | OCaml CPS                 |
-+======================+=========================+===========================+
-| Procedure            | Lambda ($\lambda_p$)    | `var * var list * m`      |
-+----------------------+-------------------------+---------------------------+
-| Basic Block          | See long explanation    | See long explanation      |
-+----------------------+-------------------------+---------------------------+
-| Jump                 | Continuation Call       | `Mcont _`                 |
-+----------------------+-------------------------+---------------------------+
-| Procedure Call       | Application w/ Cont     | `Mapp (_, _, C _)`        |
-+----------------------+-------------------------+---------------------------+
-| Procedure Tail Call  | Application w/ Cont Var | `Mapp (_, _, Cvar _)`     |
-+----------------------+-------------------------+---------------------------+
-| Branch               | If-Then-Else            | `Mcond _`                 |
-+----------------------+-------------------------+---------------------------+
-| Return               | Continuation Call       | `Mcont _`                 |
-+----------------------+-------------------------+---------------------------+
++----------------------+---------------------------+-------------------------+
+| SSA                  | CPS                       | OCaml CPS               |
++======================+===========================+=========================+
+| Procedure            | Lambda ($\lambda_p$)      | `var * var list * m`    |
++----------------------+---------------------------+-------------------------+
+| Basic Block          | See long explanation      | See long explanation    |
++----------------------+---------------------------+-------------------------+
+| Jump                 | Continuation Call         | `Mcont _`               |
++----------------------+---------------------------+-------------------------+
+| Procedure Call       | Application with Cont     | `Mapp (_, _, C _)`      |
++----------------------+---------------------------+-------------------------+
+| Procedure Tail Call  | Application with Cont Var | `Mapp (_, _, Cvar _)`   |
++----------------------+---------------------------+-------------------------+
+| Branch               | If-Then-Else              | `Mif _`                 |
++----------------------+---------------------------+-------------------------+
+| Return               | Continuation Call         | `Mcont _`               |
++----------------------+---------------------------+-------------------------+
 
-For reasons of scope, a basic block is translated as follows:
+For reasons of scope, the basic block
 
 \begin{verbatim}
 +----------+
-| x1 <- v1 |       let x1 = v1 in
-| x2 <- v2 |  -->  let x2 = v2 in
-|  <jump>  |       letrec { [dominatees] } in
-+----------+       [<jump>]
+| x1 <- v1 |
+| x2 <- v2 |
+|   jump   |
++----------+
 \end{verbatim}
+
+is translated into
+
+
+\begin{equation}
+\begin{array}{l}
+\mathsf{let} \: x1 \: = \: v1 \: \mathsf{in}\\
+\mathsf{let} \: x2 \: = \: v2 \: \mathsf{in}\\
+\mathsf{letrec} \: { \: \langle dominatees \rangle \: } \: \mathsf{in}\\
+\langle jump \rangle \\
+\end{array}
+\end{equation}
 
 Note in particular that the bindings of variables precede the bindings of
 $\lambda$s.
 
-
 ###About dominators
 
-It is also important to keep in mind that the dominance tree of the SSA CFG is
-directly reflected in the term structure of the CPS term. More specifically,
-when a block $b$ is the immediate dominator of $b_i$, the translation contains
-$letrec \: \{ \Lambda_i \} \cup \_ \: in \: _ m$, where $m$ is the translation
-of of $b$, and $\Lambda_i$ is the translation of $b_i$. (Note that $m$ might
-be nested in another term, e.g. an `Mapp`.)
+The dominance tree of the SSA CFG is directly reflected in the term structure
+of the CPS term. More specifically, when a block $b$ is the immediate
+dominator of $b_i$, the translation contains
+$\mathsf{letrec} \: \dots \: \Lambda_i \: \dots  \: \mathsf{in} \: m$, where
+$m$ is the translation of $b$, and $\Lambda_i$ is the translation of $b_i$.
+(Note that $m$ might be nested in another term, e.g. an `Mapp`.)
 
 Note that this correspondance between the term structure and the dominator
 tree is not necessary for terms to be valid (with respect to scoping and
@@ -154,7 +164,7 @@ do account for them, we don't perform any smart optimisation (e.g. reordering)
 with them. This is why we consider function calls as unmovable basic block
 limits.
 
-Hence a basic block ends with any application (be it conditional (`Mcond`),
+Hence a basic block ends with any application (be it conditional (`Mif`),
 direct (`Mcont`), or external (`Mapp`)). This means that basic blocks are
 chunks of terms enclosed between a $\lambda$ and an application.
 
@@ -178,15 +188,14 @@ is not part of any block's bindings per-se.
 
 ##Notions
 
-We always work in the context of a $\lambda_p$; that is,
-\`\`$\exists m \text{ a term}$'' is to be understood as
-\`\`$\exists m \text{ a term in the body of the current }\lambda_p$''
+We always work in the context of a $\lambda_p$; when no context is given,
+\`\`a term'' refers to \`\`a term in the body of the current $\lambda_p$''.
 
 We define the following:
 
 \begin{description}
 
-\item[Subterms]: the the terms that can be found inside a term
+\item[Subterms]: the terms that can be found inside a term
 
 \begin{equation}
 \begin{array}{r r l}
@@ -195,9 +204,9 @@ Subterms:
 StrictSubterms:
   & f \: v_1 \: \dots \: v_n \: k \: \mapsto & Subterms_k(k) \\
   & l \: v_1 \: \dots \: v_n \: \mapsto & \{ \} \\
-  & if(\_) \: then \: \_ \: else \: \_ \: \mapsto & \{ \}\\
-  & let \: x \: = \: v \: in \: m \: \mapsto & Subterms(m) \\
-  & letrec \: \{ \Lambda_i | 0 < i < n \} \: in \: m \: \mapsto & Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
+  & \mathsf{if} \: \_ \: \mathsf{then} \: \_ \: \mathsf{else} \: \_ \: \mapsto & \{ \}\\
+  & \mathsf{let} \: x \: = \: v \: \mathsf{in} \: m \: \mapsto & Subterms(m) \\
+  & \mathsf{letrec} \: \{ \Lambda_i | 0 < i < n \} \: \mathsf{in} \: m \: \mapsto & Subterms(m) \cup \bigcup_{0 < i < n} Subterms_{\Lambda}(\Lambda_i)\\
 Subterms_k:
   & l \: \mapsto & \{ \} \\
   & \lambda_c \: x \: \cdot \: m \: \mapsto & Subterms(m) \\
@@ -217,15 +226,18 @@ let rec subterms t = match t with
     t :: subterms m @ List.flatten (List.map (fun (_, _, m) -> subterms m) ls)
 \end{verbatim}
 
-\item[Calls]: the calls that are made in a CPS term
+\item[Calls]: the calls that are made in a CPS term (shallow collecting,
+strict-subterms are ignored)
+
+Also note that we do not collect inter-procedural calls ($f$s).
 
 \begin{equation}
 \begin{array}{r l}
 Calls(f \: v_1 \: \dots \: v_n \: k) = & Calls_k(k) \\
 Calls(l \: v_1 \: \dots \: v_n) = & \{ l \} \\
-Calls(if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n) = & \{ l1, \: l2 \}\\
-Calls(let \: x \: = \: v \: in \: m) = & \{ \} \\
-Calls(letrec \: \{ \_ \} \: in \: m) = & \{ \}\\
+Calls(\mathsf{if} \: v \: \mathsf{then} \: l_1 \: v_1 \: \dots \: v_n \: \mathsf{else} \: l_2 \: u_1 \: \dots \: u_n) = & \{ l1, \: l2 \}\\
+Calls(\mathsf{let} \: x \: = \: v \: \mathsf{in} \: m) = & \{ \} \\
+Calls(\mathsf{letrec} \: \{ \_ \} \: \mathsf{in} \: m) = & \{ \}\\
 Calls_k(l) = & \{ l \} \\
 Calls_k(\lambda_c \: x \: \cdot \: m) = & \{ \} \\
 \end{array}
@@ -254,31 +266,32 @@ $Calls$ and $Subterms$ to get all the calls of a term.
 
 \begin{equation}
 \begin{array}{l}
-Conditional(m) = True \text{ if } m = if(\_) \: then \: \_ \: else \: \_ \\
+Conditional(m) = True \text{ if } m = \mathsf{if} \: \_ \: \mathsf{then} \: \_ \: \mathsf{else} \: \_ \\
 Conditional(m) = False \text{ otherwise}
 \end{array}
 \end{equation}
 
-\item[Terminator]
+\item[Tail]
 
 \begin{equation}
 \begin{array}{r c c l}
-Terminator:
+Tail:
   & m & \mapsto & m \text{ if } \left\{
     \begin{array}{c}
       m = f \: v_1 \: \dots \: v_n \: \_ \text{ or} \\
       m = l \: v_1 \: \dots \: v_n \text{ or} \\
-      m = if(v) \: then \: l_1 \: v_1 \: \dots \: v_n \: else \: l_2 \: u_1 \: \dots \: u_n \\
+      m = \mathsf{if} \: v \: \mathsf{then} \: l_1 \: v_1 \: \dots \: v_n \: \mathsf{else} \: l_2 \: u_1 \: \dots \: u_n \\
     \end{array} \right. \\
-  & let \: \_ \: = \: \_ \: in \: m & \mapsto & Terminator(m) \\
-  & letrec \: \{ \_ \} \: in \: m & \mapsto & Terminator(m) \\
+  & \mathsf{let} \: \_ \: = \: \_ \: \mathsf{in} \: m & \mapsto & Tail(m) \\
+  & \mathsf{letrec} \: \{ \_ \} \: \mathsf{in} \: m & \mapsto & Tail(m) \\
 \end{array}
 \end{equation}
 
-\item[Siblings]: $\lambda$s of the same parent
+\item[Siblings]: $\lambda$s defined under the same $\mathsf{letrec}$
+construct
 
 $Siblings(\Lambda) = L$ such that
-$letrec \: L \: in \: m'$ is a term and $\Lambda \in L$
+$\mathsf{letrec} \: L \: \mathsf{in} \: m'$ is a term and $\Lambda \in L$
 
 \item[StrictSiblings]:
 
@@ -286,24 +299,19 @@ $StrictSiblings(\Lambda) = Siblings(\Lambda) - \Lambda$
 
 
 
-\item[Head]: the name of the continuation a term is the body of
+\item[Head, Body]:
 
 \begin{equation}
 \begin{array}{l}
-Head(m) = f \Leftrightarrow
-  Parent(m) =
-    let \: rec \: \dots \:
-           and \: f \: = \: \lambda_j \: \_ \: \cdot \: m \:
-           and \: \dots \:
-    in \: \_ \\
-Head(m) \text{ is undefined otherwise}
+Head(l = \lambda_j \: \_ \: \cdot m) = l\\
+Head(m) \text{ is undefined otherwise}\\
+Body(l = \lambda_j \: \_ \: \cdot m) = m\\
+Body(m) \text{ is undefined otherwise}\\
 \end{array}
 \end{equation}
 
+We use $Heads$ and $Bodies$ when mapping a set of $\Lambda$s
 
-\item[Body]: the inverse of $Head$
-
-$Body(f) = m \Leftrightarrow f = Head(m)$
 
 \item[Variables]: all the variables appearing in a value
 
@@ -311,9 +319,9 @@ $Body(f) = m \Leftrightarrow f = Head(m)$
 \begin{array}{r l}
 Variables :
   & x \mapsto \{ x \}\\
-  & 0 \mapsto \{\}, \: 1 \mapsto \{\}, \: \dots \\
-  & v_1 \: + \: v_2 \mapsto \{v_1, v_2\} \\
-  & v_1 \: \times \: v_2 \mapsto \{v_1, v_2\} \\
+  & n \mapsto \{\} \text{ for } n \in \mathbb{N}\\
+  & v_1 \: + \: v_2 \mapsto Variables(v_1) \cup Variables(v_2) \\
+  & v_1 \: \times \: v_2 \mapsto Variables(v_1) \cup Variables(v_2) \\
   & \dots\\
 \end{array}
 \end{equation}
@@ -340,24 +348,16 @@ corresponding concept in CPS *landing lambdas*.
 \begin{description}
 \item[Simple loop]
 
-A \em{simple loop} is a term $m$ such as
+$\Lambda$ is a \em{simple loop} if
 
 \begin{equation}
-\begin{array}{r l}
-Head(m) \in Calls(m) & \\
-\forall f \in Calls(m), & f \in Head(Subterms(m) \text{ or} \\
-                        & Head(m) \notin Calls(Body(f)) \text{ and transitively} \\
-\end{array}
+Head(\Lambda) \in Calls(Subterms(\Lambda))
 \end{equation}
 
-\item[Simple loop head]
-
-A simple-loop head is the $Head$ of a simple-loop
-
-\texttt{l} is a simple loop head when it is part of
+In code, \texttt{l} is a simple loop when it is part of
 
 \begin{verbatim}
-let rec simple_loop_headers = function
+let rec simple_loop = function
   | Mapp  (_, _, Cvar _     ) -> []
   | Mapp  (_, _, C    (_, m)) -> simple_loop_headers m
   | Mcont (_, _) -> []
@@ -376,7 +376,7 @@ let rec simple_loop_headers = function
 
 Simple loop headers are the entry nodes of loops that have exactly one entry
 node. This, however, is not sufficient to treat all the loop cases. Consider
-for example of mutually recursive functions.
+the example of mutually recursive functions.
 
 \begin{verbatim}
 let rec even x b =
@@ -403,7 +403,7 @@ $\Lambda$ such that
   L \supseteq E \supseteq C
 \end{equation}
 \begin{equation}\label{loopdef:1}
-  m = letrec \: Siblings(L) \: in \: m'
+  m = \mathsf{letrec} \: Siblings(L) \: \mathsf{in} \: m'
 \end{equation}
 \begin{equation}\label{loopdef:2}
   \begin{array}{r l}
@@ -418,7 +418,7 @@ $\Lambda$ such that
 \begin{equation}\label{loopdef:4}
   \begin{array}{r l}
     \forall \Lambda \in C
-      & Conditional(Terminator(\Lambda)) \\
+      & Conditional(Tail(\Lambda)) \\
       & Calls(Subterms(\Lambda)) \cap L \neq \{\} \\
       & Calls(Subterms(\Lambda)) \cap StrictSiblings(L) \neq \{\} \\
     \end{array}
@@ -435,27 +435,83 @@ $\Lambda$s
 
 The maximality condition is important so as to capture the whole loop.
 
+We give an example of the transformation we are carrying out before giving a
+formal definition.
 
-Introducing Landing Lambdas is achieved by transforming a term in the
-following fashion:
+\begin{verbatim}
+Mrec ([
+  (l0,[x0], Mcont(k [x])),
+  (l1, [x10; x11], (*loop entry*)
+    Mif(x10 > 100,
+        (l2, [x10 + x11, x11 + x11]),
+        (l0, [x11])
+      )
+  ),
+  (l2, [x20; x21], (*loop element*)
+    Mif(x20 > 100,
+        (l1, [x20 + x21, x21 + x21 + x21]),
+        (l0, [x21])
+      )
+  )],
+  Mcont(l1, [0, 42])
+)
+\end{verbatim}
+
+is transformed into
+
+\begin{verbatim}
+Mrec ([
+  (l0,[x0], Mcont(k [x])),
+  (lentry, [x30, x31], (*landing lambda*)
+    Mrec([
+      (l1', [x10; x11], (*copy of l1*)
+        Mif(x10 > 100,
+            (l2, [x10 + x11, x11 + x11]),
+            (l0, [x11])
+          )
+      ),
+      (l1, [x10; x11],
+        Mif(x10 > 100,
+            (l2, [x10 + x11, x11 + x11]),
+            (l0, [x11])
+          )
+      ),
+      (l2, [x20; x21],
+        Mif(x20 > 100,
+            (l1, [x20 + x21, x21 + x21 + x21]),
+            (l0, [x21])
+          )
+      )],
+      Mcont(l1', [x30, x31]) (*dispatch term*)
+      )
+  )],
+  Mcont(lentry, [0, 42])
+)
+\end{verbatim}
+
+This transformation pushes all the loop under a common $\lambda$. Note that
+the dispatch term is very simple because there is only one entry point (`l1`).
+Because this entry point is also an exit point (its tail is a conditional), we
+build a copy of it (`l1'`).
+
 
 \begin{description}
 \item[Landing-Lambdas]
-if $t = letrec \: L \sqcup M \: in \: m$ has a loop $(L, E ,C)$, then
+if $t = \mathsf{letrec} \: L \sqcup M \: \mathsf{in} \: m$ has a loop $(L, E ,C)$, then
 
 \begin{equation}
-LandingLambda(t) = letrec \: \{ \Lambda \} \cup M \: in \: m'
+LandingLambda(t) = \mathsf{letrec} \: \{ \Lambda \} \cup M \: \mathsf{in} \: m'
 \end{equation}
 
 where
 \begin{equation}
 \begin{array}{r l l}
-\Lambda & = & pad = \lambda \: i \: args \: \cdot \: letrec \: L \cup C' \: in \: m'' \\
+\Lambda & = & pad = \lambda \: i \: args \: \cdot \: \mathsf{letrec} \: L \cup C' \: \mathsf{in} \: m'' \\
 pad & & \text{is a fresh label} \\
 args & & \text{is the union of arguments of elements of } E \\
 C' & = & C[l = \lambda \: args \: \cdot \: m \: / \: l_{cpad} = \lambda \: args \: \cdot \: m] \\
-m'' & = & letrec \: \{ Dispatch_2 \} \: in \: if (i = 1) \: then \: CallTo(\Lambda_1) \: else \: dispatch_2 \: i \\
-Dispatch_i & = & dispatch_i \: = \: \lambda \: j \: \cdot \: letrec \: \{ Dispatch_{i+1} \} \: in if(j=i) \: then CallTo(\Lambda_i) \: else \: dispatch_{i+1} k \\
+m'' & = & \mathsf{letrec} \: \{ Dispatch_2 \} \: \mathsf{in} \: \mathsf{if} \: i = 1 \: \mathsf{then} \: CallTo(\Lambda_1) \: \mathsf{else} \: dispatch_2 \: i \\
+Dispatch_i & = & dispatch_i \: = \: \lambda \: j \: \cdot \: \mathsf{letrec} \: \{ Dispatch_{i+1} \} \: \mathsf{in} \mathsf{if} \: j=i \: \mathsf{then} CallTo(\Lambda_i) \: \mathsf{else} \: dispatch_{i+1} k \\
 \iota & : & l \rightarrow [ 1, Card(E) ] \text{ injective} \\
 \iota & : & \text{undefined if } l \notin E \\
 CallTo(l = \lambda \: vs \: \cdot \: m) & = & l_{cpad} \: vs \text{ if } l \in C \\
@@ -507,7 +563,7 @@ VirtualCalls =
   \bigcup_{L \in Loops}
     \{(l, e) |
       l \text{ is the landing $\lambda$ of $L$} \text{ and }
-      e \in Calls(Subterms_{\Lambda}(L)) - Head(Subterms_{\Lambda}(L))
+      e \in Calls(Bodies(L)) - Heads(L)
     \}
 \end{equation}
 
@@ -524,18 +580,18 @@ SSA.
 
 \begin{equation}
 \begin{array}{r l}
-Uninline_{true}(if(v) \: then \: l_1 \: vs \: else \: l_2 \: us ) = &
-  letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_1 \: vs \: \} \: in \:
-    if(v) \: then \: f \: () \: else \: l_2 \: us \\
-Uninline_{false}(if(v) \: then \: l_1 vs \: else \: l_2 \: us) = &
-  letrec \: \{ f \: = \: \lambda \: () \: \cdot \: l_2 \: us \: \} \: in \:
-    if(v) \: then \: l_1 \: vs \: else \: f \: () \\
+Uninline_{true}(\mathsf{if} \: v \: \mathsf{then} \: l_1 \: vs \: \mathsf{else} \: l_2 \: us ) = &
+  \mathsf{letrec} \: \{ f \: = \: \lambda \: () \: \cdot \: l_1 \: vs \: \} \: \mathsf{in} \:
+    \mathsf{if} \: v \: \mathsf{then} \: f \: () \: \mathsf{else} \: l_2 \: us \\
+Uninline_{false}(\mathsf{if} \: v \: \mathsf{then} \: l_1 vs \: \mathsf{else} \: l_2 \: us) = &
+  \mathsf{letrec} \: \{ f \: = \: \lambda \: () \: \cdot \: l_2 \: us \: \} \: \mathsf{in} \:
+    \mathsf{if} \: v \: \mathsf{then} \: l_1 \: vs \: \mathsf{else} \: f \: () \\
 \end{array}
 \end{equation}
 
 \item[Needs uninlining]
 Considering the term
-$letrec \: \{ \Lambda_c, \: \Lambda_t \} \cup L \: in \: m$, $c$ needs
+$\mathsf{letrec} \: \{ \Lambda_c, \: \Lambda_t \} \cup L \: \mathsf{in} \: m$, $c$ needs
 uninlining if
 
 \begin{equation}
@@ -573,8 +629,8 @@ rank :
   & v_1 \: op \: v_2 \: \mapsto \: 1+max(rank(v_1), rank(v_2)) \\
   & x \: \mapsto \: 1+max(rank(v_1),\dots,rank(v_n)) \text{ if } f \: v_1 \: \dots \: v_n \: \lambda_c \: x \: \cdot \: \_ \\
   & x \: \mapsto \: rank(v) \text{ if } let \: x \: = \: v \: in \: \_ \\
-  & v \: \mapsto \: 0 \text{ if $v$ is a $\lambda_p$ parameter} \\
-  & v \: \mapsto \: max(r_1,\dots,r_n) \text{ if $v$ is a $\lambda_j$ parameter called with values of rank $r_i$} \\
+  & x \: \mapsto \: 0 \text{ if $v$ is a $\lambda_p$ parameter} \\
+  & x \: \mapsto \: max(r_1,\dots,r_n) \text{ if $v$ is a $\lambda_j$ parameter called with values of rank $r_i$} \\
 \end{array}
 \end{equation}
 
@@ -585,10 +641,10 @@ Note that ranks are not always well defined. Consider the following term
 term).
 
 \begin{align*}
-&letrec \{ \\
-&\:\: f_1 \: = \: \lambda_j \: x_1 \: o_1 \: \cdot \: test_1 \: o_1 \: (\lambda_c \: b_1 \: \cdot \: if(b_1) \: then \: f_2 \: (x_1+1) \: b_1 \: else \: exit \: x_1) \:, \\
-&\:\: f_2 \: = \: \lambda_j \: x_2 \: o_2 \: \cdot \: test_2 \: o_2 \: (\lambda_c \: b_2 \: \cdot \: if(b_2) \: then \: f_1 \: (x_2+1) \: b_2 \: else \: exit \: x_2) \:, \\
-&\} \: if(b_0) \: then f_1 \: v_1 \: w_1 \: else f_2 \: v_2 \: w_2 \\
+&\mathsf{letrec} \{ \\
+&\:\: f_1 \: = \: \lambda_j \: x_1 \: o_1 \: \cdot \: test_1 \: o_1 \: (\lambda_c \: b_1 \: \cdot \: \mathsf{if} \: b_1 \: \mathsf{then} \: f_2 \: (x_1+1) \: b_1 \: \mathsf{else} \: exit \: x_1) \:, \\
+&\:\: f_2 \: = \: \lambda_j \: x_2 \: o_2 \: \cdot \: test_2 \: o_2 \: (\lambda_c \: b_2 \: \cdot \: \mathsf{if} \: b_2 \: \mathsf{then} \: f_1 \: (x_2+1) \: b_2 \: \mathsf{else} \: exit \: x_2) \:, \\
+&\} \: \mathsf{in} \: \mathsf{if} b_0 \: \mathsf{then} f_1 \: v_1 \: w_1 \: \mathsf{else} f_2 \: v_2 \: w_2 \\
 \end{align*}
 
 The ranks for $x_1$ and $x_2$ are:
@@ -668,8 +724,11 @@ assignments.
 
 \begin{equation}
 \begin{array}{r l}
+TBR: &\\
+term \rightarrow & term\\
 letand \: \{ (x, y) \} \cup B \: in \: m \: \mapsto & letand \: B[x/y] \: in \: m[x/y] \\
 letand \: \{ (x_1, y_1 \: op \: y_2), (x_2, y_1 \: op \: y_2) \} \cup B \: in \: m \: \mapsto & letand \:  \{ (x_1, y_1 \: op \: y_2), (x_2, x_1) \} \cup B \: in \: m \\
+m \mapsto & m' \text{ where $m'$ is $m$ with subterms mapped by $TBR$}\\
 \end{array}
 \end{equation}
 
@@ -695,7 +754,7 @@ The main part of the original algorithm is a nested loop over ranks (starting
 at $0$) and blocks (in top-sort order from the \`\`deepest'' to the
 \`\`shallowest''). Each execution of the body of the loop leads to potential
 trivial assignments. Thus, it is necessary to interleave the trivial
-assignment removal The body of the loop consists in:
+assignment removal pass. The body of the loop consists in:
 
 (a) moving computations from either
     (1) the deeper block the current one jumps to, or
@@ -747,7 +806,7 @@ m1)], m2)` where `ls` is a loop.)
 The following invariants are to be maintained:
 
 - in `Mlambda`, the bindings are sorted in callees-before-callers order
-- in `Mlambda` (resp `Mloop`) the term (`m` (resp. `m2`)) is a terminator
+- in `Mlambda` (resp `Mloop`) the term (`m` (resp. `m2`)) is a tail
   (this avoids rank interleaving)
 - in `Mloop (v, vs, ls, dispatch, m)`,
     + `dispatch` only makes call to elements of `ls`,
@@ -872,9 +931,9 @@ this case the offending nodes can simply be removed.
 
 \begin{equation}
 \begin{array}{r l}
-letrec \: \{ f = \lambda_j \: \_ \cdot l \_ \} \cup L \: in \: m \: \mapsto &
-  (letrec \: L \: in \: m)[f \: \_ / \: l \_] \\
-letrec \: \{\} \: in \: m \mapsto & m
+\mathsf{letrec} \: \{ f = \lambda_j \: \_ \cdot l \_ \} \cup L \: \mathsf{in} \: m \: \mapsto &
+  (\mathsf{letrec} \: L \: \mathsf{in} \: m)[f \: \_ / \: l \_] \\
+\mathsf{letrec} \: \{\} \: \mathsf{in} \: m \mapsto & m
 \end{array}
 \end{equation}
 
