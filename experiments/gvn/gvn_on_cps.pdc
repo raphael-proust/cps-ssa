@@ -833,9 +833,26 @@ values that depends on arguments of `b4` cannot up.
 ###Post folding operations
 
 After folding, it is necessary to come back to the original CPS term
-representation. This is acheived by replacing `Mbind` constructors with `Mlet`
-ones. The invariant property of ranks makes it an easy task. TODO: a little
-more details.
+representation. This is achieved by replacing `Mbind` constructors with `Mlet`
+ones. The invariant property of ranks makes it an easy task:
+
+- computations of the same rank need not be ordered, and
+- ranks need be ordered by increasing order,
+
+thus a simple fold operation on the sorted list of bindings is enough.
+
+\begin{verbatim}
+let rec tr = function
+  | Mbind (rbs, m) ->
+    assert (rbs = List.sort compare rbs);
+    List.fold_right
+      (fun (_, bindings) g ->
+        List.fold_left (fun g (x,v) -> Mlet (x, v, g)) g bindings
+      )
+      rbs
+      (tr m)
+  | ..
+\end{verbatim}
 
 The algorithm can introduce \`\`empty'' terms. E.g. landing-$lambda$s might
 not have received any bindings from nodes that are \`\`after'' the loop. In
