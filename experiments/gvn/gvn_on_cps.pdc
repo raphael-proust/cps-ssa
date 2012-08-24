@@ -10,7 +10,7 @@ of the Single Static Assignment (SSA) form to improve on Value Numbering.
 Continuation Passing Style (CPS) is a special form of $\lambda$-calculus where
 functions get a continuation argument to be used instead of returning. A
 translation between SSA and CPS (in both directions) is presented in \`\`A
-Correspondance Between CPS and SSA form''.
+Correspondence Between CPS and SSA form''.
 
 We here present an adaptation of the GVN algorithm to CPS.
 
@@ -90,7 +90,7 @@ and value =
   | ..
 \end{verbatim}
 
-The notion of primitive operators (addition, multiplication) is purposedly
+The notion of primitive operators (addition, multiplication) is purportedly
 left unspecified.
 
 ##About SSA to CPS translation
@@ -149,7 +149,7 @@ $\mathsf{letrec} \: \dots \: \Lambda_i \: \dots  \: \mathsf{in} \: m$, where
 $m$ is the translation of $b$, and $\Lambda_i$ is the translation of $b_i$.
 (Note that $m$ might be nested in another term, e.g. an `Mapp`.)
 
-Note that this correspondance between the term structure and the dominator
+Note that this correspondence between the term structure and the dominator
 tree is not necessary for terms to be valid (with respect to scoping and
 well-formed-ness). We happen to preserve the dominator information during the
 translation.
@@ -183,7 +183,7 @@ and $max$ is implemented by another $\lambda_p$)
 \end{verbatim}
 
 The first block binds $x$, and $y$, the second binds $xx$. The binding of $z$
-is not part of any block's bindings per-se.
+is not part of any block's bindings per se.
 
 
 ##Notions
@@ -262,7 +262,7 @@ We naturally extend $Calls$ to apply on sets. This is useful for composing
 $Calls$ and $Subterms$ to get all the calls of a term.
 
 
-\item[Conditional] tests wheter a term is a conditional
+\item[Conditional] tests whether a term is a conditional
 
 \begin{equation}
 \begin{array}{l}
@@ -337,7 +337,7 @@ Just as with the original GVN algorithm, the code needs to be (automatically)
 modified. The two modifications that we apply are:
 
 - landing lambdas insertion with virtual call annotations, and
-- trivial-call uninlining.
+- trivial-call un-inlining.
 
 ### Landing Lambdas
 
@@ -568,7 +568,7 @@ VirtualCalls =
 \end{equation}
 
 
-###Trivial-call Uninlining
+###Trivial-call Un-inlining
 
 In this transformation we add a level of indirection to some calls by
 un-inlining a trivial redirection. This allows the moving of code to the
@@ -666,13 +666,13 @@ original algorithm). Defaulting to zero is essentially the same as not taking
 ##Trivial Binding Removing
 
 Removing some trivial bindings in CPS code is easier than removing the
-corresponding trivial assignements in SSA form. Because of the scoping rule,
+corresponding trivial assignments in SSA form. Because of the scoping rule,
 changes are local to a term. On the other hand, the term structure is not as
 nice to work upon as a block of—temporarily unordered—assignments because it
 is more rigid.
 
 Thus we change the $let-in$ construct of our CPS terms. This is only intended
-to be used localy and does not need to be exported outside of this
+to be used locally and does not need to be exported outside of this
 optimisation. (That is, it can be converted back to classic CPS after the
 optimisation is done.)
 
@@ -836,24 +836,24 @@ The last point is worth a few explanations. Consider the following SSA graph:
 
 \begin{verbatim}
         +---------------+
-        | <assigments1> |
-        |     <jump1>   |
+        | <assignments1> |
+        |     <jump1>    |
         +---------------+
              |       |
              V       V
-+---------------+ +---------------+
-| <assigments2> | | <assigments3> |
-|     <jump2>   | |     <jump3>   |
-+---------------+ +---------------+
++----------------+ +----------------+
+| <assignments2> | | <assignments3> |
+|     <jump2>    | |     <jump3>    |
++----------------+ +----------------+
              |       |
              V       V
-        +---------------+
-        | <assigments4> |
-        |     <jump4>   |
-        +---------------+
+        +----------------+
+        | <assignments4> |
+        |     <jump4>    |
+        +----------------+
 \end{verbatim}
 
-The original algorithm moves assignements from block `4` to blocks `2` and `3`
+The original algorithm moves assignments from block `4` to blocks `2` and `3`
 (introducing the necessary $\phi$ nodes). And from blocks `2` and `3` to `1`.
 
 In CPS world, this example becomes:
@@ -876,7 +876,7 @@ letrec (
 <calls1>
 \end{verbatim}
 
-Where `<bindings>` are translations of `<assigments>` and `<calls>`
+Where `<bindings>` are translations of `<assignments>` and `<calls>`
 translations of `<jump>`.
 
 Moving some computations of `b4` into `b2` and `b3` requires the introduction
@@ -884,7 +884,7 @@ of arguments to `b4` (just like $\phi$ nodes where necessary in the SSA form).
 From a scope perspective, it is simpler to moves elements of `<bindings4>`
 into `<bindings1>`. This is what our prototype does.
 
-For this reason, our prototype does not make use of uninlined trivial calls
+For this reason, our prototype does not make use of un-inlined trivial calls
 (CPS's equivalent of split edges).
 
 It is more straight-forward than the original algorithm but fails to capture
