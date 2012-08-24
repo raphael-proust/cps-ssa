@@ -1,4 +1,4 @@
- (* {{{ LICENSE                                Prim.var                              *
+ (* {{{ LICENSE                                                              *
   * vi: set fdm=marker fdl=0:                                                *
   *                                                                          *
   * Copyright (c) 2012 Raphaël Proust <raphlalou@gmail.com>                  *
