@@ -842,7 +842,8 @@ ones. The invariant property of ranks makes it an easy task:
 - computations of the same rank need not be ordered, and
 - ranks need be ordered by increasing order,
 
-thus a simple fold operation on the sorted list of bindings is enough.
+thus a simple fold operation on the sorted list of bindings is
+enough[^wrongtyping]:
 
 \begin{verbatim}
 let rec tr = function
@@ -854,8 +855,12 @@ let rec tr = function
       )
       rbs
       (tr m)
-  | ..
+  | .. (* recursive exploration of the term *)
 \end{verbatim}
+
+[^wrongtyping]: The function `tr` presented here works on two different
+versions of the CPS term representation: it expects the newer representation
+(with `Mbind`) and returns the older (with `Mlet`).
 
 The algorithm can introduce \`\`empty'' terms. E.g. landing-$lambda$s might
 not have received any bindings from nodes that are \`\`after'' the loop. In
