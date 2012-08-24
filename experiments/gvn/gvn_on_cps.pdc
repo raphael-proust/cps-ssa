@@ -780,14 +780,14 @@ The last point is worth a few explanations. Consider the following SSA graph:
         | <assigments1> |
         |     <jump1>   |
         +---------------+
-               |   |
-               V   V
+             |       |
+             V       V
 +---------------+ +---------------+
 | <assigments2> | | <assigments3> |
 |     <jump2>   | |     <jump3>   |
 +---------------+ +---------------+
-               |   |
-               V   V
+             |       |
+             V       V
         +---------------+
         | <assigments4> |
         |     <jump4>   |
@@ -824,6 +824,9 @@ Moving some computations of `b4` into `b2` and `b3` requires the introduction
 of arguments to `b4` (just like $\phi$ nodes where necessary in the SSA form).
 From a scope perspective, it is simpler to moves elements of `<bindings4>`
 into `<bindings1>`. This is what our prototype does.
+
+For this reason, our prototype does not make use of uninlined trivial calls
+(CPS's equivalent of split edges).
 
 It is more straight-forward than the original algorithm but fails to capture
 certain possible optimisations. Indeed, contrarily to the original algorithm,
