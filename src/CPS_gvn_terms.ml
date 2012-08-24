@@ -120,9 +120,9 @@ let rec apply_subs subs = function
     GLambda (map_bodys (apply_subs subs) ls, apply_subs subs g)
 
 
-let assert_value env v = assert (Prim.closed env v)
+let assert_value e v = assert (Prim.closed e v)
 
-let assert_values env vs = List.iter (assert_value env) vs
+let assert_values e vs = List.iter (assert_value e) vs
 
 let nits xs = List.map (fun x -> (x, ())) xs
 
@@ -133,69 +133,69 @@ let rec assert_dispatch = function
   | GLambda _ -> assert false
 
 let assert_g g =
-  let rec aux env lenv g =
+  let rec aux e le g =
     match g with
     | GAppCont (v, vs, k) ->
-      assert (Env.has ~env v);
-      assert_values env vs;
-      assert (Env.has ~env:lenv k)
+      assert (Env.has ~e v);
+      assert_values e vs;
+      assert (Env.has ~e:le k)
     | GAppBind (v, vs, (x, g)) ->
-      assert (Env.hasnt ~env:env x);
-      assert (Env.has ~env:lenv v);
-      assert_values env vs;
-      aux (Env.add1 ~env x ()) lenv g
+      assert (Env.hasnt ~e:e x);
+      assert (Env.has ~e:le v);
+      assert_values e vs;
+      aux (Env.add1 ~e x ()) le g
     | GCont (k, vs) ->
-      assert (Env.has ~env:lenv k);
-      assert_values env vs
+      assert (Env.has ~e:le k);
+      assert_values e vs
     | GCond (v, (k1, vs1), (k2, vs2)) ->
-      assert_value env v;
-      assert (Env.has ~env:lenv k1); assert_values env vs1;
-      assert (Env.has ~env:lenv k2); assert_values env vs2
+      assert_value e v;
+      assert (Env.has ~e:le k1); assert_values e vs1;
+      assert (Env.has ~e:le k2); assert_values e vs2
     | GBind (_, GBind _) -> assert false
     | GBind (bs, g) ->
-      let (env, _) =
+      let (e, _) =
         List.fold_left
-          (fun (env, r) (rank, bs) ->
+          (fun (e, r) (rank, bs) ->
             assert (r < rank);
             let (vars, values) = List.split bs in
-            List.iter (fun v -> assert (Env.hasnt ~env v)) vars;
-            List.iter (assert_value env) values;
-            (Env.add ~env (nits vars), rank)
+            List.iter (fun v -> assert (Env.hasnt ~e v)) vars;
+            List.iter (assert_value e) values;
+            (Env.add ~e (nits vars), rank)
           )
-          (env, -1)
+          (e, -1)
           bs
       in
-      aux env lenv g
+      aux e le g
     | GLoop (v, vs, ls, g1, g2) ->
       assert_dispatch g1;
       (*TODO: check ls's call graph*)
-      assert (Env.hasnt ~env:lenv v);
-      List.iter (fun v -> assert (Env.hasnt ~env v)) vs;
+      assert (Env.hasnt ~e:le v);
+      List.iter (fun v -> assert (Env.hasnt ~e v)) vs;
       (*DO NOT: add ls to g2's environment (calls should go through v) *)
-      aux env (Env.add1 ~env:lenv v ()) g2;
+      aux e (Env.add1 ~e:le v ()) g2;
       (*TODO: deforest these iter*)
       List.iter
         (fun (v, (vs, g)) ->
-          assert (Env.hasnt ~env:lenv v);
-          List.iter (fun v -> assert (Env.hasnt ~env v)) vs;
+          assert (Env.hasnt ~e:le v);
+          List.iter (fun v -> assert (Env.hasnt ~e v)) vs;
         )
         ls;
       let (names, lambdas) = List.split ls in
       (*DO NOT: add v to g1's environment (g1 should dispatch to ls) *)
       aux (Env.t_of_list (nits vs)) (Env.t_of_list (nits names)) g1;
-      let lenv = Env.add ~env (nits names) in
-      List.iter (fun (vs, g) -> aux (Env.add ~env (nits vs)) lenv g) lambdas
+      let le = Env.add ~e (nits names) in
+      List.iter (fun (vs, g) -> aux (Env.add ~e (nits vs)) le g) lambdas
     | GLambda (ls, g) ->
       List.iter
         (fun (v, (vs, g)) ->
-          assert (Env.hasnt ~env:lenv v);
-          List.iter (fun v -> assert (Env.hasnt ~env v)) vs;
-          (*DONT add v to g's env, (it's not under a GLoop!)*)
+          assert (Env.hasnt ~e:le v);
+          List.iter (fun v -> assert (Env.hasnt ~e v)) vs;
+          (*DONT add v to g's e, (it's not under a GLoop!)*)
           (*DONT add v to the environment to force splitting of lambdas*)
-          aux (Env.add ~env (nits vs)) lenv g
+          aux (Env.add ~e (nits vs)) le g
         )
         ls ;
-      aux env (Env.add ~env (nits (heads ls))) g
+      aux e (Env.add ~e (nits (heads ls))) g
   in
   aux Env.empty (Env.one CPS.var_return ()) g
 

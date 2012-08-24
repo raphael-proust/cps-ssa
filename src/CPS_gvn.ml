@@ -43,14 +43,14 @@ let trivial_bind_removal g =
       (*FIXME: sometimes require re-ranking*)
       let (subs, _, revbs) =
         List.fold_left (* this fold is over the (rank, bindings) list *)
-          (fun (subs, env, bsacc) (r, bs) ->
-            let (subs, env, bs) =
+          (fun (subs, e, bsacc) (r, bs) ->
+            let (subs, e, bs) =
               List.fold_left (* this fold is over the bindings *)
-                (fun (subs, env, bs) (x,v) ->
+                (fun (subs, e, bs) (x,v) ->
                   let open Prim in
                   match v with
-                  | VVar _ -> ((x, v) :: subs, env, bs)
-                  | VRead _ -> (subs, env, (x,v) :: bs)
+                  | VVar _ -> ((x, v) :: subs, e, bs)
+                  | VRead _ -> (subs, e, (x,v) :: bs)
                   | VConst _
                   | VNull | VUndef | VDummy _ | VZero
                   | VStruct _
@@ -60,18 +60,18 @@ let trivial_bind_removal g =
                   | VCast _
                   | VShl _ | VLShr _ | VAShr _ ->
                     try
-                      let y = Env.teg ~env v in
-                      ((x, VVar y) :: subs, env, bs)
+                      let y = Env.teg ~e v in
+                      ((x, VVar y) :: subs, e, bs)
                       (* because we substitute directly here, there is no need
                        * for fixpointing this function *)
                     with
                       | Not_found ->
-                        (subs, Env.add1 ~env x v, (x,v) :: bs)
+                        (subs, Env.add1 ~e x v, (x,v) :: bs)
                 )
-                (subs, env, [])
+                (subs, e, [])
                 bs
             in
-            (subs, env, (r, bs) :: bsacc)
+            (subs, e, (r, bs) :: bsacc)
           )
           ([], Env.empty, [])
           bs
@@ -98,16 +98,16 @@ let movable rk binds =
   try
     let (_, bs, revbinds) =
       List.fold_left (*TODO: optimisation*)
-        (fun (env, bs, binds) ((rrk, bbs) as rbs) ->
+        (fun (e, bs, binds) ((rrk, bbs) as rbs) ->
           if rk < rrk then begin (*before rank*)
             assert (bs = []);
-            (Env.add ~env bbs, bs, rbs :: binds)
+            (Env.add ~e bbs, bs, rbs :: binds)
           end else if rk = rrk then begin (*on the rank*)
             assert (bs = []);
             let (movables, nonmovables) =
               List.partition
                 (fun (_, v) ->
-                  List.for_all (Env.hasnt ~env) (Prim.vars_of_value v)
+                  List.for_all (Env.hasnt ~e) (Prim.vars_of_value v)
                 )
                 bbs
             in
@@ -119,8 +119,8 @@ let movable rk binds =
             in
             (Env.empty, movables, binds)
           end else begin (*after the rank*)
-            assert (env = Env.empty);
-            (env, bs, rbs :: binds)
+            assert (e = Env.empty);
+            (e, bs, rbs :: binds)
           end
         )
         (Env.empty, [], binds)

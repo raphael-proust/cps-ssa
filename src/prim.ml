@@ -72,11 +72,11 @@ type mem_w =
   | MWrite of value
   | MAlloc
 
-let rec closed env = function
-  | VVar v -> Env.has ~env v
+let rec closed e = function
+  | VVar v -> Env.has ~e v
   | VConst _ | VNull | VUndef | VDummy _ | VZero -> true
-  | VStruct vs -> List.for_all (closed env) vs
-  | VRead v | VCast v -> closed env v
+  | VStruct vs -> List.for_all (closed e) vs
+  | VRead v | VCast v -> closed e v
   | VPlus (v1, v2) | VMinus (v1, v2)
   | VMult (v1, v2) | VDiv (v1, v2) | VRem (v1, v2)
   | VGt (v1, v2) | VGe (v1, v2)
@@ -84,7 +84,7 @@ let rec closed env = function
   | VEq (v1, v2) | VNe (v1, v2)
   | VAnd (v1, v2) | VOr (v1, v2) | VXor (v1, v2)
   | VShl (v1, v2) | VLShr (v1, v2) | VAShr (v1, v2)
-  -> closed env v1 && closed env v2
+  -> closed e v1 && closed e v2
 
 let rec apply_subs subs = function
   | VVar v as value -> begin try List.assoc v subs with Not_found -> value end

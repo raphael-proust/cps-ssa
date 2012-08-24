@@ -184,109 +184,109 @@ let rank g =
 
   (*TODO: clean up environments (based on scope) to improve performance*)
 
-  let rank_value env v =
+  let rank_value e v =
     (* the succ of the maximum of the rank of all the variables used in v *)
-    succ (List.fold_left max 0 (List.map (Env.get ~env) (Prim.vars_of_value v)))
+    succ (List.fold_left max 0 (List.map (Env.get ~e) (Prim.vars_of_value v)))
   in
-  let rank_values env vs = List.map (rank_value env) vs in
+  let rank_values e vs = List.map (rank_value e) vs in
 
-  let update_callenv env k rs =
+  let update_callenv e k rs =
     (* update or add the rank of the k's call-site arguments*)
-    Env.add1 ~env k (
-      if Env.has ~env k then
-        List.map2 max rs (Env.get ~env k)
+    Env.add1 ~e k (
+      if Env.has ~e k then
+        List.map2 max rs (Env.get ~e k)
       else
         rs
     )
   in
 
-  let rec rank_g env cenv = function
-    (* env: (variable, rank) environment
-     * cenv: (function, arguments' ranks) environment
+  let rec rank_g e ce = function
+    (* e: (variable, rank) environment
+     * ce: (function, arguments' ranks) environment
      *)
     (* App: external call, nothing to do *)
-    | GP.GAppCont _ as g -> (cenv, g)
+    | GP.GAppCont _ as g -> (ce, g)
 
-    (* Continuations: update cenv for superterms (return a new cenv) *)
+    (* Continuations: update ce for superterms (return a new ce) *)
     | GP.GCont (k, vs) as g ->
-      (update_callenv cenv k (rank_values env vs), g)
+      (update_callenv ce k (rank_values e vs), g)
     | GP.GCond (v, (k1, vs1), (k2, vs2)) as g ->
-      let cenv = update_callenv cenv k1 (rank_values env vs1) in
-      let cenv = update_callenv cenv k2 (rank_values env vs2) in
-      (cenv, g)
+      let ce = update_callenv ce k1 (rank_values e vs1) in
+      let ce = update_callenv ce k2 (rank_values e vs2) in
+      (ce, g)
 
-    (* Binds: fix update env for subterms *)
+    (* Binds: fix update e for subterms *)
     | GP.GAppBind (v, vs, (x, g)) ->
-      let rk = List.fold_left max 0 (rank_values env vs) in
-      let (cenv, g) = rank_g (Env.add1 ~env x rk) cenv g in
-      (cenv, GP.GAppBind (v, vs, (x, g)))
+      let rk = List.fold_left max 0 (rank_values e vs) in
+      let (ce, g) = rank_g (Env.add1 ~e x rk) ce g in
+      (ce, GP.GAppBind (v, vs, (x, g)))
     | GP.GBind (_, GP.GBind _) -> assert false
-    | GP.GBind ([-1, bs], g) -> rank_gbind env cenv bs g
+    | GP.GBind ([-1, bs], g) -> rank_gbind e ce bs g
     | GP.GBind _ -> assert false
 
-    (* Lambdas: fix subterm and then bodies, do not send env 'up', only cenv *)
+    (* Lambdas: fix subterm and then bodies, do not send e 'up', only ce *)
     | GP.GLoop (v, vs, ls, g1, g2) ->
-      let (cenv, g2) = rank_g env cenv g2 in
-      let (cenv, g1) = rank_g env cenv g1 in
-      let (cenv, ls) =
+      let (ce, g2) = rank_g e ce g2 in
+      let (ce, g1) = rank_g e ce g1 in
+      let (ce, ls) =
         List.fold_left
-          (fun (cenv, ls) (l, (vs, g)) ->
+          (fun (ce, ls) (l, (vs, g)) ->
             let (ncenv, nl) =
-              let env = Env.add ~env (List.combine vs (Env.get ~env:cenv l)) in
-              (*TODO: don't add ls's calls to cenv*)
-              let (ncenv, g) = rank_g env cenv g in
+              let e = Env.add ~e (List.combine vs (Env.get ~e:ce l)) in
+              (*TODO: don't add ls's calls to ce*)
+              let (ncenv, g) = rank_g e ce g in
               (ncenv, (l, (vs, g)))
             in
-            (Env.merge ncenv cenv, nl :: ls)
+            (Env.merge ncenv ce, nl :: ls)
           )
-          (cenv, [])
+          (ce, [])
           ls
       in
-      (cenv, GP.GLoop (v, vs, ls, g1, g2))
+      (ce, GP.GLoop (v, vs, ls, g1, g2))
     | GP.GLambda (ls, g) ->
       (*all the calls to the lambdas of ls are in g*)
       (* we start by fixing ranks in g*)
-      let (cenv, g) = rank_g env cenv g in
+      let (ce, g) = rank_g e ce g in
       (* we then go in each of the lambdas bodies *)
-      let (cenv, ls) =
+      let (ce, ls) =
         List.fold_left
-          (fun (cenv, ls) (l, (vs, g)) ->
+          (fun (ce, ls) (l, (vs, g)) ->
             let (ncenv, nl) =
-              let env = Env.add ~env (List.combine vs (Env.get ~env:cenv l)) in
-              let (ncenv, g) = rank_g env cenv g in
+              let e = Env.add ~e (List.combine vs (Env.get ~e:ce l)) in
+              let (ncenv, g) = rank_g e ce g in
               (ncenv, (l, (vs, g)))
             in
-            (Env.merge ncenv cenv, nl :: ls)
+            (Env.merge ncenv ce, nl :: ls)
           )
-          (cenv, [])
+          (ce, [])
           ls
       in
-      (cenv, GP.GLambda (ls, g))
+      (ce, GP.GLambda (ls, g))
 
-  and rank_gbind env cenv bs g =
-    let rec aux env ranked nonranked = match nonranked with
-      | [] -> (env, ranked)
+  and rank_gbind e ce bs g =
+    let rec aux e ranked nonranked = match nonranked with
+      | [] -> (e, ranked)
       | _::_ ->
         let (rankable, nonrankable) =
           List.partition
-            (fun (x, v) -> List.for_all (Env.has ~env) (Prim.vars_of_value v))
+            (fun (x, v) -> List.for_all (Env.has ~e) (Prim.vars_of_value v))
             nonranked
         in
         assert (not (rankable = [])); (*replaces stack-overflow*)
-        let (env, ranked) =
+        let (e, ranked) =
           List.fold_left
-            (fun (env, r) (x, v) ->
-              let rk = rank_value env v in
-              (Env.add1 ~env x rk, (rk, (x, v)) :: ranked)
+            (fun (e, r) (x, v) ->
+              let rk = rank_value e v in
+              (Env.add1 ~e x rk, (rk, (x, v)) :: ranked)
             )
-            (env, ranked)
+            (e, ranked)
             rankable
         in
-        aux env ranked nonrankable
+        aux e ranked nonrankable
     in
-    let (env, ranked) = aux env [] bs in
-    let (cenv, g) = rank_g env cenv g in
-    (cenv, GP.GBind (L.classes ranked, g))
+    let (e, ranked) = aux e [] bs in
+    let (ce, g) = rank_g e ce g in
+    (ce, GP.GBind (L.classes ranked, g))
   in
 
   rank_g Env.empty Env.empty g
