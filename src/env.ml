@@ -30,13 +30,13 @@ let t_of_list t = t
 
 let disjoint e1 e2 = L.disjoint e1 e2
 
-let add1 ~env v d = (v, d) :: env
-let add  ~env vds = vds @ env
+let add1 ~e v d = (v, d) :: e
+let add  ~e vds = vds @ e
 let merge e1 e2 = e1 @ e2
 
-let has ~env v = List.exists (fun vd -> fst vd = v) env
-let hasnt ~env v = not (has ~env v)
+let has ~e v = List.exists (fun vd -> fst vd = v) e
+let hasnt ~e v = not (has ~e v)
 
-let get ~env v = List.assoc v env
+let get ~e v = List.assoc v e
 
-let teg ~env d = fst (List.find (fun (_, dd) -> d = dd) env)
+let teg ~e d = fst (List.find (fun (_, dd) -> d = dd) e)
