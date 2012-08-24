@@ -794,8 +794,8 @@ The last point is worth a few explanations. Consider the following SSA graph:
         +---------------+
 \end{verbatim}
 
-The original algorithm moves assignements from block `4` to blocks `2` and
-`3`. And from blocks `2` and `3` to `1`.
+The original algorithm moves assignements from block `4` to blocks `2` and `3`
+(introducing the necessary $\phi$ nodes). And from blocks `2` and `3` to `1`.
 
 In CPS world, this example becomes:
 
@@ -804,33 +804,6 @@ letand <bindings1> in
 letrec (
   b4 = lambda _ .
     letand <bindings4> in
-    <calls4>
-  b2 = lambda _ .
-    letand <bindings2> in
-    <calls2>
-  b3 = lambda _ .
-    letand <bindings3> in
-    <calls3>
-) in
-<calls1>
-\end{verbatim}
-
-Where `<bindings>` are translations of `<assigments>` and `<calls>`
-translations of `<jump>`.
-
-Moving some computations of `b4` into `b2` abd `b3` does not makes sense from
-a scope perspective. (It would require transmitting some information to `b4`
-through parameters.) Our algorithm moves elements of `<bindings4>` into
-`<bindings1>`.
-
-The original behaviour can be obtained by translating the example into the
-following form:
-
-\begin{verbatim}
-letand <bindings1> in
-letrec (
-  b4 = lambda _ .
-    (* MARK *)
     letrec (
       b2 = lambda _ .
         letand <bindings2> in
@@ -839,13 +812,22 @@ letrec (
         letand <bindings3> in
         <calls3>
     ) in
-    letand <bindings4> in
     <calls4>
 ) in
 <calls1>
 \end{verbatim}
 
-and moving bindings from `<bindings4>` to `(* MARK *)`
+Where `<bindings>` are translations of `<assigments>` and `<calls>`
+translations of `<jump>`.
+
+Moving some computations of `b4` into `b2` and `b3` requires the introduction
+of arguments to `b4` (just like $\phi$ nodes where necessary in the SSA form).
+From a scope perspective, it is simpler to moves elements of `<bindings4>`
+into `<bindings1>`. This is what our prototype does.
+
+It is more straight-forward than the original algorithm but fails to capture
+certain possible optimisations. Indeed, contrarily to the original algorithm,
+values that depends on arguments of `b4` cannot up.
 
 
 ###Post folding operations
